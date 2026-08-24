@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { lookupByBarcode, searchReleases } from "@/api/releases";
 import type { Release } from "@/domain/types";
 import { createCopy } from "@/local/copyWrites";
@@ -10,6 +10,18 @@ import { useStore } from "@/local/StoreProvider";
 import * as Crypto from "expo-crypto";
 
 const BARCODE = /^\d{8,14}$/;
+
+/**
+ * How long the field has to stand still before the search runs itself.
+ *
+ * Long enough that typing an artist's name is one request rather than eleven, short
+ * enough that it still feels like the list is following along. Kept in step with the web
+ * dialog, which does the same thing with the same numbers.
+ */
+const DEBOUNCE_MS = 350;
+
+/** Below this, a title search matches most of the archive and tells you nothing. */
+const MIN_TERM_LENGTH = 2;
 
 export function useAddLogic() {
   const { store, clock } = useStore();
@@ -102,20 +114,50 @@ export function useAddLogic() {
 
   const wishlist = useQuery({ queryKey: ["wishlist"], queryFn: () => store.listWishlist() });
 
-  const run = useCallback(
+  const run = useCallback((query: string) => setSubmitted(query), []);
+
+  /**
+   * Recent searches hold things somebody meant, not every prefix they passed through on
+   * the way — which is why this is not called from the debounce. A search counts as meant
+   * once it is pressed for deliberately (the search key, a scan, repeating an earlier
+   * one) or once it produces something that gets added. Barcodes are skipped either way:
+   * a number nobody typed is not a search anybody would want to repeat.
+   */
+  const remember = useCallback(
     (query: string) => {
-      setSubmitted(query);
-      // Remembered on submit rather than on keystroke, so the list holds searches somebody
-      // meant, not every prefix they passed through on the way. A barcode is skipped: a
-      // number nobody typed is not a search anybody would want to repeat.
-      if (!BARCODE.test(query.trim())) {
-        void rememberSearch(store, query).then(() =>
-          queryClient.invalidateQueries({ queryKey: ["recentSearches"] }),
-        );
-      }
+      if (BARCODE.test(query.trim())) return;
+      void rememberSearch(store, query).then(() =>
+        queryClient.invalidateQueries({ queryKey: ["recentSearches"] }),
+      );
     },
     [store, queryClient],
   );
+
+  const query = term.trim();
+  /** A barcode is only a barcode once it is complete, so half a scan never goes out. */
+  const queryReady = BARCODE.test(query) || query.length >= MIN_TERM_LENGTH;
+  /** Typed something new and the request has not gone out yet. */
+  const waiting = queryReady && query !== submitted;
+
+  /**
+   * The search runs itself after the field stands still.
+   *
+   * Adding a record is a search you repeat with small corrections — a misheard title, an
+   * artist spelled two ways — and reaching for the keyboard's search key between every
+   * attempt is a tap that only ever means "yes, I did mean what I just typed". The search
+   * key still works, and skips the wait.
+   */
+  useEffect(() => {
+    if (!queryReady) {
+      // Emptying or shortening the field drops the results with it, rather than leaving
+      // them stranded under a box that no longer says what produced them.
+      run("");
+      return;
+    }
+    if (query === submitted) return;
+    const timer = setTimeout(() => run(query), DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [query, queryReady, submitted, run]);
 
   /** A scanned barcode goes straight into the search box and submits itself. */
   const handleScan = useCallback(
@@ -130,33 +172,48 @@ export function useAddLogic() {
   return {
     term,
     setTerm,
-    submit: useCallback(() => run(term), [run, term]),
-    canSubmit: term.trim().length > 0,
+    /** The keyboard's search key — the same search, without waiting out the debounce. */
+    submit: useCallback(() => {
+      if (query === "") return;
+      run(query);
+      remember(query);
+    }, [query, run, remember]),
+    canSubmit: query !== "",
     scanning,
     startScanning: useCallback(() => setScanning(true), []),
     stopScanning: useCallback(() => setScanning(false), []),
     handleScan,
     results: resultsQuery.data ?? [],
-    searching: resultsQuery.isFetching,
-    failed: resultsQuery.isError,
-    hasSearched: submitted.trim() !== "",
+    /**
+     * True from the keystroke, not from the request: the skeletons stand in for the wait
+     * as a whole, and a debounce the reader cannot see is still a wait.
+     */
+    searching: waiting || resultsQuery.isFetching,
+    failed: resultsQuery.isError && !waiting,
+    hasSearched: submitted.trim() !== "" || waiting,
     submittedTerm: submitted.trim(),
     /** True when the thing with no results was a scanned or pasted barcode (screen 8c). */
     searchedBarcode: BARCODE.test(submitted.trim()),
     recentSearches: recent.data ?? [],
     repeatSearch: (value: string) => {
       setTerm(value);
-      run(value);
+      run(value.trim());
+      remember(value);
     },
     clearRecent: () => forgetSearches.mutate(),
     /** Screen 5a's quick-add strip: things you already said you wanted. */
     wishlist: (wishlist.data ?? []).slice(0, 4),
     searchWish: (title: string, artistName: string) => {
-      const query = `${artistName} ${title}`;
-      setTerm(query);
-      run(query);
+      const wish = `${artistName} ${title}`;
+      setTerm(wish);
+      run(wish);
+      remember(wish);
     },
-    addRelease: (release: Release) => addCopy.mutate(release),
+    addRelease: (release: Release) => {
+      // The search that found something you kept is one worth offering again.
+      if (submitted.trim() !== "") remember(submitted);
+      addCopy.mutate(release);
+    },
     addingMbid: addCopy.isPending ? addCopy.variables?.mbid : undefined,
     wishFor: (release: Release) => addWish.mutate(release),
     wishingMbid: addWish.isPending ? addWish.variables?.mbid : undefined,

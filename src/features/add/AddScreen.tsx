@@ -25,6 +25,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { releaseDisambiguation } from "@/api/releases";
 import { FormatThumb } from "@/components/FormatThumb";
+import { Skeleton } from "@/components/Skeleton";
 import { ReleaseArt } from "@/components/ReleaseArt";
 import type { Release, WishlistItem } from "@/domain/types";
 import { FORMAT_LABELS } from "@/domain/types";
@@ -32,6 +33,23 @@ import { useAddLogic } from "@/features/add/useAddLogic";
 import { colors, fonts } from "@/theme/colors";
 
 type Logic = ReturnType<typeof useAddLogic>;
+
+/**
+ * Five placeholder rows, in the widths the deck draws them (screen 2a).
+ *
+ * Five rather than "as many as fit": it fills the list above the keyboard without
+ * promising a result count nobody knows yet. The uneven widths are what stop the block
+ * reading as a table.
+ */
+type Percent = `${number}%`;
+
+const SKELETON_ROWS: readonly (readonly [Percent, Percent, Percent])[] = [
+  ["62%", "44%", "30%"],
+  ["48%", "56%", "24%"],
+  ["70%", "38%", "34%"],
+  ["54%", "48%", "28%"],
+  ["66%", "42%", "32%"],
+];
 
 /**
  * The add flow (screens 1e, 2a, 5a, 8c).
@@ -72,7 +90,12 @@ export function AddScreen() {
             placeholderTextColor="rgba(255,255,255,0.42)"
             style={styles.searchInput}
           />
-          {logic.term !== "" && (
+          {/* The spinner belongs to the field that caused the wait, so the cause and the
+              wait are in the same place. It replaces the clear button rather than sitting
+              beside it, which keeps the field's contents from shifting mid-search. */}
+          {logic.searching ? (
+            <ActivityIndicator size="small" color="rgba(255,255,255,0.7)" />
+          ) : logic.term !== "" ? (
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={t("add.clearSearch")}
@@ -81,7 +104,7 @@ export function AddScreen() {
             >
               <X size={12} color={colors.night} strokeWidth={1.75} />
             </Pressable>
-          )}
+          ) : null}
         </View>
         <Pressable accessibilityRole="button" onPress={() => router.back()}>
           <Text style={styles.cancel}>{t("common.cancel")}</Text>
@@ -96,14 +119,7 @@ export function AddScreen() {
 function Body({ logic, onScan }: { readonly logic: Logic; readonly onScan: () => void }) {
   const { t } = useTranslation();
 
-  if (logic.searching) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator color="#fff" />
-        <Text style={styles.hint}>{t("add.searching")}</Text>
-      </View>
-    );
-  }
+  if (logic.searching) return <SearchingRows />;
   if (logic.failed) return <Text style={styles.hint}>{t("add.failed")}</Text>;
   if (!logic.hasSearched) return <BeforeTyping logic={logic} onScan={onScan} />;
   if (logic.results.length === 0) {
@@ -130,6 +146,41 @@ function Body({ logic, onScan }: { readonly logic: Logic; readonly onScan: () =>
         />
       )}
     />
+  );
+}
+
+/**
+ * The wait, in the shape of what is coming (screen 2a).
+ *
+ * Every dimension here is copied from ResultRow below — the 48px sleeve, the three lines,
+ * the two round buttons — so the results replace the placeholders without moving anything
+ * the reader had already started looking at.
+ */
+function SearchingRows() {
+  const { t } = useTranslation();
+
+  return (
+    <ScrollView contentContainerStyle={styles.list} keyboardShouldPersistTaps="handled">
+      <Text
+        accessibilityRole="text"
+        accessibilityLiveRegion="polite"
+        style={[styles.section, styles.searchingCaption]}
+      >
+        {t("add.searching")}
+      </Text>
+      {SKELETON_ROWS.map(([first, second, third]) => (
+        <View key={first + second} style={styles.row}>
+          <Skeleton style={[styles.thumb, styles.thumbSkeleton]} />
+          <View style={styles.rowBody}>
+            <Skeleton style={{ height: 11, width: first }} />
+            <Skeleton tone="soft" style={{ height: 9, width: second, marginTop: 6 }} />
+            <Skeleton tone="faint" style={{ height: 8, width: third, marginTop: 6 }} />
+          </View>
+          <Skeleton tone="soft" style={styles.rowAddSkeleton} />
+          <Skeleton tone="soft" style={styles.rowAddSkeleton} />
+        </View>
+      ))}
+    </ScrollView>
   );
 }
 
@@ -397,7 +448,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   cancel: { fontSize: 13.5, fontWeight: "500", color: "rgba(255,255,255,0.6)" },
-  centered: { alignItems: "center", paddingTop: 32, gap: 10 },
   hint: { fontSize: 13, color: "rgba(255,255,255,0.5)", padding: 18 },
   list: { paddingHorizontal: 18, paddingTop: 14, paddingBottom: 28 },
   shortcuts: { flexDirection: "row", gap: 10 },
@@ -460,7 +510,10 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: HAIRLINE,
   },
-  thumb: { width: 46, height: 46 },
+  thumb: { width: 48, height: 48 },
+  thumbSkeleton: { borderRadius: 5 },
+  rowAddSkeleton: { width: 30, height: 30, borderRadius: 999 },
+  searchingCaption: { marginTop: 6, marginBottom: 10 },
   rowBody: { flex: 1 },
   rowTitle: { fontSize: 13.5, fontWeight: "600", color: "#fff" },
   rowSubtitle: { fontSize: 11.5, color: "rgba(255,255,255,0.55)" },
