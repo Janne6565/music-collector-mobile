@@ -4,10 +4,11 @@
  * — change both together.
  */
 import { pullChanges, pushChanges } from "@/api/sync";
-import { mergeCopies } from "@/domain/merge";
-import type { Copy } from "@/domain/types";
+import { mergeCopies, mergeWishlistItems } from "@/domain/merge";
+import type { Copy, WishlistItem } from "@/domain/types";
 import type { LocalStore } from "@/local/LocalStore";
 import { type ClockSource, tombstoneCopy } from "@/local/copyWrites";
+import { tombstoneWishlistItem } from "@/local/wishWrites";
 
 /**
  * Reconciles the local store with the server.
@@ -55,6 +56,9 @@ export class SyncEngine {
       for (const copy of await this.store.listCopies()) {
         await this.discard(copy, now);
       }
+      for (const wish of await this.store.listWishlist()) {
+        await this.store.putWishlistItem(tombstoneWishlistItem(wish, this.clock, now));
+      }
       await this.store.writePendingIds([]);
       return this.sync();
     }
@@ -66,9 +70,14 @@ export class SyncEngine {
 
       const pulled = await this.pullAll();
       const now = Date.now();
-      for (const copy of pulled) {
+      for (const copy of pulled.copies) {
         if (!localIds.has(copy.id) && copy.deletedAt === null) {
           await this.discard(copy, now);
+        }
+      }
+      for (const wish of pulled.wishes) {
+        if (!localIds.has(wish.id) && wish.deletedAt === null) {
+          await this.store.putWishlistItem(tombstoneWishlistItem(wish, this.clock, now));
         }
       }
       await this.store.writePendingIds(await this.allCopyIds());
@@ -83,16 +92,27 @@ export class SyncEngine {
   async sync(): Promise<SyncResult> {
     const pulled = await this.pullAll();
     const pushed = await this.pushPending();
-    return { pulled: pulled.length, pushed, cursor: await this.store.readSyncCursor() };
+    return {
+      pulled: pulled.copies.length + pulled.wishes.length,
+      pushed,
+      cursor: await this.store.readSyncCursor(),
+    };
   }
 
-  private async pullAll(): Promise<Copy[]> {
+  private async pullAll(): Promise<{ copies: Copy[]; wishes: WishlistItem[] }> {
     const applied: Copy[] = [];
+    const appliedWishes: WishlistItem[] = [];
     let cursor = await this.store.readSyncCursor();
     let hasMore = true;
 
     while (hasMore) {
       const page = await pullChanges(cursor);
+      for (const remote of page.wishes) {
+        const local = await this.store.getWishlistItemIncludingDeleted(remote.id);
+        const merged = mergeWishlistItems(local, remote);
+        await this.store.adoptWishlistItem(merged);
+        appliedWishes.push(merged);
+      }
       for (const remote of page.copies) {
         // Tombstones included. Looking this up with getCopy would hide a locally deleted
         // copy, make the server's live version look like a record we had never seen, and
@@ -106,37 +126,51 @@ export class SyncEngine {
       hasMore = page.hasMore;
       await this.store.writeSyncCursor(cursor);
     }
-    return applied;
+    return { copies: applied, wishes: appliedWishes };
   }
 
   private async pushPending(): Promise<number> {
     const pendingIds = await this.store.readPendingIds();
     if (pendingIds.length === 0) return 0;
 
+    // One pending set covers both kinds, so a session that added a record and wished for
+    // another sends a single request rather than racing two.
     const copies: Copy[] = [];
+    const wishes: WishlistItem[] = [];
     for (const id of pendingIds) {
       const copy = await this.store.getCopyIncludingDeleted(id);
-      if (copy !== undefined) copies.push(copy);
+      if (copy !== undefined) {
+        copies.push(copy);
+        continue;
+      }
+      const wish = await this.store.getWishlistItemIncludingDeleted(id);
+      if (wish !== undefined) wishes.push(wish);
     }
-    if (copies.length === 0) {
+    if (copies.length === 0 && wishes.length === 0) {
       await this.store.writePendingIds([]);
       return 0;
     }
 
-    const response = await pushChanges(copies);
+    const response = await pushChanges(copies, wishes);
     // Adopt whatever the server decided, so the two sides are byte-identical afterwards
     // and the next push does not resend the same records.
     for (const merged of response.copies) {
       await this.store.adoptCopy(merged);
     }
+    for (const merged of response.wishes) {
+      await this.store.adoptWishlistItem(merged);
+    }
     if (response.cursor > 0) {
       await this.store.writeSyncCursor(response.cursor);
     }
     await this.store.writePendingIds([]);
-    return copies.length;
+    return copies.length + wishes.length;
   }
 
+  /** Everything the device holds, of both kinds — they share one pending set. */
   private async allCopyIds(): Promise<string[]> {
-    return (await this.store.listCopies()).map((copy) => copy.id);
+    const copies = await this.store.listCopies();
+    const wishes = await this.store.listWishlist();
+    return [...copies.map((copy) => copy.id), ...wishes.map((wish) => wish.id)];
   }
 }

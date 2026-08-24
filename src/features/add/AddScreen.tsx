@@ -1,6 +1,6 @@
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { useRouter } from "expo-router";
-import { Plus, ScanBarcode, Search, X } from "lucide-react-native";
+import { Heart, Plus, ScanBarcode, Search, X } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -90,6 +90,8 @@ function Results({ logic }: { readonly logic: ReturnType<typeof useAddLogic> }) 
           release={item}
           adding={logic.addingMbid === item.mbid}
           onAdd={() => logic.addRelease(item)}
+          wishing={logic.wishingMbid === item.mbid}
+          onWish={() => logic.wishFor(item)}
         />
       )}
     />
@@ -101,10 +103,14 @@ function ResultRow({
   release,
   adding,
   onAdd,
+  wishing,
+  onWish,
 }: {
   readonly release: Release;
   readonly adding: boolean;
   readonly onAdd: () => void;
+  readonly wishing: boolean;
+  readonly onWish: () => void;
 }) {
   const { t } = useTranslation();
   const subtitle = releaseDisambiguation(release);
@@ -129,6 +135,19 @@ function ResultRow({
           </Text>
         )}
       </View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={t("wishlist.addToWishlist")}
+        onPress={onWish}
+        disabled={wishing}
+        style={styles.rowAdd}
+      >
+        {wishing ? (
+          <ActivityIndicator size="small" color={colors.ink} />
+        ) : (
+          <Heart size={15} color={colors.inkMuted} strokeWidth={1.75} />
+        )}
+      </Pressable>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={t("add.add")}

@@ -1,10 +1,9 @@
 /*
  * MIRROR of music-collector-frontend/src/domain/types.ts
  *
- * The web and mobile apps must agree exactly on the clock, the domain shape, the write
- * path and the merge, or the same collection would converge differently depending on which
- * device synced last. These files are copied verbatim for now; phase 3+ extracts them into
- * a shared package. Until then: change both, in the same commit.
+ * The web and mobile apps must agree exactly on the domain shape, the write path and the
+ * merge, or the same collection would converge differently depending on which device
+ * synced last. Change both, in the same commit.
  */
 /**
  * The domain the app stores locally.
@@ -104,7 +103,24 @@ export interface Copy {
   readonly fieldClocks: FieldClocks<CopyMergeableField>;
 }
 
+/**
+ * Fields of a WishlistItem that sync independently, mirroring how a Copy works. A wish is
+ * edited less often than a copy, but sharing the machinery costs less than inventing a
+ * second, subtly different merge.
+ */
+export const WISH_MERGEABLE_FIELDS = [
+  "releaseGroupMbid",
+  "title",
+  "artistName",
+  "year",
+  "desiredFormat",
+  "note",
+  "deletedAt",
+] as const;
+export type WishMergeableField = (typeof WISH_MERGEABLE_FIELDS)[number];
+
 export interface WishlistItem {
+  /** Client-generated, so an item added offline keeps its identity when it syncs. */
   readonly id: string;
   readonly releaseGroupMbid: string;
   readonly title: string;
@@ -115,6 +131,7 @@ export interface WishlistItem {
   readonly note: string | null;
   readonly createdAt: number;
   readonly deletedAt: number | null;
+  readonly fieldClocks: FieldClocks<WishMergeableField>;
 }
 
 export interface CollectionStats {

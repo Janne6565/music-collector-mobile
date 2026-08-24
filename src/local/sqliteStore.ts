@@ -78,8 +78,10 @@ export class SqliteLocalStore implements LocalStore {
         desiredFormat    TEXT,
         note             TEXT,
         createdAt        INTEGER NOT NULL,
-        deletedAt        INTEGER
+        deletedAt        INTEGER,
+        fieldClocks      TEXT NOT NULL DEFAULT '{}'
       );
+      CREATE INDEX IF NOT EXISTS wishlist_group_idx ON wishlist (releaseGroupMbid);
 
       CREATE TABLE IF NOT EXISTS meta (
         key   TEXT PRIMARY KEY NOT NULL,
@@ -227,17 +229,40 @@ export class SqliteLocalStore implements LocalStore {
   }
 
   async listWishlist(): Promise<WishlistItem[]> {
-    const rows = await this.handle().getAllAsync<WishlistRow>(
+    const rows = await this.handle().getAllAsync<WishRow>(
       "SELECT * FROM wishlist WHERE deletedAt IS NULL ORDER BY createdAt DESC",
     );
-    return rows.map((row) => ({ ...row, desiredFormat: row.desiredFormat as Format | null }));
+    return rows.map(toWish);
+  }
+
+  async getWishlistItemIncludingDeleted(id: string): Promise<WishlistItem | undefined> {
+    const row = await this.handle().getFirstAsync<WishRow>("SELECT * FROM wishlist WHERE id = ?", [id]);
+    return row === null ? undefined : toWish(row);
+  }
+
+  async wishlistHas(releaseGroupMbid: string): Promise<boolean> {
+    const row = await this.handle().getFirstAsync<{ n: number }>(
+      "SELECT COUNT(*) AS n FROM wishlist WHERE releaseGroupMbid = ? AND deletedAt IS NULL",
+      [releaseGroupMbid],
+    );
+    return (row?.n ?? 0) > 0;
   }
 
   async putWishlistItem(item: WishlistItem): Promise<void> {
+    await this.writeWish(item);
+    await this.markPending(item.id);
+  }
+
+  async adoptWishlistItem(item: WishlistItem): Promise<void> {
+    // No pending mark: the client would otherwise push straight back what it just pulled.
+    await this.writeWish(item);
+  }
+
+  private async writeWish(item: WishlistItem): Promise<void> {
     await this.handle().runAsync(
       `INSERT OR REPLACE INTO wishlist
-        (id, releaseGroupMbid, title, artistName, year, desiredFormat, note, createdAt, deletedAt)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (id, releaseGroupMbid, title, artistName, year, desiredFormat, note, createdAt, deletedAt, fieldClocks)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         item.id,
         item.releaseGroupMbid,
@@ -248,12 +273,9 @@ export class SqliteLocalStore implements LocalStore {
         item.note,
         item.createdAt,
         item.deletedAt,
+        JSON.stringify(item.fieldClocks),
       ],
     );
-  }
-
-  async softDeleteWishlistItem(id: string, at: number): Promise<void> {
-    await this.handle().runAsync("UPDATE wishlist SET deletedAt = ? WHERE id = ?", [at, id]);
   }
 
   async stats(): Promise<CollectionStats> {
@@ -344,10 +366,21 @@ interface ReleaseRow extends Omit<Release, "coverTheme"> {
   coverTheme: string | null;
 }
 
-type WishlistRow = Omit<WishlistItem, "desiredFormat"> & { desiredFormat: string | null };
+type WishRow = Omit<WishlistItem, "desiredFormat" | "fieldClocks"> & {
+  desiredFormat: string | null;
+  fieldClocks: string;
+};
 
 function toCopy(row: CopyRow): Copy {
   return { ...row, fieldClocks: JSON.parse(row.fieldClocks) as Copy["fieldClocks"] };
+}
+
+function toWish(row: WishRow): WishlistItem {
+  return {
+    ...row,
+    desiredFormat: row.desiredFormat as Format | null,
+    fieldClocks: JSON.parse(row.fieldClocks) as WishlistItem["fieldClocks"],
+  };
 }
 
 function toRelease(row: ReleaseRow): Release {

@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { lookupByBarcode, searchReleases } from "@/api/releases";
 import type { Release } from "@/domain/types";
 import { createCopy } from "@/local/copyWrites";
+import { createWishlistItem } from "@/local/wishWrites";
 import { useStore } from "@/local/StoreProvider";
 import * as Crypto from "expo-crypto";
 
@@ -56,6 +57,34 @@ export function useAddLogic() {
     },
   });
 
+  /**
+   * Wishing for something you do not own yet. Keyed on the release *group*: you want the
+   * album on vinyl, not one particular pressing of it.
+   */
+  const addWish = useMutation({
+    mutationFn: async (release: Release) => {
+      if (await store.wishlistHas(release.releaseGroupMbid)) return;
+      await store.putWishlistItem(
+        createWishlistItem(
+          {
+            releaseGroupMbid: release.releaseGroupMbid,
+            title: release.title,
+            artistName: release.artistName,
+            year: release.year,
+            desiredFormat: release.format,
+            note: null,
+          },
+          clock,
+          Date.now(),
+          Crypto.randomUUID(),
+        ),
+      );
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["wishlist"] });
+    },
+  });
+
   /** A scanned barcode goes straight into the search box and submits itself. */
   const handleScan = useCallback((barcode: string) => {
     setScanning(false);
@@ -78,5 +107,7 @@ export function useAddLogic() {
     hasSearched: submitted.trim() !== "",
     addRelease: (release: Release) => addCopy.mutate(release),
     addingMbid: addCopy.isPending ? addCopy.variables?.mbid : undefined,
+    wishFor: (release: Release) => addWish.mutate(release),
+    wishingMbid: addWish.isPending ? addWish.variables?.mbid : undefined,
   };
 }

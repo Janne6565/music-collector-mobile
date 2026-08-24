@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { CollectionStatsBlock } from "@/features/profile/CollectionStatsBlock";
 import { useAccountLogic } from "@/features/auth/useAccountLogic";
 import type { FirstSyncStrategy } from "@/sync/syncEngine";
 import { colors, fonts } from "@/theme/colors";
@@ -28,9 +29,10 @@ export function AccountScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      <View style={styles.body}>
+      <ScrollView contentContainerStyle={styles.body}>
         {logic.user === null ? <SignInForm logic={logic} /> : <SignedIn logic={logic} />}
-      </View>
+        <CollectionStatsBlock />
+      </ScrollView>
     </SafeAreaView>
   );
 }

@@ -1,8 +1,9 @@
 /*
  * MIRROR of music-collector-frontend/src/local/LocalStore.ts
  *
- * The web and mobile apps implement the same interface, over IndexedDB and SQLite
- * respectively, so a screen written against it ports unchanged. Change both together.
+ * The web and mobile apps must agree exactly on the domain shape, the write path and the
+ * merge, or the same collection would converge differently depending on which device
+ * synced last. Change both, in the same commit.
  */
 import type { CollectionStats, Copy, Format, Release, WishlistItem } from "@/domain/types";
 
@@ -48,8 +49,11 @@ export interface LocalStore {
   getReleases(mbids: readonly string[]): Promise<Map<string, Release>>;
 
   listWishlist(): Promise<WishlistItem[]>;
+  getWishlistItemIncludingDeleted(id: string): Promise<WishlistItem | undefined>;
   putWishlistItem(item: WishlistItem): Promise<void>;
-  softDeleteWishlistItem(id: string, at: number): Promise<void>;
+  adoptWishlistItem(item: WishlistItem): Promise<void>;
+  /** True when the wishlist already holds a live wish for this album. */
+  wishlistHas(releaseGroupMbid: string): Promise<boolean>;
 
   stats(): Promise<CollectionStats>;
 

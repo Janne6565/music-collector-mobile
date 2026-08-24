@@ -1,13 +1,12 @@
 /*
  * MIRROR of music-collector-frontend/src/domain/merge.ts
  *
- * The web and mobile apps must agree exactly on the clock, the domain shape, the write
- * path and the merge, or the same collection would converge differently depending on which
- * device synced last. These files are copied verbatim for now; phase 3+ extracts them into
- * a shared package. Until then: change both, in the same commit.
+ * The web and mobile apps must agree exactly on the domain shape, the write path and the
+ * merge, or the same collection would converge differently depending on which device
+ * synced last. Change both, in the same commit.
  */
-import type { Copy } from "@/domain/types";
-import { COPY_MERGEABLE_FIELDS } from "@/domain/types";
+import type { Copy, WishlistItem } from "@/domain/types";
+import { COPY_MERGEABLE_FIELDS, WISH_MERGEABLE_FIELDS } from "@/domain/types";
 
 /**
  * Field-level last-write-wins merge for a copy.
@@ -96,7 +95,10 @@ function losingNotes(local: Copy, remote: Copy, winning: string | null): string 
   return carried[0] ?? null;
 }
 
-function pickWinner(localClock: string | undefined, remoteClock: string | undefined): "local" | "remote" {
+function pickWinner(
+  localClock: string | undefined,
+  remoteClock: string | undefined,
+): "local" | "remote" {
   if (remoteClock === undefined) return "local";
   if (localClock === undefined) return "remote";
   return remoteClock > localClock ? "remote" : "local";
@@ -104,6 +106,51 @@ function pickWinner(localClock: string | undefined, remoteClock: string | undefi
 
 function isMeaningful(notes: string | null | undefined): notes is string {
   return notes !== null && notes !== undefined && notes.trim() !== "";
+}
+
+/**
+ * The same field-level rule applied to a wishlist entry.
+ *
+ * No special case for the note: unlike a copy's notes, a wish note is a one-line reminder
+ * ("MOFI or Japanese pressing"), not a paragraph worth preserving both halves of.
+ */
+export function mergeWishlistItems(
+  local: WishlistItem | undefined,
+  remote: WishlistItem | undefined,
+): WishlistItem {
+  if (local === undefined && remote === undefined) {
+    throw new Error("mergeWishlistItems needs at least one side");
+  }
+  if (local === undefined) return remote as WishlistItem;
+  if (remote === undefined) return local;
+  if (local.id !== remote.id) {
+    throw new Error(`mergeWishlistItems got two different items: ${local.id} vs ${remote.id}`);
+  }
+
+  const merged: Record<string, unknown> = { id: local.id };
+  const clocks: Record<string, string> = {};
+
+  for (const field of WISH_MERGEABLE_FIELDS) {
+    const localClock = local.fieldClocks[field];
+    const remoteClock = remote.fieldClocks[field];
+    const winner = pickWinner(localClock, remoteClock);
+    merged[field] = winner === "remote" ? remote[field] : local[field];
+    clocks[field] = (winner === "remote" ? remoteClock : localClock) as string;
+  }
+
+  merged.createdAt = Math.min(local.createdAt, remote.createdAt);
+  merged.fieldClocks = clocks;
+  return merged as unknown as WishlistItem;
+}
+
+export function mergeWishlists(
+  local: readonly WishlistItem[],
+  remote: readonly WishlistItem[],
+): WishlistItem[] {
+  const byId = new Map<string, { local?: WishlistItem; remote?: WishlistItem }>();
+  for (const item of local) byId.set(item.id, { ...byId.get(item.id), local: item });
+  for (const item of remote) byId.set(item.id, { ...byId.get(item.id), remote: item });
+  return [...byId.values()].map((pair) => mergeWishlistItems(pair.local, pair.remote));
 }
 
 /** Merges two whole collections, keyed by copy id. */

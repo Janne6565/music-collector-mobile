@@ -91,6 +91,15 @@ export function DetailScreen({ copyId }: { readonly copyId: string }) {
             </Text>
           </View>
 
+          {copy.notesConflict !== null && (
+            <NotesConflict
+              copy={copy}
+              chrome={chrome}
+              saving={logic.saving}
+              onKeep={(notes) => logic.save({ notes })}
+            />
+          )}
+
           {otherCopies.length > 0 && (
             <>
               <Text style={[styles.sectionTitle, { color: chrome.ink }]}>{t("detail.otherCopies")}</Text>
@@ -129,6 +138,53 @@ export function DetailScreen({ copyId }: { readonly copyId: string }) {
           </Pressable>
         </View>
       </ScrollView>
+    </View>
+  );
+}
+
+/**
+ * Another device wrote different notes, and the merge kept that version instead of
+ * discarding it. Shown until the person picks one: sync can tell that two versions differ,
+ * but not which of them anybody has actually read.
+ */
+function NotesConflict({
+  copy,
+  chrome,
+  onKeep,
+  saving,
+}: {
+  readonly copy: Copy;
+  readonly chrome: DetailChrome;
+  readonly onKeep: (notes: string) => void;
+  readonly saving: boolean;
+}) {
+  const { t } = useTranslation();
+  return (
+    <View style={[styles.card, styles.conflict, { backgroundColor: chrome.surface, borderColor: chrome.accent }]}>
+      <Text style={[styles.fieldKey, { color: chrome.accent }]}>{t("detail.conflict.title")}</Text>
+      <Text style={[styles.notes, { color: chrome.ink }]}>{copy.notesConflict}</Text>
+      <View style={styles.conflictActions}>
+        <Pressable
+          accessibilityRole="button"
+          disabled={saving}
+          onPress={() => onKeep(copy.notesConflict as string)}
+          style={[styles.conflictButton, { borderColor: chrome.line }, saving && styles.dim]}
+        >
+          <Text style={[styles.conflictButtonText, { color: chrome.ink }]}>
+            {t("detail.conflict.keepThis")}
+          </Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          disabled={saving}
+          onPress={() => onKeep(copy.notes ?? "")}
+          style={[styles.conflictButton, { borderColor: chrome.line }, saving && styles.dim]}
+        >
+          <Text style={[styles.conflictButtonText, { color: chrome.ink }]}>
+            {t("detail.conflict.keepMine")}
+          </Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -196,6 +252,11 @@ const styles = StyleSheet.create({
   fieldKey: { fontSize: 9.5, letterSpacing: 0.9, textTransform: "uppercase", fontWeight: "500" },
   fieldValue: { fontSize: 14, fontWeight: "600", marginTop: 5 },
   notes: { fontSize: 13.5, lineHeight: 21, marginTop: 6 },
+  conflict: { marginTop: 10, borderWidth: 1 },
+  conflictActions: { flexDirection: "row", gap: 8, marginTop: 12 },
+  conflictButton: { height: 32, paddingHorizontal: 12, borderRadius: 999, borderWidth: StyleSheet.hairlineWidth, alignItems: "center", justifyContent: "center" },
+  conflictButtonText: { fontSize: 12, fontWeight: "600" },
+  dim: { opacity: 0.5 },
   sectionTitle: { fontSize: 13, fontWeight: "600", marginTop: 22, marginBottom: 10 },
   otherRow: { flexDirection: "row", gap: 10 },
   otherCard: { flex: 1 },
