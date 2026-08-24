@@ -4,6 +4,7 @@ import { StatusBar } from "expo-status-bar";
 import { Provider } from "react-redux";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import "@/i18n/config";
+import { StoreProvider } from "@/local/StoreProvider";
 import { store } from "@/store";
 
 const queryClient = new QueryClient();
@@ -14,7 +15,9 @@ export default function RootLayout() {
       <QueryClientProvider client={queryClient}>
         <SafeAreaProvider>
           <StatusBar style="dark" />
-          <Stack screenOptions={{ headerShown: false }} />
+          <StoreProvider>
+            <Stack screenOptions={{ headerShown: false }} />
+          </StoreProvider>
         </SafeAreaProvider>
       </QueryClientProvider>
     </Provider>

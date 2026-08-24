@@ -1,7 +1,3 @@
-import { useTranslation } from "react-i18next";
-import { PlaceholderScreen } from "@/components/PlaceholderScreen";
+import { LibraryScreen } from "@/features/library/LibraryScreen";
 
-export default function LibraryScreen() {
-  const { t } = useTranslation();
-  return <PlaceholderScreen title={t("nav.library")} subtitle={t("scaffold.comingInPhaseTwo")} />;
-}
+export default LibraryScreen;

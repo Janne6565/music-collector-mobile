@@ -1,0 +1,146 @@
+/*
+ * MIRROR of music-collector-frontend/src/domain/types.ts
+ *
+ * The web and mobile apps must agree exactly on the clock, the domain shape and the write
+ * path, or the same collection would merge differently depending on which device synced
+ * last. These files are copied verbatim for now; phase 3 extracts them into a shared
+ * package alongside the merge function. Until then: change both, in the same commit.
+ */
+/**
+ * The domain the app stores locally.
+ *
+ * Three levels, mirroring MusicBrainz and the design deck's screens:
+ *
+ *   ReleaseGroup  the album            Bitches Brew
+ *   Release       a specific edition   Columbia GP 26, 2xLP, US, 1970
+ *   Copy          the item you own     VG+, EUR 28, Concerto Amsterdam, 14 Aug 2026
+ *
+ * `Release` rows are a cache of what the metadata proxy returned. `Copy` and
+ * `WishlistItem` are the user's own data — the only records that ever sync.
+ */
+
+export const FORMATS = ["VINYL", "CD", "CASSETTE", "DIGITAL", "OTHER"] as const;
+export type Format = (typeof FORMATS)[number];
+
+/** The Goldmine grading scale, which screen 1l names as the default. */
+export const CONDITIONS = ["M", "NM", "VG_PLUS", "VG", "G_PLUS", "G", "F", "P"] as const;
+export type Condition = (typeof CONDITIONS)[number];
+
+export interface CoverTheme {
+  readonly dominantColor: string;
+  readonly accentColor: string;
+  /**
+   * Perceptual lightness (CIE L*), normalised to 0..1 — not WCAG relative luminance,
+   * which is linear light and would put mid-grey at 0.22.
+   */
+  readonly lightness: number;
+  /** Precomputed by the server so the theme is right on first paint, before the image loads. */
+  readonly dark: boolean;
+}
+
+export interface Release {
+  readonly mbid: string;
+  readonly releaseGroupMbid: string;
+  readonly title: string;
+  readonly artistName: string;
+  readonly year: number | null;
+  readonly format: Format;
+  readonly label: string | null;
+  readonly catalogNumber: string | null;
+  readonly country: string | null;
+  readonly barcode: string | null;
+  readonly coverArtUrl: string | null;
+  readonly coverTheme: CoverTheme | null;
+  /** When this cache row was written, so it can be refreshed later. */
+  readonly cachedAt: number;
+}
+
+/**
+ * Fields of a Copy that sync independently. Each carries its own clock, so two devices
+ * editing different fields of the same copy both keep their edit.
+ */
+export const COPY_MERGEABLE_FIELDS = [
+  "releaseMbid",
+  "condition",
+  "pricePaidCents",
+  "currency",
+  "purchasedOn",
+  "purchasedAt",
+  "notes",
+  "rating",
+  "deletedAt",
+] as const;
+export type CopyMergeableField = (typeof COPY_MERGEABLE_FIELDS)[number];
+
+/** Encoded HLC stamps, one per mergeable field. */
+export type FieldClocks<Field extends string> = Readonly<Record<Field, string>>;
+
+export interface Copy {
+  /** Client-generated, so a record created offline never collides on sync. */
+  readonly id: string;
+  readonly releaseMbid: string;
+  readonly condition: Condition | null;
+  readonly pricePaidCents: number | null;
+  readonly currency: string;
+  /** ISO date, no time — you know the day you bought a record, not the minute. */
+  readonly purchasedOn: string | null;
+  readonly purchasedAt: string | null;
+  readonly notes: string | null;
+  readonly rating: number | null;
+  readonly createdAt: number;
+  /** Tombstone. Deletes have to be represented, or sync would resurrect the row. */
+  readonly deletedAt: number | null;
+  readonly fieldClocks: FieldClocks<CopyMergeableField>;
+}
+
+export interface WishlistItem {
+  readonly id: string;
+  readonly releaseGroupMbid: string;
+  readonly title: string;
+  readonly artistName: string;
+  readonly year: number | null;
+  /** A wish is for an album in a format, not for one specific pressing. */
+  readonly desiredFormat: Format | null;
+  readonly note: string | null;
+  readonly createdAt: number;
+  readonly deletedAt: number | null;
+}
+
+export interface CollectionStats {
+  readonly copyCount: number;
+  readonly releaseGroupCount: number;
+  readonly totalSpentCents: number;
+  readonly averageSpentCents: number;
+  readonly byFormat: Readonly<Record<Format, number>>;
+}
+
+export const CONDITION_LABELS: Readonly<Record<Condition, string>> = {
+  M: "Mint",
+  NM: "Near Mint",
+  VG_PLUS: "Very Good Plus",
+  VG: "Very Good",
+  G_PLUS: "Good Plus",
+  G: "Good",
+  F: "Fair",
+  P: "Poor",
+};
+
+/** The short form the design deck shows on badges ("VG+", "NM"). */
+export const CONDITION_SHORT: Readonly<Record<Condition, string>> = {
+  M: "M",
+  NM: "NM",
+  VG_PLUS: "VG+",
+  VG: "VG",
+  G_PLUS: "G+",
+  G: "G",
+  F: "F",
+  P: "P",
+};
+
+export const FORMAT_LABELS: Readonly<Record<Format, string>> = {
+  VINYL: "Vinyl",
+  CD: "CD",
+  CASSETTE: "Cassette",
+  DIGITAL: "Digital",
+  OTHER: "Other",
+};
