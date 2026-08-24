@@ -1,8 +1,34 @@
 import { Camera, ImagePlus, Trash2 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { useRef } from "react";
+import { ActivityIndicator, Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import type { DetailChrome } from "@/features/detail/theme";
 import { usePhotoStripLogic } from "@/features/photos/usePhotoStripLogic";
+
+/**
+ * One thumbnail, over a tile that holds its place until the file has decoded.
+ *
+ * Reading a photo off the device is fast but not free, and a strip of frames that pop in
+ * one after another is the part people notice. The chrome-coloured tile underneath keeps
+ * the row's shape from the first frame, and the photo crosses over it.
+ */
+function PhotoThumb({ uri, chrome }: { readonly uri: string; readonly chrome: DetailChrome }) {
+  const reveal = useRef(new Animated.Value(0)).current;
+
+  return (
+    <>
+      <View style={[styles.image, styles.underlay, { backgroundColor: chrome.surface }]} />
+      <Animated.Image
+        source={{ uri }}
+        style={[styles.image, { opacity: reveal }]}
+        onLoadStart={() => reveal.setValue(0)}
+        onLoad={() =>
+          Animated.timing(reveal, { toValue: 1, duration: 200, useNativeDriver: true }).start()
+        }
+      />
+    </>
+  );
+}
 
 /**
  * Your own pictures of this copy, with the camera as the primary action.
@@ -27,7 +53,7 @@ export function PhotoStrip({
       <View style={styles.strip}>
         {logic.photos.map((photo) => (
           <View key={photo.id} style={styles.tile}>
-            <Image source={{ uri: logic.uriFor(photo) }} style={styles.image} />
+            <PhotoThumb uri={logic.uriFor(photo)} chrome={chrome} />
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={t("photos.remove")}
@@ -83,6 +109,7 @@ const styles = StyleSheet.create({
   strip: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 },
   tile: { width: 64, height: 64 },
   image: { width: "100%", height: "100%", borderRadius: 6 },
+  underlay: { position: "absolute", top: 0, left: 0 },
   removeBadge: {
     position: "absolute",
     top: -5,

@@ -20,19 +20,13 @@ const TONES: Record<SkeletonTone, string> = {
  */
 const CYCLE_MS = 700;
 
-interface SkeletonProps {
-  readonly tone?: SkeletonTone;
-  readonly style?: ViewStyle | readonly ViewStyle[];
-}
-
 /**
- * One placeholder block (turn 9).
- *
- * Deliberately dimensionless: the rule the deck sets out is that a skeleton keeps the
- * dimensions of the content it replaces, so the caller — which is the only thing that
- * knows those dimensions — supplies them, and this contributes nothing but the pulse.
+ * The pulse itself, shared with anything that wants to breathe while it waits — the
+ * placeholder blocks below, and the cover silhouette that holds a frame until its image
+ * arrives. Respects the system's reduce-motion setting, which is why it is worth having
+ * in one place rather than re-derived at each call site.
  */
-export function Skeleton({ tone = "strong", style }: SkeletonProps) {
+export function usePulse(active: boolean): Animated.Value {
   const pulse = useRef(new Animated.Value(1)).current;
   const [reduceMotion, setReduceMotion] = useState(false);
 
@@ -51,8 +45,8 @@ export function Skeleton({ tone = "strong", style }: SkeletonProps) {
   useEffect(() => {
     // An indicator that will not stop moving is exactly the kind of motion people turn
     // off. Held at a steady mid-tone instead, which still reads as "not content yet".
-    if (reduceMotion) {
-      pulse.setValue(0.75);
+    if (!active || reduceMotion) {
+      pulse.setValue(active ? 0.75 : 1);
       return;
     }
     const step = (toValue: number) =>
@@ -65,7 +59,25 @@ export function Skeleton({ tone = "strong", style }: SkeletonProps) {
     const loop = Animated.loop(Animated.sequence([step(0.5), step(1)]));
     loop.start();
     return () => loop.stop();
-  }, [pulse, reduceMotion]);
+  }, [pulse, active, reduceMotion]);
+
+  return pulse;
+}
+
+interface SkeletonProps {
+  readonly tone?: SkeletonTone;
+  readonly style?: ViewStyle | readonly ViewStyle[];
+}
+
+/**
+ * One placeholder block (turn 9).
+ *
+ * Deliberately dimensionless: the rule the deck sets out is that a skeleton keeps the
+ * dimensions of the content it replaces, so the caller — which is the only thing that
+ * knows those dimensions — supplies them, and this contributes nothing but the pulse.
+ */
+export function Skeleton({ tone = "strong", style }: SkeletonProps) {
+  const pulse = usePulse(true);
 
   return (
     <Animated.View
