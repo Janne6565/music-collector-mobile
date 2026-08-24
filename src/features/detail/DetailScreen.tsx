@@ -8,6 +8,7 @@ import type { Copy } from "@/domain/types";
 import { CONDITION_LABELS, CONDITION_SHORT, FORMAT_LABELS } from "@/domain/types";
 import { type DetailChrome, chromeFor } from "@/features/detail/theme";
 import { useDetailLogic } from "@/features/detail/useDetailLogic";
+import { PhotoStrip } from "@/features/photos/PhotoStrip";
 import { fonts } from "@/theme/colors";
 
 export function DetailScreen({ copyId }: { readonly copyId: string }) {
@@ -83,6 +84,8 @@ export function DetailScreen({ copyId }: { readonly copyId: string }) {
           </View>
 
           <Fields copy={copy} chrome={chrome} />
+
+          <PhotoStrip copyId={copy.id} chrome={chrome} />
 
           <View style={[styles.card, { backgroundColor: chrome.surface }]}>
             <Text style={[styles.fieldKey, { color: chrome.muted }]}>{t("detail.notes")}</Text>

@@ -1,13 +1,15 @@
 /*
  * MIRROR of music-collector-frontend/src/sync/syncEngine.ts, with the generated Orval
- * client swapped for the mobile fetch client. The reconciliation logic must stay identical
- * — change both together.
+ * client swapped for the mobile fetch client and photo bytes moved by file URI rather than
+ * Blob. The reconciliation logic must stay identical — change both together.
  */
 import { pullChanges, pushChanges } from "@/api/sync";
-import { mergeCopies, mergeWishlistItems } from "@/domain/merge";
-import type { Copy, WishlistItem } from "@/domain/types";
+import { downloadPhotoBytes, uploadPhotoBytes } from "@/api/photos";
+import { mergeCopies, mergePhotos, mergeWishlistItems } from "@/domain/merge";
+import type { Copy, Photo, WishlistItem } from "@/domain/types";
 import type { LocalStore } from "@/local/LocalStore";
 import { type ClockSource, tombstoneCopy } from "@/local/copyWrites";
+import { markUploaded } from "@/local/photoWrites";
 import { tombstoneWishlistItem } from "@/local/wishWrites";
 
 /**
@@ -91,22 +93,32 @@ export class SyncEngine {
   /** A normal incremental sync: pull what is new, push what changed locally. */
   async sync(): Promise<SyncResult> {
     const pulled = await this.pullAll();
+    await this.downloadMissingPhotoBytes(pulled.photos);
     const pushed = await this.pushPending();
     return {
-      pulled: pulled.copies.length + pulled.wishes.length,
+      pulled: pulled.copies.length + pulled.wishes.length + pulled.photos.length,
       pushed,
       cursor: await this.store.readSyncCursor(),
     };
   }
 
-  private async pullAll(): Promise<{ copies: Copy[]; wishes: WishlistItem[] }> {
+  private async pullAll(): Promise<{ copies: Copy[]; wishes: WishlistItem[]; photos: Photo[] }> {
     const applied: Copy[] = [];
     const appliedWishes: WishlistItem[] = [];
+    const appliedPhotos: Photo[] = [];
     let cursor = await this.store.readSyncCursor();
     let hasMore = true;
 
     while (hasMore) {
       const page = await pullChanges(cursor);
+      for (const remote of page.photos) {
+        const local = await this.store.getPhotoIncludingDeleted(remote.id);
+        const merged = mergePhotos(local, remote);
+        await this.store.adoptPhoto(merged);
+        appliedPhotos.push(merged);
+        // A photo deleted anywhere is not worth the space here either.
+        if (merged.deletedAt !== null) await this.store.deletePhotoBytes(merged.id);
+      }
       for (const remote of page.wishes) {
         const local = await this.store.getWishlistItemIncludingDeleted(remote.id);
         const merged = mergeWishlistItems(local, remote);
@@ -126,10 +138,53 @@ export class SyncEngine {
       hasMore = page.hasMore;
       await this.store.writeSyncCursor(cursor);
     }
-    return { copies: applied, wishes: appliedWishes };
+    return { copies: applied, wishes: appliedWishes, photos: appliedPhotos };
+  }
+
+  /**
+   * Uploads the bytes of any photo that only exists on this device.
+   *
+   * Runs before the metadata push on purpose: a photo record with no storageKey is one
+   * other devices can see but never fetch, so the bytes have to land first.
+   */
+  private async uploadPendingPhotos(): Promise<void> {
+    for (const photo of await this.store.listPhotosAwaitingUpload()) {
+      try {
+        const uploaded = await uploadPhotoBytes(
+          photo.id,
+          photo.copyId,
+          this.store.photoUri(photo.id),
+          photo.contentType,
+        );
+        if (uploaded === null) continue;
+        await this.store.putPhoto(markUploaded(photo, uploaded.storageKey, this.clock));
+      } catch {
+        // Offline, too large, or storage is down. The photo stays local and the next sync
+        // tries again; nothing is lost and the picture still shows on this device.
+      }
+    }
+  }
+
+  /** Fetches the bytes for photos this device knows about but has never held. */
+  private async downloadMissingPhotoBytes(photos: readonly Photo[]): Promise<void> {
+    for (const photo of photos) {
+      if (photo.storageKey === null || photo.deletedAt !== null) continue;
+      if ((await this.store.getPhotoBytes(photo.id)) !== undefined) continue;
+      try {
+        await this.store.putPhotoBytes(
+          photo.id,
+          await downloadPhotoBytes(photo.id),
+          photo.contentType,
+        );
+      } catch {
+        // Try again next sync. The strip shows a placeholder until then rather than
+        // failing the whole reconciliation over one image.
+      }
+    }
   }
 
   private async pushPending(): Promise<number> {
+    await this.uploadPendingPhotos();
     const pendingIds = await this.store.readPendingIds();
     if (pendingIds.length === 0) return 0;
 
@@ -137,6 +192,7 @@ export class SyncEngine {
     // another sends a single request rather than racing two.
     const copies: Copy[] = [];
     const wishes: WishlistItem[] = [];
+    const photos: Photo[] = [];
     for (const id of pendingIds) {
       const copy = await this.store.getCopyIncludingDeleted(id);
       if (copy !== undefined) {
@@ -144,14 +200,23 @@ export class SyncEngine {
         continue;
       }
       const wish = await this.store.getWishlistItemIncludingDeleted(id);
-      if (wish !== undefined) wishes.push(wish);
+      if (wish !== undefined) {
+        wishes.push(wish);
+        continue;
+      }
+      const photo = await this.store.getPhotoIncludingDeleted(id);
+      // A photo whose bytes never uploaded is not pushed: other devices would see a
+      // record they can never fetch. It stays pending until the upload succeeds.
+      if (photo !== undefined && (photo.storageKey !== null || photo.deletedAt !== null)) {
+        photos.push(photo);
+      }
     }
-    if (copies.length === 0 && wishes.length === 0) {
+    if (copies.length === 0 && wishes.length === 0 && photos.length === 0) {
       await this.store.writePendingIds([]);
       return 0;
     }
 
-    const response = await pushChanges(copies, wishes);
+    const response = await pushChanges(copies, wishes, photos);
     // Adopt whatever the server decided, so the two sides are byte-identical afterwards
     // and the next push does not resend the same records.
     for (const merged of response.copies) {
@@ -160,11 +225,14 @@ export class SyncEngine {
     for (const merged of response.wishes) {
       await this.store.adoptWishlistItem(merged);
     }
+    for (const merged of response.photos) {
+      await this.store.adoptPhoto(merged);
+    }
     if (response.cursor > 0) {
       await this.store.writeSyncCursor(response.cursor);
     }
     await this.store.writePendingIds([]);
-    return copies.length + wishes.length;
+    return copies.length + wishes.length + photos.length;
   }
 
   /** Everything the device holds, of both kinds — they share one pending set. */

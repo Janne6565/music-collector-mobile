@@ -14,6 +14,9 @@ let accessToken: string | null = null;
 
 export function setAccessToken(token: string | null): void {
   accessToken = token;
+  // The binary client keeps its own copy, because it bypasses this module's fetch wrapper
+  // to send multipart bodies. Setting both here stops the two drifting apart.
+  void import("@/api/photos").then((photos) => photos.setBinaryAccessToken(token));
 }
 
 export async function readRefreshToken(): Promise<string | null> {
@@ -40,6 +43,8 @@ interface RequestOptions {
   readonly headers?: Record<string, string>;
   /** Set on the refresh call itself, so a failing refresh cannot trigger another one. */
   readonly noRetry?: boolean;
+  /** Return the raw bytes rather than parsing JSON — used for image downloads. */
+  readonly raw?: boolean;
 }
 
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
@@ -69,7 +74,8 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   if (!response.ok) {
     throw new HttpError(response.status, path);
   }
-  return response.status === 204 ? (undefined as T) : ((await response.json()) as T);
+  if (response.status === 204) return undefined as T;
+  return (options.raw === true ? await response.arrayBuffer() : await response.json()) as T;
 }
 
 /** Exchanges the stored refresh token for a new pair. Returns null when there is no session. */

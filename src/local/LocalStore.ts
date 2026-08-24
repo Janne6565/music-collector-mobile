@@ -5,7 +5,7 @@
  * merge, or the same collection would converge differently depending on which device
  * synced last. Change both, in the same commit.
  */
-import type { CollectionStats, Copy, Format, Release, WishlistItem } from "@/domain/types";
+import type { CollectionStats, Copy, Format, Photo, Release, WishlistItem } from "@/domain/types";
 
 export interface LibraryFilter {
   readonly format?: Format | "ALL";
@@ -47,6 +47,28 @@ export interface LocalStore {
   cacheReleases(releases: readonly Release[]): Promise<void>;
   getRelease(mbid: string): Promise<Release | undefined>;
   getReleases(mbids: readonly string[]): Promise<Map<string, Release>>;
+
+  /** Live photos for one copy, in strip order. */
+  listPhotos(copyId: string): Promise<Photo[]>;
+  getPhotoIncludingDeleted(id: string): Promise<Photo | undefined>;
+  /** Photos whose bytes are on this device but not yet in object storage. */
+  listPhotosAwaitingUpload(): Promise<Photo[]>;
+  putPhoto(photo: Photo): Promise<void>;
+  adoptPhoto(photo: Photo): Promise<void>;
+
+  /**
+   * The image bytes, kept on the device.
+   *
+   * Photos are local-first like everything else: once fetched, they render with no
+   * network at all, and a photo taken without an account never leaves the device.
+   */
+  // Stored as a buffer plus its content type rather than a Blob: Blob support in
+  // IndexedDB is uneven across engines, and the pair reconstructs the Blob exactly.
+  putPhotoBytes(id: string, buffer: ArrayBuffer, contentType: string): Promise<void>;
+  getPhotoBytes(id: string): Promise<Blob | undefined>;
+  /** Mobile only: the on-device file URI an Image component can render directly. */
+  photoUri(id: string): string;
+  deletePhotoBytes(id: string): Promise<void>;
 
   listWishlist(): Promise<WishlistItem[]>;
   getWishlistItemIncludingDeleted(id: string): Promise<WishlistItem | undefined>;

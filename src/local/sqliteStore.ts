@@ -1,10 +1,49 @@
+import * as FileSystem from "expo-file-system/legacy";
 import * as SQLite from "expo-sqlite";
 import * as Crypto from "expo-crypto";
-import type { CollectionStats, Copy, Format, Release, WishlistItem } from "@/domain/types";
+import type { CollectionStats, Copy, Format, Photo, Release, WishlistItem } from "@/domain/types";
 import { FORMATS } from "@/domain/types";
 import type { LibraryFilter, LocalStore } from "@/local/LocalStore";
 
 const DATABASE = "music-collector.db";
+const PHOTO_DIR = `${FileSystem.documentDirectory}photos/`;
+
+function photoPath(id: string): string {
+  return `${PHOTO_DIR}${id}`;
+}
+
+const BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+/** React Native has no btoa/atob for binary, so the two conversions are explicit. */
+function encodeBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let out = "";
+  for (let i = 0; i < bytes.length; i += 3) {
+    const chunk = (bytes[i] as number) << 16 | ((bytes[i + 1] ?? 0) << 8) | (bytes[i + 2] ?? 0);
+    out += BASE64[(chunk >> 18) & 63];
+    out += BASE64[(chunk >> 12) & 63];
+    out += i + 1 < bytes.length ? BASE64[(chunk >> 6) & 63] : "=";
+    out += i + 2 < bytes.length ? BASE64[chunk & 63] : "=";
+  }
+  return out;
+}
+
+function decodeBase64(value: string): Uint8Array {
+  const clean = value.replace(/=+$/, "");
+  const bytes = new Uint8Array(Math.floor((clean.length * 3) / 4));
+  let buffer = 0;
+  let bits = 0;
+  let out = 0;
+  for (const char of clean) {
+    buffer = (buffer << 6) | BASE64.indexOf(char);
+    bits += 6;
+    if (bits >= 8) {
+      bits -= 8;
+      bytes[out++] = (buffer >> bits) & 0xff;
+    }
+  }
+  return bytes;
+}
 const DEVICE_ID_KEY = "deviceId";
 const CLOCK_KEY = "clock";
 const CURSOR_KEY = "syncCursor";
@@ -82,6 +121,19 @@ export class SqliteLocalStore implements LocalStore {
         fieldClocks      TEXT NOT NULL DEFAULT '{}'
       );
       CREATE INDEX IF NOT EXISTS wishlist_group_idx ON wishlist (releaseGroupMbid);
+
+      CREATE TABLE IF NOT EXISTS photos (
+        id            TEXT PRIMARY KEY NOT NULL,
+        copyId        TEXT NOT NULL,
+        storageKey    TEXT,
+        contentType   TEXT NOT NULL,
+        byteSize      INTEGER NOT NULL,
+        sortIndex     INTEGER NOT NULL,
+        createdAt     INTEGER NOT NULL,
+        deletedAt     INTEGER,
+        fieldClocks   TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS photos_copy_idx ON photos (copyId);
 
       CREATE TABLE IF NOT EXISTS meta (
         key   TEXT PRIMARY KEY NOT NULL,
@@ -228,6 +280,90 @@ export class SqliteLocalStore implements LocalStore {
     return new Map(rows.map((row) => [row.mbid, toRelease(row)]));
   }
 
+  async listPhotos(copyId: string): Promise<Photo[]> {
+    const rows = await this.handle().getAllAsync<PhotoRow>(
+      "SELECT * FROM photos WHERE copyId = ? AND deletedAt IS NULL ORDER BY sortIndex ASC",
+      [copyId],
+    );
+    return rows.map(toPhoto);
+  }
+
+  async getPhotoIncludingDeleted(id: string): Promise<Photo | undefined> {
+    const row = await this.handle().getFirstAsync<PhotoRow>("SELECT * FROM photos WHERE id = ?", [id]);
+    return row === null ? undefined : toPhoto(row);
+  }
+
+  async listPhotosAwaitingUpload(): Promise<Photo[]> {
+    const rows = await this.handle().getAllAsync<PhotoRow>(
+      "SELECT * FROM photos WHERE storageKey IS NULL AND deletedAt IS NULL",
+    );
+    // Only those whose bytes are actually on this device; a photo pulled from elsewhere
+    // has nothing to upload and retrying it forever would be pointless.
+    const withBytes: Photo[] = [];
+    for (const row of rows) {
+      const info = await FileSystem.getInfoAsync(photoPath(row.id));
+      if (info.exists) withBytes.push(toPhoto(row));
+    }
+    return withBytes;
+  }
+
+  async putPhoto(photo: Photo): Promise<void> {
+    await this.writePhoto(photo);
+    await this.markPending(photo.id);
+  }
+
+  async adoptPhoto(photo: Photo): Promise<void> {
+    await this.writePhoto(photo);
+  }
+
+  private async writePhoto(photo: Photo): Promise<void> {
+    await this.handle().runAsync(
+      `INSERT OR REPLACE INTO photos
+        (id, copyId, storageKey, contentType, byteSize, sortIndex, createdAt, deletedAt, fieldClocks)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        photo.id,
+        photo.copyId,
+        photo.storageKey,
+        photo.contentType,
+        photo.byteSize,
+        photo.sortIndex,
+        photo.createdAt,
+        photo.deletedAt,
+        JSON.stringify(photo.fieldClocks),
+      ],
+    );
+  }
+
+  /**
+   * Image bytes go to the filesystem, not into SQLite: a few megabytes per row would
+   * bloat the database and slow down every unrelated query that walks it.
+   */
+  async putPhotoBytes(id: string, buffer: ArrayBuffer, _contentType: string): Promise<void> {
+    await FileSystem.makeDirectoryAsync(PHOTO_DIR, { intermediates: true }).catch(() => undefined);
+    await FileSystem.writeAsStringAsync(photoPath(id), encodeBase64(buffer), {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+  }
+
+  async getPhotoBytes(id: string): Promise<Blob | undefined> {
+    const info = await FileSystem.getInfoAsync(photoPath(id));
+    if (!info.exists) return undefined;
+    const base64 = await FileSystem.readAsStringAsync(photoPath(id), {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+    return new Blob([decodeBase64(base64).buffer as ArrayBuffer]);
+  }
+
+  /** The on-device file URI, which is what an Image component renders from. */
+  photoUri(id: string): string {
+    return photoPath(id);
+  }
+
+  async deletePhotoBytes(id: string): Promise<void> {
+    await FileSystem.deleteAsync(photoPath(id), { idempotent: true }).catch(() => undefined);
+  }
+
   async listWishlist(): Promise<WishlistItem[]> {
     const rows = await this.handle().getAllAsync<WishRow>(
       "SELECT * FROM wishlist WHERE deletedAt IS NULL ORDER BY createdAt DESC",
@@ -366,6 +502,8 @@ interface ReleaseRow extends Omit<Release, "coverTheme"> {
   coverTheme: string | null;
 }
 
+type PhotoRow = Omit<Photo, "fieldClocks"> & { fieldClocks: string };
+
 type WishRow = Omit<WishlistItem, "desiredFormat" | "fieldClocks"> & {
   desiredFormat: string | null;
   fieldClocks: string;
@@ -373,6 +511,10 @@ type WishRow = Omit<WishlistItem, "desiredFormat" | "fieldClocks"> & {
 
 function toCopy(row: CopyRow): Copy {
   return { ...row, fieldClocks: JSON.parse(row.fieldClocks) as Copy["fieldClocks"] };
+}
+
+function toPhoto(row: PhotoRow): Photo {
+  return { ...row, fieldClocks: JSON.parse(row.fieldClocks) as Photo["fieldClocks"] };
 }
 
 function toWish(row: WishRow): WishlistItem {

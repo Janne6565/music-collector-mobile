@@ -5,8 +5,12 @@
  * merge, or the same collection would converge differently depending on which device
  * synced last. Change both, in the same commit.
  */
-import type { Copy, WishlistItem } from "@/domain/types";
-import { COPY_MERGEABLE_FIELDS, WISH_MERGEABLE_FIELDS } from "@/domain/types";
+import type { Copy, Photo, WishlistItem } from "@/domain/types";
+import {
+  COPY_MERGEABLE_FIELDS,
+  PHOTO_MERGEABLE_FIELDS,
+  WISH_MERGEABLE_FIELDS,
+} from "@/domain/types";
 
 /**
  * Field-level last-write-wins merge for a copy.
@@ -151,6 +155,39 @@ export function mergeWishlists(
   for (const item of local) byId.set(item.id, { ...byId.get(item.id), local: item });
   for (const item of remote) byId.set(item.id, { ...byId.get(item.id), remote: item });
   return [...byId.values()].map((pair) => mergeWishlistItems(pair.local, pair.remote));
+}
+
+/**
+ * The same field-level rule applied to a photo's metadata.
+ *
+ * Note what this makes possible: reordering the strip on one device while deleting a photo
+ * on another leaves the photo deleted *and* the reorder applied, rather than one silently
+ * undoing the other.
+ */
+export function mergePhotos(local: Photo | undefined, remote: Photo | undefined): Photo {
+  if (local === undefined && remote === undefined) {
+    throw new Error("mergePhotos needs at least one side");
+  }
+  if (local === undefined) return remote as Photo;
+  if (remote === undefined) return local;
+  if (local.id !== remote.id) {
+    throw new Error(`mergePhotos got two different photos: ${local.id} vs ${remote.id}`);
+  }
+
+  const merged: Record<string, unknown> = { id: local.id };
+  const clocks: Record<string, string> = {};
+
+  for (const field of PHOTO_MERGEABLE_FIELDS) {
+    const localClock = local.fieldClocks[field];
+    const remoteClock = remote.fieldClocks[field];
+    const winner = pickWinner(localClock, remoteClock);
+    merged[field] = winner === "remote" ? remote[field] : local[field];
+    clocks[field] = (winner === "remote" ? remoteClock : localClock) as string;
+  }
+
+  merged.createdAt = Math.min(local.createdAt, remote.createdAt);
+  merged.fieldClocks = clocks;
+  return merged as unknown as Photo;
 }
 
 /** Merges two whole collections, keyed by copy id. */

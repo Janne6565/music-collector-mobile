@@ -134,6 +134,40 @@ export interface WishlistItem {
   readonly fieldClocks: FieldClocks<WishMergeableField>;
 }
 
+/**
+ * Fields of a Photo that sync independently.
+ *
+ * The bytes are immutable — a photo id points at one image forever — so `storageKey`,
+ * `contentType` and `byteSize` only ever change from "not uploaded yet" to "uploaded".
+ * What genuinely moves is where it sits in the strip and whether it was deleted.
+ */
+export const PHOTO_MERGEABLE_FIELDS = [
+  "copyId",
+  "storageKey",
+  "contentType",
+  "byteSize",
+  "sortIndex",
+  "deletedAt",
+] as const;
+export type PhotoMergeableField = (typeof PHOTO_MERGEABLE_FIELDS)[number];
+
+export interface Photo {
+  /** Client-generated: the photo exists on the device before it is ever uploaded. */
+  readonly id: string;
+  readonly copyId: string;
+  /**
+   * Where the bytes live in object storage, or null while the photo is still only on this
+   * device. This *is* the upload state — a separate flag could disagree with reality.
+   */
+  readonly storageKey: string | null;
+  readonly contentType: string;
+  readonly byteSize: number;
+  readonly sortIndex: number;
+  readonly createdAt: number;
+  readonly deletedAt: number | null;
+  readonly fieldClocks: FieldClocks<PhotoMergeableField>;
+}
+
 export interface CollectionStats {
   readonly copyCount: number;
   readonly releaseGroupCount: number;

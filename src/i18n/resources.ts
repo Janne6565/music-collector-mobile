@@ -24,6 +24,13 @@ const enCommon = {
       body: "Scan a barcode or search to add your first record, tape, disc or download.",
     },
   },
+  photos: {
+    title: "Your photos",
+    take: "Take a photo of your copy",
+    choose: "Choose a photo",
+    remove: "Remove this photo",
+    deviceOnly: "on device",
+  },
   wishlist: {
     count: "{{count}} items",
     empty: "Nothing on the wishlist yet.",
@@ -135,6 +142,13 @@ const deCommon: CommonSchema = {
       title: "Noch nichts da",
       body: "Scanne einen Barcode oder suche, um dein erstes Exemplar hinzuzufügen.",
     },
+  },
+  photos: {
+    title: "Deine Fotos",
+    take: "Foto deines Exemplars aufnehmen",
+    choose: "Foto auswählen",
+    remove: "Dieses Foto entfernen",
+    deviceOnly: "nur hier",
   },
   wishlist: {
     count: "{{count}} Einträge",
