@@ -76,3 +76,15 @@ export async function signOut(): Promise<void> {
   setAccessToken(null);
   await writeRefreshToken(null);
 }
+
+/**
+ * Deletes the account and everything synced to it.
+ *
+ * The local collection is deliberately untouched — it belongs to the device, not the
+ * account, and the app goes on working without one.
+ */
+export async function deleteAccount(): Promise<void> {
+  await request("/api/v1/auth/me", { method: "DELETE" });
+  setAccessToken(null);
+  await writeRefreshToken(null);
+}

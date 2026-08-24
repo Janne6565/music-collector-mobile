@@ -22,24 +22,21 @@ export function CopyEditor({ copy, chrome, saving, onSave, onCancel }: CopyEdito
 
   return (
     <View style={styles.root}>
-      <Text style={[styles.legend, { color: chrome.muted }]}>{t("detail.condition")}</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-        <Chip
-          label={t("editor.unset")}
-          active={editor.fields.condition === ""}
-          chrome={chrome}
-          onPress={() => editor.set("condition", "")}
-        />
-        {CONDITIONS.map((condition) => (
-          <Chip
-            key={condition}
-            label={CONDITION_SHORT[condition]}
-            active={editor.fields.condition === condition}
-            chrome={chrome}
-            onPress={() => editor.set("condition", condition as Condition)}
-          />
-        ))}
-      </ScrollView>
+      <GradeRow
+        label={t("detail.mediaCondition")}
+        value={editor.fields.condition}
+        chrome={chrome}
+        onChange={(value) => editor.set("condition", value)}
+      />
+      {/* Two grades, not one: sellers list the record and its jacket separately, and a
+          near-mint pressing in a ring-worn sleeve is a different object from a near-mint
+          one in a near-mint sleeve. */}
+      <GradeRow
+        label={t("detail.sleeveCondition")}
+        value={editor.fields.sleeveCondition}
+        chrome={chrome}
+        onChange={(value) => editor.set("sleeveCondition", value)}
+      />
 
       <Labelled
         label={editor.priceInvalid ? t("editor.badPrice") : t("detail.paid")}
@@ -140,6 +137,42 @@ export function CopyEditor({ copy, chrome, saving, onSave, onCancel }: CopyEdito
         </Pressable>
       </View>
     </View>
+  );
+}
+
+function GradeRow({
+  label,
+  value,
+  chrome,
+  onChange,
+}: {
+  readonly label: string;
+  readonly value: Condition | "";
+  readonly chrome: DetailChrome;
+  readonly onChange: (value: Condition | "") => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <>
+      <Text style={[styles.legend, { color: chrome.muted }]}>{label}</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+        <Chip
+          label={t("editor.unset")}
+          active={value === ""}
+          chrome={chrome}
+          onPress={() => onChange("")}
+        />
+        {CONDITIONS.map((condition) => (
+          <Chip
+            key={condition}
+            label={CONDITION_SHORT[condition]}
+            active={value === condition}
+            chrome={chrome}
+            onPress={() => onChange(condition)}
+          />
+        ))}
+      </ScrollView>
+    </>
   );
 }
 

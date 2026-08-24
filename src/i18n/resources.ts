@@ -56,11 +56,33 @@ const enCommon = {
     failed: "Could not reach the release database. Try again in a moment.",
     noResults: "Nothing found for that search.",
     add: "Add to library",
+    clearSearch: "Clear the search",
+    scanCard: {
+      title: "Scan a barcode",
+      body: "Fastest for anything with a sleeve.",
+    },
+    manualCard: { title: "Enter manually" },
+    enterManually: "Enter it manually",
+    manualSoon: "Bootlegs, test presses, tapes. Still being designed.",
+    soon: "Soon",
+    onWishlist: "On your wishlist",
+    checkedSources: "Checked MusicBrainz",
+    rescan: "Rescan",
+    searchByTitle: "Search by title instead",
+    barcodeMissing: {
+      title: "No release with that barcode",
+      body: "Common with promos, club editions and anything pressed before the mid-eighties.",
+    },
+  },
+  addDialog: {
+    recent: "Recent searches",
+    clearRecent: "Clear",
   },
   detail: {
     back: "Library",
     notFound: "That item is no longer in your collection.",
-    condition: "Condition",
+    mediaCondition: "Media",
+    sleeveCondition: "Sleeve",
     paid: "Paid",
     bought: "Bought",
     where: "Where",
@@ -104,6 +126,9 @@ const enCommon = {
     haveAccount: "Already have an account? Sign in",
     signOut: "Sign out",
     signOutKeepsData: "Your collection stays on this device.",
+    useWithout: "Use it without an account",
+    useWithoutBody: "Your collection stays on this device. Add an account later to back it up.",
+    skipRegister: "Skip — keep it on this device",
     syncing: "Your collection syncs across your devices.",
     error: {
       badCredentials: "That e-mail address and password do not match.",
@@ -112,13 +137,41 @@ const enCommon = {
     },
   },
   firstSync: {
-    title: "You already have a collection here",
-    lede: "Choose what to do before anything is synced.",
-    merge: { title: "Merge them", body: "Keep everything from both." },
-    keepLocal: { title: "Keep this device" },
-    keepLocalShort: "Discards what is only in your account.",
-    keepAccount: { title: "Keep the account" },
-    keepAccountShort: "Discards what is only on this device.",
+    title: "You already have {{count}} copies on this device",
+    body: "Your account holds {{count}}. Decide what happens to the local ones before we sync.",
+    merge: {
+      title: "Merge them",
+      body: "{{added}} new copies added, {{skipped}} already in your account. Nothing is overwritten.",
+    },
+    keepAccount: {
+      title: "Keep the account version",
+      body: "The {{count}} local copies stay on this device, unsynced.",
+    },
+    exportFirst: "Export the local copies as CSV first",
+    confirmMerge: "Merge and sync",
+    confirmKeep: "Keep the account version",
+  },
+  account: {
+    title: "Account",
+    passwordBody: "Change it from the reset link on the sign-in screen.",
+    stat: { copies: "copies", releases: "releases" },
+    section: { signIn: "Sign-in", storage: "Storage and sync" },
+    sync: {
+      title: "Sync across devices",
+      last: "Last synced {{when}}",
+      never: "Not synced yet",
+    },
+    local: {
+      title: "Keep a local copy",
+      always: "Always on — every screen reads from this phone",
+    },
+    export: { title: "Export as CSV", body: "One row per copy" },
+    delete: {
+      title: "Delete account",
+      action: "Delete",
+      confirm:
+        "This removes your account and everything synced to it. The collection on this phone is kept.",
+    },
   },
   editor: {
     unset: "Not recorded",
@@ -131,6 +184,7 @@ const enCommon = {
   common: {
     save: "Save",
     cancel: "Cancel",
+    back: "Back",
     unknownYear: "Year unknown",
   },
   scaffold: {
@@ -202,11 +256,33 @@ const deCommon: CommonSchema = {
     failed: "Die Datenbank ist gerade nicht erreichbar. Versuche es gleich noch einmal.",
     noResults: "Nichts zu dieser Suche gefunden.",
     add: "Zur Sammlung",
+    clearSearch: "Suche leeren",
+    scanCard: {
+      title: "Barcode scannen",
+      body: "Am schnellsten für alles mit Hülle.",
+    },
+    manualCard: { title: "Manuell eingeben" },
+    enterManually: "Manuell eingeben",
+    manualSoon: "Bootlegs, Testpressungen, Kassetten. Wird noch entworfen.",
+    soon: "Bald",
+    onWishlist: "Auf deiner Wunschliste",
+    checkedSources: "Bei MusicBrainz gesucht",
+    rescan: "Erneut scannen",
+    searchByTitle: "Stattdessen nach Titel suchen",
+    barcodeMissing: {
+      title: "Keine Veröffentlichung mit diesem Barcode",
+      body: "Typisch für Promos, Clubauflagen und alles vor Mitte der Achtziger.",
+    },
+  },
+  addDialog: {
+    recent: "Zuletzt gesucht",
+    clearRecent: "Löschen",
   },
   detail: {
     back: "Sammlung",
     notFound: "Dieses Exemplar ist nicht mehr in deiner Sammlung.",
-    condition: "Zustand",
+    mediaCondition: "Tonträger",
+    sleeveCondition: "Hülle",
     paid: "Bezahlt",
     bought: "Gekauft",
     where: "Wo",
@@ -250,6 +326,10 @@ const deCommon: CommonSchema = {
     haveAccount: "Schon ein Konto? Anmelden",
     signOut: "Abmelden",
     signOutKeepsData: "Deine Sammlung bleibt auf diesem Gerät.",
+    useWithout: "Ohne Konto benutzen",
+    useWithoutBody:
+      "Deine Sammlung bleibt auf diesem Gerät. Ein Konto kannst du später zum Sichern anlegen.",
+    skipRegister: "Überspringen — auf diesem Gerät behalten",
     syncing: "Deine Sammlung wird zwischen deinen Geräten synchronisiert.",
     error: {
       badCredentials: "E-Mail-Adresse und Passwort passen nicht zusammen.",
@@ -258,13 +338,41 @@ const deCommon: CommonSchema = {
     },
   },
   firstSync: {
-    title: "Auf diesem Gerät gibt es schon eine Sammlung",
-    lede: "Wähle, was passieren soll, bevor synchronisiert wird.",
-    merge: { title: "Zusammenführen", body: "Alles von beiden Seiten behalten." },
-    keepLocal: { title: "Dieses Gerät behalten" },
-    keepLocalShort: "Verwirft, was nur im Konto ist.",
-    keepAccount: { title: "Konto behalten" },
-    keepAccountShort: "Verwirft, was nur auf diesem Gerät ist.",
+    title: "Auf diesem Gerät liegen schon {{count}} Exemplare",
+    body: "In deinem Konto sind es {{count}}. Entscheide vor dem Sync, was mit den lokalen passiert.",
+    merge: {
+      title: "Zusammenführen",
+      body: "{{added}} neue Exemplare kommen dazu, {{skipped}} sind schon im Konto. Nichts wird überschrieben.",
+    },
+    keepAccount: {
+      title: "Version aus dem Konto behalten",
+      body: "Die {{count}} lokalen Exemplare bleiben auf diesem Gerät, ohne Sync.",
+    },
+    exportFirst: "Die lokalen Exemplare vorher als CSV exportieren",
+    confirmMerge: "Zusammenführen und synchronisieren",
+    confirmKeep: "Version aus dem Konto behalten",
+  },
+  account: {
+    title: "Konto",
+    passwordBody: "Änderbar über den Zurücksetzen-Link auf der Anmeldeseite.",
+    stat: { copies: "Exemplare", releases: "Veröffentlichungen" },
+    section: { signIn: "Anmeldung", storage: "Speicher und Sync" },
+    sync: {
+      title: "Zwischen Geräten synchronisieren",
+      last: "Zuletzt synchronisiert {{when}}",
+      never: "Noch nicht synchronisiert",
+    },
+    local: {
+      title: "Lokale Kopie behalten",
+      always: "Immer an — jede Ansicht liest von diesem Gerät",
+    },
+    export: { title: "Als CSV exportieren", body: "Eine Zeile pro Exemplar" },
+    delete: {
+      title: "Konto löschen",
+      action: "Löschen",
+      confirm:
+        "Das entfernt dein Konto und alles Synchronisierte. Die Sammlung auf diesem Gerät bleibt erhalten.",
+    },
   },
   editor: {
     unset: "Nicht erfasst",
@@ -277,6 +385,7 @@ const deCommon: CommonSchema = {
   common: {
     save: "Speichern",
     cancel: "Abbrechen",
+    back: "Zurück",
     unknownYear: "Jahr unbekannt",
   },
   scaffold: {

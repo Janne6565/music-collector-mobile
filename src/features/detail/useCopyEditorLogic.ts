@@ -11,6 +11,7 @@ import type { CopyDraft } from "@/local/copyWrites";
 
 export interface EditorFields {
   condition: Condition | "";
+  sleeveCondition: Condition | "";
   price: string;
   purchasedOn: string;
   purchasedAt: string;
@@ -21,6 +22,7 @@ export interface EditorFields {
 function fieldsOf(copy: Copy): EditorFields {
   return {
     condition: copy.condition ?? "",
+    sleeveCondition: copy.sleeveCondition ?? "",
     price: copy.pricePaidCents === null ? "" : (copy.pricePaidCents / 100).toFixed(2),
     purchasedOn: copy.purchasedOn ?? "",
     purchasedAt: copy.purchasedAt ?? "",
@@ -69,6 +71,7 @@ export function useCopyEditorLogic(copy: Copy, onSave: (patch: Partial<CopyDraft
 
     onSave({
       condition: fields.condition === "" ? null : fields.condition,
+      sleeveCondition: fields.sleeveCondition === "" ? null : fields.sleeveCondition,
       pricePaidCents: price,
       purchasedOn,
       purchasedAt: fields.purchasedAt.trim() === "" ? null : fields.purchasedAt.trim(),

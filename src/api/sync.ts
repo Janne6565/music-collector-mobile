@@ -34,6 +34,7 @@ function toCopy(raw: unknown): Copy | null {
     id: dto.id,
     releaseMbid: dto.releaseMbid,
     condition: dto.condition ?? null,
+    sleeveCondition: dto.sleeveCondition ?? null,
     pricePaidCents: dto.pricePaidCents ?? null,
     currency: dto.currency,
     purchasedOn: dto.purchasedOn ?? null,

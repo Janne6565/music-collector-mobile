@@ -14,6 +14,8 @@ export const colors = {
   line: "rgba(25,23,19,0.09)",
   accent: "#a2573a",
   accentHover: "#7d3f27",
+  /** The darker accent the deck reserves for destructive wording ("Delete account"). */
+  accentStrong: "#8c4530",
 
   /** Dark chrome — used by the cover-derived theme on item detail screens. */
   night: "#141311",
