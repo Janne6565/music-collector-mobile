@@ -1,7 +1,3 @@
-import { useTranslation } from "react-i18next";
-import { PlaceholderScreen } from "@/components/PlaceholderScreen";
+import { AccountScreen } from "@/features/auth/AccountScreen";
 
-export default function YouScreen() {
-  const { t } = useTranslation();
-  return <PlaceholderScreen title={t("nav.you")} subtitle={t("scaffold.comingInPhaseTwo")} />;
-}
+export default AccountScreen;

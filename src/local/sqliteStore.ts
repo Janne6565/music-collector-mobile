@@ -7,6 +7,8 @@ import type { LibraryFilter, LocalStore } from "@/local/LocalStore";
 const DATABASE = "music-collector.db";
 const DEVICE_ID_KEY = "deviceId";
 const CLOCK_KEY = "clock";
+const CURSOR_KEY = "syncCursor";
+const PENDING_KEY = "pendingIds";
 
 /**
  * SQLite-backed store for the mobile app — the same interface the web app implements over
@@ -125,6 +127,11 @@ export class SqliteLocalStore implements LocalStore {
     return row === null ? undefined : toCopy(row);
   }
 
+  async getCopyIncludingDeleted(id: string): Promise<Copy | undefined> {
+    const row = await this.handle().getFirstAsync<CopyRow>("SELECT * FROM copies WHERE id = ?", [id]);
+    return row === null ? undefined : toCopy(row);
+  }
+
   async listCopiesInReleaseGroup(releaseGroupMbid: string): Promise<Copy[]> {
     const rows = await this.handle().getAllAsync<CopyRow>(
       `SELECT c.* FROM copies c JOIN releases r ON r.mbid = c.releaseMbid
@@ -135,6 +142,16 @@ export class SqliteLocalStore implements LocalStore {
   }
 
   async putCopy(copy: Copy): Promise<void> {
+    await this.write(copy);
+    await this.markPending(copy.id);
+  }
+
+  async adoptCopy(copy: Copy): Promise<void> {
+    // No pending mark: the client would otherwise push straight back what it just pulled.
+    await this.write(copy);
+  }
+
+  private async write(copy: Copy): Promise<void> {
     await this.handle().runAsync(
       `INSERT OR REPLACE INTO copies
         (id, releaseMbid, condition, pricePaidCents, currency, purchasedOn, purchasedAt,
@@ -158,10 +175,11 @@ export class SqliteLocalStore implements LocalStore {
     );
   }
 
-  async softDeleteCopy(id: string, at: number): Promise<void> {
-    // Tombstone, not DELETE: a row that simply vanished locally would be handed straight
-    // back by the server on the next sync.
-    await this.handle().runAsync("UPDATE copies SET deletedAt = ? WHERE id = ?", [at, id]);
+  private async markPending(id: string): Promise<void> {
+    const pending = new Set(await this.readPendingIds());
+    if (pending.has(id)) return;
+    pending.add(id);
+    await this.writePendingIds([...pending]);
   }
 
   async cacheReleases(releases: readonly Release[]): Promise<void> {
@@ -285,6 +303,24 @@ export class SqliteLocalStore implements LocalStore {
 
   async writeClock(encoded: string): Promise<void> {
     await this.writeMeta(CLOCK_KEY, encoded);
+  }
+
+  async readSyncCursor(): Promise<number> {
+    const stored = await this.readMeta(CURSOR_KEY);
+    return stored === undefined ? 0 : Number.parseInt(stored, 10);
+  }
+
+  async writeSyncCursor(cursor: number): Promise<void> {
+    await this.writeMeta(CURSOR_KEY, String(cursor));
+  }
+
+  async readPendingIds(): Promise<string[]> {
+    const stored = await this.readMeta(PENDING_KEY);
+    return stored === undefined ? [] : (JSON.parse(stored) as string[]);
+  }
+
+  async writePendingIds(ids: readonly string[]): Promise<void> {
+    await this.writeMeta(PENDING_KEY, JSON.stringify(ids));
   }
 
   private async readMeta(key: string): Promise<string | undefined> {

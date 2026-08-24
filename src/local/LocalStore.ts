@@ -1,10 +1,8 @@
 /*
  * MIRROR of music-collector-frontend/src/local/LocalStore.ts
  *
- * The web and mobile apps must agree exactly on the clock, the domain shape and the write
- * path, or the same collection would merge differently depending on which device synced
- * last. These files are copied verbatim for now; phase 3 extracts them into a shared
- * package alongside the merge function. Until then: change both, in the same commit.
+ * The web and mobile apps implement the same interface, over IndexedDB and SQLite
+ * respectively, so a screen written against it ports unchanged. Change both together.
  */
 import type { CollectionStats, Copy, Format, Release, WishlistItem } from "@/domain/types";
 
@@ -28,11 +26,22 @@ export interface LocalStore {
 
   listCopies(filter?: LibraryFilter): Promise<Copy[]>;
   getCopy(id: string): Promise<Copy | undefined>;
+  /** Tombstones included — sync has to be able to push a delete. */
+  getCopyIncludingDeleted(id: string): Promise<Copy | undefined>;
   /** Copies of the same album, for the detail screen's "other copies you own". */
   listCopiesInReleaseGroup(releaseGroupMbid: string): Promise<Copy[]>;
+  /**
+   * A local write. Records the copy as pending, so nothing has to remember to do that at
+   * the call site — a write that forgot would simply never reach the server.
+   */
   putCopy(copy: Copy): Promise<void>;
-  /** Writes a tombstone rather than removing the row, so a delete can sync. */
-  softDeleteCopy(id: string, at: number): Promise<void>;
+  /** A write that came from sync. Deliberately does not mark the copy pending, or the
+   * client would push straight back what it just pulled, forever. */
+  adoptCopy(copy: Copy): Promise<void>;
+
+  // There is deliberately no deleteCopy here. A delete is an ordinary write of a
+  // tombstone, stamped by `tombstoneCopy`, and it goes through putCopy like any other
+  // edit. An unstamped delete would lose every merge and the copy would come back.
 
   cacheReleases(releases: readonly Release[]): Promise<void>;
   getRelease(mbid: string): Promise<Release | undefined>;
@@ -53,4 +62,11 @@ export interface LocalStore {
   /** The device's HLC, persisted so it never goes backwards across a restart. */
   readClock(): Promise<string | undefined>;
   writeClock(encoded: string): Promise<void>;
+
+  /** How far through the server's change log this device has read. */
+  readSyncCursor(): Promise<number>;
+  writeSyncCursor(cursor: number): Promise<void>;
+  /** Ids written locally since the last successful push. */
+  readPendingIds(): Promise<string[]>;
+  writePendingIds(ids: readonly string[]): Promise<void>;
 }

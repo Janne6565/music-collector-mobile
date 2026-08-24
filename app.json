@@ -15,7 +15,8 @@
           "cameraPermission": "Music Collector uses the camera to scan barcodes on sleeves and cases."
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      "expo-secure-store"
     ],
     "ios": {
       "supportsTablet": true,
