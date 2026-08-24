@@ -2,9 +2,9 @@ import { useRouter } from "expo-router";
 import { ChevronLeft, Pencil, Star, Trash2 } from "lucide-react-native";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { FormatThumb } from "@/components/FormatThumb";
+import { ReleaseArt } from "@/components/ReleaseArt";
 import type { Copy } from "@/domain/types";
 import { CONDITION_LABELS, CONDITION_SHORT, FORMAT_LABELS } from "@/domain/types";
 import { type DetailChrome, chromeFor } from "@/features/detail/theme";
@@ -41,11 +41,7 @@ export function DetailScreen({ copyId }: { readonly copyId: string }) {
     <View style={[styles.root, { backgroundColor: chrome.background }]}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.cover}>
-          {release?.coverArtUrl == null ? (
-            <FormatThumb format={release?.format ?? "OTHER"} />
-          ) : (
-            <Image source={{ uri: release.coverArtUrl }} style={styles.coverImage} />
-          )}
+          <ReleaseArt release={release} style={styles.coverImage} />
           <SafeAreaView style={styles.backWrap} edges={["top"]}>
             <Pressable
               accessibilityRole="button"
