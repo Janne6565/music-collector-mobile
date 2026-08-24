@@ -5,6 +5,7 @@ import {
   Clock,
   Heart,
   Plus,
+  PencilLine,
   ScanBarcode,
   Search,
   SearchX,
@@ -137,13 +138,29 @@ function BeforeTyping({ logic, onScan }: { readonly logic: Logic; readonly onSca
 
   return (
     <ScrollView contentContainerStyle={styles.list} keyboardShouldPersistTaps="handled">
-      {/* One card, not the deck's two: the manual-entry form it would open has not been
-          designed, and a card that leads nowhere is worse than no card. */}
-      <Pressable accessibilityRole="button" onPress={onScan} style={styles.shortcut}>
-        <ScanBarcode size={20} color="#fff" strokeWidth={1.6} />
-        <Text style={styles.shortcutTitle}>{t("add.scanCard.title")}</Text>
-        <Text style={styles.shortcutBody}>{t("add.scanCard.body")}</Text>
-      </Pressable>
+      <View style={styles.shortcuts}>
+        <Pressable accessibilityRole="button" onPress={onScan} style={styles.shortcut}>
+          <ScanBarcode size={20} color="#fff" strokeWidth={1.6} />
+          <Text style={styles.shortcutTitle}>{t("add.scanCard.title")}</Text>
+          <Text style={styles.shortcutBody}>{t("add.scanCard.body")}</Text>
+        </Pressable>
+        {/* Manual entry is in the deck but its form has not been designed. Shown rather
+            than hidden, so the way in is discoverable before it works — disabled and
+            labelled, so it never looks like a card that failed to respond. */}
+        <View
+          accessibilityRole="button"
+          accessibilityState={{ disabled: true }}
+          accessibilityLabel={`${t("add.manualCard.title")} — ${t("add.manualSoon")}`}
+          style={[styles.shortcut, styles.shortcutDisabled]}
+        >
+          <PencilLine size={20} color="rgba(255,255,255,0.55)" strokeWidth={1.6} />
+          <View style={styles.shortcutTitleRow}>
+            <Text style={styles.shortcutTitleDim}>{t("add.manualCard.title")}</Text>
+            <Text style={styles.soon}>{t("add.soon")}</Text>
+          </View>
+          <Text style={styles.shortcutBody}>{t("add.manualSoon")}</Text>
+        </View>
+      </View>
 
       {logic.recentSearches.length > 0 && (
         <>
@@ -229,8 +246,19 @@ function BarcodeNotFound({ logic, onScan }: { readonly logic: Logic; readonly on
         <Text style={styles.emptyBody}>{t("add.barcodeMissing.body")}</Text>
       </View>
 
-      {/* The deck also offers "Enter it manually" here. That form has not been designed,
-          so it is left out rather than shipped as a guess. */}
+      {/* The deck makes manual entry the primary way out of here. The form does not exist
+          yet, so the button is present and plainly disabled rather than missing — a dead
+          end you can see is better than one you go looking for. */}
+      <View
+        accessibilityRole="button"
+        accessibilityState={{ disabled: true }}
+        accessibilityLabel={`${t("add.enterManually")} — ${t("add.manualSoon")}`}
+        style={[styles.primaryAction, styles.actionDisabled]}
+      >
+        <PencilLine size={16} color="rgba(20,19,17,0.45)" strokeWidth={1.9} />
+        <Text style={styles.primaryActionText}>{t("add.enterManually")}</Text>
+        <Text style={styles.soonDark}>{t("add.soon")}</Text>
+      </View>
       <Pressable
         accessibilityRole="button"
         onPress={() => logic.setTerm("")}
@@ -367,8 +395,34 @@ const styles = StyleSheet.create({
   centered: { alignItems: "center", paddingTop: 32, gap: 10 },
   hint: { fontSize: 13, color: "rgba(255,255,255,0.5)", padding: 18 },
   list: { paddingHorizontal: 18, paddingTop: 14, paddingBottom: 28 },
-  shortcut: { gap: 9, padding: 14, borderRadius: 12, backgroundColor: RAISED },
+  shortcuts: { flexDirection: "row", gap: 10 },
+  shortcut: { flex: 1, gap: 9, padding: 14, borderRadius: 12, backgroundColor: RAISED },
+  shortcutDisabled: { opacity: 0.6 },
+  shortcutTitleRow: { flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" },
   shortcutTitle: { fontSize: 13, fontWeight: "600", color: "#fff" },
+  shortcutTitleDim: { fontSize: 13, fontWeight: "600", color: "rgba(255,255,255,0.7)" },
+  soon: {
+    fontSize: 9,
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+    color: "rgba(255,255,255,0.5)",
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderRadius: 999,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    overflow: "hidden",
+  },
+  soonDark: {
+    fontSize: 9,
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+    color: "rgba(20,19,17,0.45)",
+    backgroundColor: "rgba(20,19,17,0.08)",
+    borderRadius: 999,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    overflow: "hidden",
+  },
   shortcutBody: { fontSize: 11, lineHeight: 16, color: "rgba(255,255,255,0.45)" },
   sectionRow: {
     flexDirection: "row",
@@ -444,13 +498,25 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.5)",
     textAlign: "center",
   },
-  secondaryAction: {
+  primaryAction: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
     height: 48,
     marginTop: 26,
+    borderRadius: 999,
+    backgroundColor: "#fff",
+  },
+  primaryActionText: { fontSize: 14, fontWeight: "600", color: "rgba(20,19,17,0.45)" },
+  actionDisabled: { opacity: 0.55 },
+  secondaryAction: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    height: 48,
+    marginTop: 10,
     borderRadius: 999,
     backgroundColor: "rgba(255,255,255,0.1)",
     borderWidth: StyleSheet.hairlineWidth,
