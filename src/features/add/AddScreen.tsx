@@ -25,6 +25,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { releaseDisambiguation } from "@/api/releases";
 import { FormatThumb } from "@/components/FormatThumb";
+import { ReleaseArt } from "@/components/ReleaseArt";
 import type { Release, WishlistItem } from "@/domain/types";
 import { FORMAT_LABELS } from "@/domain/types";
 import { useAddLogic } from "@/features/add/useAddLogic";
@@ -290,8 +291,12 @@ function ResultRow({
 
   return (
     <View style={styles.row}>
+      {/* The real cover, not just the format silhouette. Picking between four pressings of
+          the same album is largely a visual job, and the sleeve is the thing people
+          recognise. The format is still named in the line below, and ReleaseArt falls back
+          to the silhouette whenever the archive has nothing. */}
       <View style={styles.thumb}>
-        <FormatThumb format={release.format} />
+        <ReleaseArt release={release} />
       </View>
       <View style={styles.rowBody}>
         <Text style={styles.rowTitle} numberOfLines={1}>
