@@ -64,6 +64,8 @@ const enCommon = {
     paid: "Paid",
     bought: "Bought",
     where: "Where",
+    edit: "Edit copy",
+    rating: "Rating",
     notes: "Notes",
     notesEmpty: "No notes yet.",
     conflict: {
@@ -102,7 +104,16 @@ const enCommon = {
     keepAccount: { title: "Keep the account" },
     keepAccountShort: "Discards what is only on this device.",
   },
+  editor: {
+    unset: "Not recorded",
+    badPrice: "Not a price",
+    badDate: "Not a date",
+    wherePlaceholder: "Shop, market, website",
+    notesPlaceholder: "Pressing, condition detail, where it came from",
+    rate: "Rate {{count}} out of 5",
+  },
   common: {
+    save: "Save",
     cancel: "Cancel",
     unknownYear: "Year unknown",
   },
@@ -183,6 +194,8 @@ const deCommon: CommonSchema = {
     paid: "Bezahlt",
     bought: "Gekauft",
     where: "Wo",
+    edit: "Exemplar bearbeiten",
+    rating: "Bewertung",
     notes: "Notizen",
     notesEmpty: "Noch keine Notizen.",
     conflict: {
@@ -221,7 +234,16 @@ const deCommon: CommonSchema = {
     keepAccount: { title: "Konto behalten" },
     keepAccountShort: "Verwirft, was nur auf diesem Gerät ist.",
   },
+  editor: {
+    unset: "Nicht erfasst",
+    badPrice: "Kein Preis",
+    badDate: "Kein Datum",
+    wherePlaceholder: "Laden, Markt, Website",
+    notesPlaceholder: "Pressung, Zustand, Herkunft",
+    rate: "{{count}} von 5 bewerten",
+  },
   common: {
+    save: "Speichern",
     cancel: "Abbrechen",
     unknownYear: "Jahr unbekannt",
   },

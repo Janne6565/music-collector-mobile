@@ -1,5 +1,6 @@
 import { useRouter } from "expo-router";
-import { ChevronLeft, Star, Trash2 } from "lucide-react-native";
+import { ChevronLeft, Pencil, Star, Trash2 } from "lucide-react-native";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -7,6 +8,7 @@ import { FormatThumb } from "@/components/FormatThumb";
 import type { Copy } from "@/domain/types";
 import { CONDITION_LABELS, CONDITION_SHORT, FORMAT_LABELS } from "@/domain/types";
 import { type DetailChrome, chromeFor } from "@/features/detail/theme";
+import { CopyEditor } from "@/features/detail/CopyEditor";
 import { useDetailLogic } from "@/features/detail/useDetailLogic";
 import { PhotoStrip } from "@/features/photos/PhotoStrip";
 import { fonts } from "@/theme/colors";
@@ -15,6 +17,7 @@ export function DetailScreen({ copyId }: { readonly copyId: string }) {
   const { t } = useTranslation();
   const router = useRouter();
   const logic = useDetailLogic(copyId);
+  const [editing, setEditing] = useState(false);
 
   if (logic.loading) {
     return (
@@ -83,7 +86,30 @@ export function DetailScreen({ copyId }: { readonly copyId: string }) {
             ))}
           </View>
 
-          <Fields copy={copy} chrome={chrome} />
+          {editing ? (
+            <CopyEditor
+              copy={copy}
+              chrome={chrome}
+              saving={logic.saving}
+              onSave={(patch) => {
+                logic.save(patch);
+                setEditing(false);
+              }}
+              onCancel={() => setEditing(false)}
+            />
+          ) : (
+            <>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => setEditing(true)}
+                style={[styles.edit, { backgroundColor: chrome.ink }]}
+              >
+                <Pencil size={15} color={chrome.background} strokeWidth={1.75} />
+                <Text style={[styles.editText, { color: chrome.background }]}>{t("detail.edit")}</Text>
+              </Pressable>
+              <Fields copy={copy} chrome={chrome} />
+            </>
+          )}
 
           <PhotoStrip copyId={copy.id} chrome={chrome} />
 
@@ -249,6 +275,16 @@ const styles = StyleSheet.create({
   title: { fontFamily: fonts.serif, fontSize: 32, marginTop: 14 },
   subtitle: { fontSize: 14, marginTop: 5 },
   stars: { flexDirection: "row", gap: 3, marginTop: 14 },
+  edit: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    height: 46,
+    borderRadius: 999,
+    marginTop: 22,
+  },
+  editText: { fontSize: 14, fontWeight: "600" },
   fields: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 24 },
   card: { borderRadius: 10, padding: 14 },
   fieldCard: { width: "47%" },
