@@ -34,6 +34,7 @@ export function AuthForm({ logic }: { readonly logic: ReturnType<typeof useAccou
           value={logic.displayName}
           onChangeText={logic.setDisplayName}
           textContentType="name"
+          placeholder={t("auth.namePlaceholder")}
         />
       )}
 
@@ -45,6 +46,7 @@ export function AuthForm({ logic }: { readonly logic: ReturnType<typeof useAccou
         keyboardType="email-address"
         autoCapitalize="none"
         textContentType="emailAddress"
+        placeholder={t("auth.emailPlaceholder")}
       />
 
       <PasswordInput logic={logic} registering={registering} />
@@ -137,6 +139,8 @@ function PasswordInput({
           secureTextEntry={!visible}
           autoCapitalize="none"
           textContentType={registering ? "newPassword" : "password"}
+          placeholder={registering ? t("auth.newPasswordPlaceholder") : t("auth.passwordPlaceholder")}
+          placeholderTextColor={colors.inkSubtle}
           style={styles.input}
         />
         <Pressable
@@ -180,7 +184,7 @@ function Field({
       <Text style={styles.label}>{label}</Text>
       <View style={styles.inputBox}>
         {icon}
-        <TextInput {...input} style={styles.input} />
+        <TextInput placeholderTextColor={colors.inkSubtle} {...input} style={styles.input} />
       </View>
     </View>
   );
