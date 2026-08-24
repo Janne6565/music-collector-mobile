@@ -1,10 +1,10 @@
 /*
  * MIRROR of music-collector-frontend/src/local/copyWrites.ts
  *
- * The web and mobile apps must agree exactly on the clock, the domain shape and the write
- * path, or the same collection would merge differently depending on which device synced
- * last. These files are copied verbatim for now; phase 3 extracts them into a shared
- * package alongside the merge function. Until then: change both, in the same commit.
+ * The web and mobile apps must agree exactly on the clock, the domain shape, the write
+ * path and the merge, or the same collection would converge differently depending on which
+ * device synced last. These files are copied verbatim for now; phase 3+ extracts them into
+ * a shared package. Until then: change both, in the same commit.
  */
 import { type Hlc, hlcEncode } from "@/domain/hlc";
 import type { Copy, CopyMergeableField, Release } from "@/domain/types";
@@ -53,6 +53,7 @@ export function createCopy(
     purchasedOn: draft.purchasedOn,
     purchasedAt: draft.purchasedAt,
     notes: draft.notes,
+    notesConflict: null,
     rating: draft.rating,
     createdAt: now,
     deletedAt: null,
@@ -79,6 +80,11 @@ export function applyCopyPatch(copy: Copy, patch: Partial<CopyDraft>, clock: Clo
   const stamp = hlcEncode(clock.next());
   const fieldClocks = { ...copy.fieldClocks };
   const updated: Record<string, unknown> = { ...copy };
+  if (changed.includes("notes")) {
+    // Writing the notes is how a person resolves a conflict: they have seen both versions
+    // and chosen what the text should say, so the other one stops being pending.
+    updated.notesConflict = null;
+  }
   for (const key of changed) {
     fieldClocks[key as CopyMergeableField] = stamp;
     // Assigned key by key rather than by spreading `patch`: a patch carrying an explicit

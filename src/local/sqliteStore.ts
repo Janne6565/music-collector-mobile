@@ -41,6 +41,7 @@ export class SqliteLocalStore implements LocalStore {
         purchasedOn     TEXT,
         purchasedAt     TEXT,
         notes           TEXT,
+        notesConflict   TEXT,
         rating          INTEGER,
         createdAt       INTEGER NOT NULL,
         deletedAt       INTEGER,
@@ -137,8 +138,8 @@ export class SqliteLocalStore implements LocalStore {
     await this.handle().runAsync(
       `INSERT OR REPLACE INTO copies
         (id, releaseMbid, condition, pricePaidCents, currency, purchasedOn, purchasedAt,
-         notes, rating, createdAt, deletedAt, fieldClocks)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         notes, notesConflict, rating, createdAt, deletedAt, fieldClocks)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         copy.id,
         copy.releaseMbid,
@@ -148,6 +149,7 @@ export class SqliteLocalStore implements LocalStore {
         copy.purchasedOn,
         copy.purchasedAt,
         copy.notes,
+        copy.notesConflict,
         copy.rating,
         copy.createdAt,
         copy.deletedAt,

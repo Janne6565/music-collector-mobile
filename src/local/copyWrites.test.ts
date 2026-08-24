@@ -155,3 +155,27 @@ describe("tombstoneCopy", () => {
     expect(deleted.id).toBe(copy.id);
   });
 });
+
+describe("notes conflicts", () => {
+  it("clears a pending conflict when the person writes the notes themselves", () => {
+    // Editing the notes means they have read both versions and decided.
+    const clock = testClock();
+    const copy = createCopy(release, draft, clock, 5000, "copy-1");
+    const conflicted: typeof copy = { ...copy, notesConflict: "The other device's version." };
+
+    const patched = applyCopyPatch(conflicted, { notes: "Mine, resolved." }, clock);
+
+    expect(patched.notes).toBe("Mine, resolved.");
+    expect(patched.notesConflict).toBeNull();
+  });
+
+  it("leaves a pending conflict alone when some other field is edited", () => {
+    const clock = testClock();
+    const copy = createCopy(release, draft, clock, 5000, "copy-1");
+    const conflicted: typeof copy = { ...copy, notesConflict: "The other device's version." };
+
+    const patched = applyCopyPatch(conflicted, { rating: 3 }, clock);
+
+    expect(patched.notesConflict).toBe("The other device's version.");
+  });
+});
