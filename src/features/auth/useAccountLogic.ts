@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { type AccountUser, createAccount, signIn, signOut } from "@/api/auth";
+import { type AccountUser, type AuthProvider, authProviders, createAccount, requestPasswordReset, signIn, signOut } from "@/api/auth";
 import { refreshSession } from "@/api/client";
 import { useStore } from "@/local/StoreProvider";
 import { type FirstSyncStrategy, SyncEngine } from "@/sync/syncEngine";
@@ -18,6 +18,11 @@ export function useAccountLogic() {
   const [mode, setMode] = useState<AuthMode>("SIGN_IN");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [rememberMe, setRememberMe] = useState(true);
+  const [agreed, setAgreed] = useState(false);
+  const [providers, setProviders] = useState<AuthProvider[]>([]);
+  const [resetSent, setResetSent] = useState(false);
   const [failed, setFailed] = useState<AuthError | null>(null);
   const [busy, setBusy] = useState(false);
   const syncing = useRef(false);
@@ -44,6 +49,7 @@ export function useAccountLogic() {
           setUser(null);
         }
       }
+      setProviders(await authProviders());
       setRestoring(false);
     })();
   }, [decideFirstSync]);
@@ -77,8 +83,8 @@ export function useAccountLogic() {
     try {
       const account =
         mode === "REGISTER"
-          ? await createAccount(email.trim(), password)
-          : await signIn(email.trim(), password);
+          ? await createAccount(email.trim(), password, displayName.trim())
+          : await signIn(email.trim(), password, rememberMe);
       setUser(account);
       setFirstSyncPending(await decideFirstSync());
       setPassword("");
@@ -88,7 +94,14 @@ export function useAccountLogic() {
     } finally {
       setBusy(false);
     }
-  }, [mode, email, password, decideFirstSync]);
+  }, [mode, email, password, displayName, rememberMe, decideFirstSync]);
+
+  const forgotPassword = useCallback(async () => {
+    setBusy(true);
+    await requestPasswordReset(email.trim());
+    setResetSent(true);
+    setBusy(false);
+  }, [email]);
 
   const resolveFirstSync = useCallback(
     async (strategy: FirstSyncStrategy) => {
@@ -126,7 +139,19 @@ export function useAccountLogic() {
     setEmail,
     password,
     setPassword,
-    canSubmit: email.trim().length > 0 && password.length > 0,
+    displayName,
+    setDisplayName,
+    rememberMe,
+    setRememberMe,
+    agreed,
+    setAgreed,
+    providers,
+    resetSent,
+    forgotPassword,
+    // Completeness only, except the terms box: that is a required acknowledgement rather
+    // than a format rule, so it does gate the button.
+    canSubmit:
+      email.trim().length > 0 && password.length > 0 && (mode === "SIGN_IN" || agreed),
     submit,
     busy,
     failed,

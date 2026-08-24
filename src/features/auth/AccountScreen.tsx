@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { AuthForm } from "@/features/auth/AuthForm";
 import { CollectionStatsBlock } from "@/features/profile/CollectionStatsBlock";
 import { useAccountLogic } from "@/features/auth/useAccountLogic";
 import type { FirstSyncStrategy } from "@/sync/syncEngine";
@@ -30,60 +31,10 @@ export function AccountScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.body}>
-        {logic.user === null ? <SignInForm logic={logic} /> : <SignedIn logic={logic} />}
+        {logic.user === null ? <AuthForm logic={logic} /> : <SignedIn logic={logic} />}
         <CollectionStatsBlock />
       </ScrollView>
     </SafeAreaView>
-  );
-}
-
-function SignInForm({ logic }: { readonly logic: ReturnType<typeof useAccountLogic> }) {
-  const { t } = useTranslation();
-  const registering = logic.mode === "REGISTER";
-
-  return (
-    <>
-      <Text style={styles.title}>{registering ? t("auth.createTitle") : t("auth.signInTitle")}</Text>
-      <Text style={styles.lede}>{t("auth.optional")}</Text>
-
-      <Text style={styles.label}>{t("auth.email")}</Text>
-      <TextInput
-        value={logic.email}
-        onChangeText={logic.setEmail}
-        autoCapitalize="none"
-        keyboardType="email-address"
-        textContentType="emailAddress"
-        style={styles.input}
-      />
-
-      <Text style={styles.label}>{t("auth.password")}</Text>
-      <TextInput
-        value={logic.password}
-        onChangeText={logic.setPassword}
-        secureTextEntry
-        textContentType={registering ? "newPassword" : "password"}
-        style={styles.input}
-      />
-
-      {logic.failed !== null && <Text style={styles.error}>{errorMessage(logic.failed, t)}</Text>}
-
-      <Pressable
-        accessibilityRole="button"
-        onPress={() => void logic.submit()}
-        disabled={!logic.canSubmit || logic.busy}
-        style={[styles.primary, (!logic.canSubmit || logic.busy) && styles.disabled]}
-      >
-        {logic.busy ? (
-          <ActivityIndicator size="small" color={colors.paper} />
-        ) : (
-          <Text style={styles.primaryText}>{registering ? t("auth.create") : t("auth.signIn")}</Text>
-        )}
-      </Pressable>
-
-      <Pressable accessibilityRole="button" onPress={() => logic.setMode(registering ? "SIGN_IN" : "REGISTER")}>
-        <Text style={styles.link}>{registering ? t("auth.haveAccount") : t("auth.needAccount")}</Text>
-      </Pressable>
-    </>
   );
 }
 
@@ -91,7 +42,7 @@ function SignedIn({ logic }: { readonly logic: ReturnType<typeof useAccountLogic
   const { t } = useTranslation();
   return (
     <>
-      <Text style={styles.title}>{logic.user?.email}</Text>
+      <Text style={styles.title}>{logic.user?.displayName ?? logic.user?.email}</Text>
       <Text style={styles.lede}>{t("auth.syncing")}</Text>
       <Pressable
         accessibilityRole="button"
@@ -140,16 +91,6 @@ function FirstSyncPrompt({
       </View>
     </SafeAreaView>
   );
-}
-
-/** Typed i18n rejects a template key, and rightly so — a typo would be a runtime miss. */
-function errorMessage(error: NonNullable<ReturnType<typeof useAccountLogic>["failed"]>, t: (k: never) => string) {
-  const translate = t as unknown as (key: string) => string;
-  return error === "badCredentials"
-    ? translate("auth.error.badCredentials")
-    : error === "emailTaken"
-      ? translate("auth.error.emailTaken")
-      : translate("auth.error.generic");
 }
 
 const styles = StyleSheet.create({
