@@ -40,6 +40,7 @@ const release: Release = {
 
 const draft: CopyDraft = {
   condition: "VG_PLUS",
+  sleeveCondition: "NM",
   pricePaidCents: 400,
   currency: "EUR",
   purchasedOn: "2026-03-14",
@@ -64,6 +65,7 @@ describe("createCopy", () => {
         "purchasedOn",
         "rating",
         "releaseMbid",
+        "sleeveCondition",
       ].sort(),
     );
     expect(new Set(Object.values(copy.fieldClocks)).size).toBe(1);
@@ -76,6 +78,7 @@ describe("createCopy", () => {
       id: "copy-1",
       releaseMbid: "release-1",
       condition: "VG_PLUS",
+      sleeveCondition: "NM",
       pricePaidCents: 400,
       createdAt: 5000,
       deletedAt: null,

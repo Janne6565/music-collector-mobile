@@ -1,5 +1,6 @@
 import * as Linking from "expo-linking";
-import { Check, Disc3, Eye, EyeOff, Lock, Mail, User } from "lucide-react-native";
+import { useRouter } from "expo-router";
+import { ArrowRight, Check, ChevronLeft, Disc3, Eye, EyeOff, Lock, Mail, User } from "lucide-react-native";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
@@ -11,10 +12,26 @@ import { colors, fonts } from "@/theme/colors";
 /** Screens 4a and 4b. */
 export function AuthForm({ logic }: { readonly logic: ReturnType<typeof useAccountLogic> }) {
   const { t } = useTranslation();
+  const router = useRouter();
   const registering = logic.mode === "REGISTER";
+
+  /**
+   * Both the back control and the no-account path go to the library, because that is what
+   * "without an account" means here: the app you already have. Sign-in lives in a tab, so
+   * there is no stack to pop — leaving is a sideways move, not a retreat.
+   */
+  const leave = () => router.replace("/");
 
   return (
     <View style={styles.root}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={t("common.back")}
+        onPress={leave}
+        style={styles.back}
+      >
+        <ChevronLeft size={18} color={colors.inkMuted} strokeWidth={1.75} />
+      </Pressable>
       {registering ? (
         <Text style={styles.title}>{t("auth.createTitle")}</Text>
       ) : (
@@ -106,6 +123,17 @@ export function AuthForm({ logic }: { readonly logic: ReturnType<typeof useAccou
           {registering ? t("auth.haveAccount") : t("auth.needAccount")}
         </Text>
       </Pressable>
+
+      {/* The no-account path, given real weight rather than buried: the app is fully
+          usable without an account, and hiding that would be a lie about what signing in
+          is for. */}
+      <Pressable accessibilityRole="button" onPress={leave} style={styles.without}>
+        <Text style={styles.withoutText}>
+          {registering ? t("auth.skipRegister") : t("auth.useWithout")}
+        </Text>
+        <ArrowRight size={15} color={colors.ink} strokeWidth={1.9} />
+      </Pressable>
+      {!registering && <Text style={styles.withoutNote}>{t("auth.useWithoutBody")}</Text>}
     </View>
   );
 }
@@ -291,4 +319,32 @@ const styles = StyleSheet.create({
   },
   secondaryText: { fontSize: 14, fontWeight: "600", color: colors.ink },
   switchMode: { textAlign: "center", fontSize: 13, color: colors.inkMuted, marginTop: 4 },
+  back: {
+    width: 34,
+    height: 34,
+    borderRadius: 999,
+    backgroundColor: colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.line,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  without: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "center",
+    gap: 7,
+    paddingBottom: 2,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.line,
+  },
+  withoutText: { fontSize: 13, fontWeight: "600", color: colors.ink },
+  withoutNote: {
+    textAlign: "center",
+    fontSize: 11.5,
+    lineHeight: 17,
+    color: colors.inkSubtle,
+    maxWidth: 260,
+    alignSelf: "center",
+  },
 });

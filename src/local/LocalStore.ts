@@ -95,4 +95,14 @@ export interface LocalStore {
   /** Ids written locally since the last successful push. */
   readPendingIds(): Promise<string[]>;
   writePendingIds(ids: readonly string[]): Promise<void>;
+
+  /**
+   * Device-local preferences, keyed by name.
+   *
+   * Deliberately not synced: "sync is off on this phone" is a statement about this device,
+   * and pushing it would switch sync off everywhere the moment it was turned off anywhere —
+   * including, absurdly, disabling the sync that would carry the change back.
+   */
+  readSetting(key: string): Promise<string | undefined>;
+  writeSetting(key: string, value: string): Promise<void>;
 }

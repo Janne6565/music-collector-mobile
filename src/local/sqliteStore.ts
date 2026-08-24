@@ -48,6 +48,8 @@ const DEVICE_ID_KEY = "deviceId";
 const CLOCK_KEY = "clock";
 const CURSOR_KEY = "syncCursor";
 const PENDING_KEY = "pendingIds";
+/** Namespaced, so a preference can never collide with the sync bookkeeping above. */
+const SETTING_PREFIX = "setting:";
 
 /**
  * SQLite-backed store for the mobile app — the same interface the web app implements over
@@ -77,6 +79,7 @@ export class SqliteLocalStore implements LocalStore {
         id              TEXT PRIMARY KEY NOT NULL,
         releaseMbid     TEXT NOT NULL,
         condition       TEXT,
+        sleeveCondition TEXT,
         pricePaidCents  INTEGER,
         currency        TEXT NOT NULL,
         purchasedOn     TEXT,
@@ -140,6 +143,13 @@ export class SqliteLocalStore implements LocalStore {
         value TEXT NOT NULL
       );
     `);
+    // `CREATE TABLE IF NOT EXISTS` leaves an existing database on its old shape, so a column
+    // added later has to be added explicitly. PRAGMA rather than a version number: it asks
+    // the database what it actually has, which cannot drift the way a stored version can.
+    const columns = await db.getAllAsync<{ name: string }>("PRAGMA table_info(copies)");
+    if (!columns.some((column) => column.name === "sleeveCondition")) {
+      await db.execAsync("ALTER TABLE copies ADD COLUMN sleeveCondition TEXT");
+    }
     this.db = db;
   }
 
@@ -208,13 +218,14 @@ export class SqliteLocalStore implements LocalStore {
   private async write(copy: Copy): Promise<void> {
     await this.handle().runAsync(
       `INSERT OR REPLACE INTO copies
-        (id, releaseMbid, condition, pricePaidCents, currency, purchasedOn, purchasedAt,
-         notes, notesConflict, rating, createdAt, deletedAt, fieldClocks)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (id, releaseMbid, condition, sleeveCondition, pricePaidCents, currency, purchasedOn,
+         purchasedAt, notes, notesConflict, rating, createdAt, deletedAt, fieldClocks)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         copy.id,
         copy.releaseMbid,
         copy.condition,
+        copy.sleeveCondition,
         copy.pricePaidCents,
         copy.currency,
         copy.purchasedOn,
@@ -479,6 +490,14 @@ export class SqliteLocalStore implements LocalStore {
 
   async writePendingIds(ids: readonly string[]): Promise<void> {
     await this.writeMeta(PENDING_KEY, JSON.stringify(ids));
+  }
+
+  async readSetting(key: string): Promise<string | undefined> {
+    return (await this.readMeta(`${SETTING_PREFIX}${key}`)) ?? undefined;
+  }
+
+  async writeSetting(key: string, value: string): Promise<void> {
+    await this.writeMeta(`${SETTING_PREFIX}${key}`, value);
   }
 
   private async readMeta(key: string): Promise<string | undefined> {

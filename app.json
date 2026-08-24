@@ -23,7 +23,8 @@
           "photosPermission": "Music Collector uses your photo library so you can attach pictures of your own copies.",
           "cameraPermission": "Music Collector uses the camera to photograph your sleeves and scan barcodes."
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "ios": {
       "supportsTablet": true,

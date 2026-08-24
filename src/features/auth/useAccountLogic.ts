@@ -1,7 +1,20 @@
+import * as FileSystem from "expo-file-system/legacy";
+import * as Sharing from "expo-sharing";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { type AccountUser, type AuthProvider, authProviders, createAccount, requestPasswordReset, signIn, signOut } from "@/api/auth";
+import {
+  type AccountUser,
+  type AuthProvider,
+  authProviders,
+  createAccount,
+  deleteAccount,
+  requestPasswordReset,
+  signIn,
+  signOut,
+} from "@/api/auth";
 import { refreshSession } from "@/api/client";
+import { toCsv } from "@/domain/csv";
 import { useStore } from "@/local/StoreProvider";
+import { readLastSyncedAt, readSyncEnabled, writeLastSyncedAt, writeSyncEnabled } from "@/local/settings";
 import { type FirstSyncStrategy, SyncEngine } from "@/sync/syncEngine";
 
 export type AuthMode = "SIGN_IN" | "REGISTER";
@@ -25,6 +38,8 @@ export function useAccountLogic() {
   const [resetSent, setResetSent] = useState(false);
   const [failed, setFailed] = useState<AuthError | null>(null);
   const [busy, setBusy] = useState(false);
+  const [syncEnabled, setSyncEnabledState] = useState(true);
+  const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
   const syncing = useRef(false);
 
   const decideFirstSync = useCallback(async () => {
@@ -50,9 +65,11 @@ export function useAccountLogic() {
         }
       }
       setProviders(await authProviders());
+      setSyncEnabledState(await readSyncEnabled(store));
+      setLastSyncedAt(await readLastSyncedAt(store));
       setRestoring(false);
     })();
-  }, [decideFirstSync]);
+  }, [decideFirstSync, store]);
 
   useEffect(() => {
     if (user === null || firstSyncPending) return;
@@ -61,9 +78,15 @@ export function useAccountLogic() {
     const run = async () => {
       // A slow sync must not stack up behind itself on a flaky connection.
       if (syncing.current) return;
+      // Read every tick rather than once: the account screen can switch this off while the
+      // interval is already running, and it should take effect on the next tick.
+      if (!(await readSyncEnabled(store))) return;
       syncing.current = true;
       try {
         await engine.sync();
+        const at = Date.now();
+        await writeLastSyncedAt(store, at);
+        setLastSyncedAt(at);
       } catch {
         // Offline or the server is down. Local changes stay recorded as pending, so the
         // next tick picks them up; nothing is lost.
@@ -126,9 +149,50 @@ export function useAccountLogic() {
     // behaves with no account, and wiping someone's records would be a way to lose data.
   }, []);
 
+  /**
+   * The collection as a file. Built on the device from the local store, so it works
+   * offline and works identically with no account at all.
+   */
+  const exportCsv = useCallback(async () => {
+    const copies = await store.listCopies();
+    const releases = await store.getReleases(copies.map((copy) => copy.releaseMbid));
+    const file = `${FileSystem.cacheDirectory}music-collector-${new Date().toISOString().slice(0, 10)}.csv`;
+    await FileSystem.writeAsStringAsync(file, toCsv(copies, releases));
+    // The share sheet is the only way to get a file off a phone: there is no download
+    // folder to write to and no browser to hand it to.
+    if (await Sharing.isAvailableAsync()) {
+      await Sharing.shareAsync(file, { mimeType: "text/csv", UTI: "public.comma-separated-values-text" });
+    }
+  }, [store]);
+
+  const removeAccount = useCallback(async () => {
+    setBusy(true);
+    try {
+      await deleteAccount();
+      setUser(null);
+      setFirstSyncPending(false);
+      // The cursor points into a change log that no longer exists; leaving it would make a
+      // later sign-in believe it had already pulled everything.
+      await store.writeSyncCursor(0);
+    } finally {
+      setBusy(false);
+    }
+  }, [store]);
+
   return {
     user,
     restoring,
+    syncEnabled,
+    setSyncEnabled: useCallback(
+      async (enabled: boolean) => {
+        setSyncEnabledState(enabled);
+        await writeSyncEnabled(store, enabled);
+      },
+      [store],
+    ),
+    lastSyncedAt,
+    exportCsv,
+    deleteAccount: removeAccount,
     firstSyncPending,
     mode,
     setMode: useCallback((next: AuthMode) => {

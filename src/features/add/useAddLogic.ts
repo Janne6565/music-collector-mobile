@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { lookupByBarcode, searchReleases } from "@/api/releases";
 import type { Release } from "@/domain/types";
 import { createCopy } from "@/local/copyWrites";
+import { clearRecentSearches, readRecentSearches, rememberSearch } from "@/local/settings";
 import { createWishlistItem } from "@/local/wishWrites";
 import { useStore } from "@/local/StoreProvider";
 import * as Crypto from "expo-crypto";
@@ -36,6 +37,7 @@ export function useAddLogic() {
         release,
         {
           condition: null,
+          sleeveCondition: null,
           pricePaidCents: null,
           currency: "EUR",
           purchasedOn: null,
@@ -85,17 +87,50 @@ export function useAddLogic() {
     },
   });
 
+  /** The empty state of screen 5a: what you looked for last. */
+  const recent = useQuery({
+    queryKey: ["recentSearches"],
+    queryFn: () => readRecentSearches(store),
+  });
+
+  const forgetSearches = useMutation({
+    mutationFn: () => clearRecentSearches(store),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["recentSearches"] });
+    },
+  });
+
+  const wishlist = useQuery({ queryKey: ["wishlist"], queryFn: () => store.listWishlist() });
+
+  const run = useCallback(
+    (query: string) => {
+      setSubmitted(query);
+      // Remembered on submit rather than on keystroke, so the list holds searches somebody
+      // meant, not every prefix they passed through on the way. A barcode is skipped: a
+      // number nobody typed is not a search anybody would want to repeat.
+      if (!BARCODE.test(query.trim())) {
+        void rememberSearch(store, query).then(() =>
+          queryClient.invalidateQueries({ queryKey: ["recentSearches"] }),
+        );
+      }
+    },
+    [store, queryClient],
+  );
+
   /** A scanned barcode goes straight into the search box and submits itself. */
-  const handleScan = useCallback((barcode: string) => {
-    setScanning(false);
-    setTerm(barcode);
-    setSubmitted(barcode);
-  }, []);
+  const handleScan = useCallback(
+    (barcode: string) => {
+      setScanning(false);
+      setTerm(barcode);
+      run(barcode);
+    },
+    [run],
+  );
 
   return {
     term,
     setTerm,
-    submit: useCallback(() => setSubmitted(term), [term]),
+    submit: useCallback(() => run(term), [run, term]),
     canSubmit: term.trim().length > 0,
     scanning,
     startScanning: useCallback(() => setScanning(true), []),
@@ -105,6 +140,22 @@ export function useAddLogic() {
     searching: resultsQuery.isFetching,
     failed: resultsQuery.isError,
     hasSearched: submitted.trim() !== "",
+    submittedTerm: submitted.trim(),
+    /** True when the thing with no results was a scanned or pasted barcode (screen 8c). */
+    searchedBarcode: BARCODE.test(submitted.trim()),
+    recentSearches: recent.data ?? [],
+    repeatSearch: (value: string) => {
+      setTerm(value);
+      run(value);
+    },
+    clearRecent: () => forgetSearches.mutate(),
+    /** Screen 5a's quick-add strip: things you already said you wanted. */
+    wishlist: (wishlist.data ?? []).slice(0, 4),
+    searchWish: (title: string, artistName: string) => {
+      const query = `${artistName} ${title}`;
+      setTerm(query);
+      run(query);
+    },
     addRelease: (release: Release) => addCopy.mutate(release),
     addingMbid: addCopy.isPending ? addCopy.variables?.mbid : undefined,
     wishFor: (release: Release) => addWish.mutate(release),

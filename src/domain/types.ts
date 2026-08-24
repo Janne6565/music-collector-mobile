@@ -61,6 +61,7 @@ export interface Release {
 export const COPY_MERGEABLE_FIELDS = [
   "releaseMbid",
   "condition",
+  "sleeveCondition",
   "pricePaidCents",
   "currency",
   "purchasedOn",
@@ -78,7 +79,18 @@ export interface Copy {
   /** Client-generated, so a record created offline never collides on sync. */
   readonly id: string;
   readonly releaseMbid: string;
+  /**
+   * The media grade. Named `condition` rather than `mediaCondition` because it is the
+   * field that already syncs — renaming it would have meant a coordinated rename of the
+   * merge contract in three repositories for no gain.
+   */
   readonly condition: Condition | null;
+  /**
+   * The sleeve grade, judged separately from the media. A near-mint record in a ring-worn
+   * jacket is a different object from a near-mint one in a near-mint jacket, and that is
+   * how sellers list them.
+   */
+  readonly sleeveCondition: Condition | null;
   readonly pricePaidCents: number | null;
   readonly currency: string;
   /** ISO date, no time — you know the day you bought a record, not the minute. */
