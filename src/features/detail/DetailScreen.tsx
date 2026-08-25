@@ -13,6 +13,7 @@ import {
   FORMAT_LABELS,
   chromeFor,
   copyFormat,
+  copyPreviewSrc,
 } from "@janne6565/music-collector-shared";
 import { CopyEditor } from "@/features/detail/CopyEditor";
 import { useCoverWash } from "@/features/detail/useCoverWash";
@@ -152,7 +153,7 @@ function DetailBody({
             format={copyFormat(copy, release)}
             style={styles.coverImage}
             variant="bleed"
-            fallbackUri={photos.firstUri}
+            previewUri={copyPreviewSrc(copy, photos.firstUri)}
             allowCatalogArt={copy.catalogArt !== "HIDDEN"}
           />
           <SafeAreaView style={styles.backWrap} edges={["top"]}>

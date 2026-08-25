@@ -12,6 +12,7 @@ import {
   signOut,
 } from "@/api/auth";
 import { refreshSession } from "@/api/client";
+import { signInWithProvider } from "@/features/auth/externalSignIn";
 import { toCsv } from "@/domain/csv";
 import { useStore } from "@/local/StoreProvider";
 import { readLastSyncedAt, readSyncEnabled, writeLastSyncedAt, writeSyncEnabled } from "@/local/settings";
@@ -120,6 +121,32 @@ export function useAccountLogic() {
     }
   }, [mode, email, password, displayName, rememberMe, decideFirstSync]);
 
+  /**
+   * Google or Apple. Ends in the same place a password sign-in does — the round trip
+   * through the browser is an implementation detail of proving who somebody is.
+   */
+  const signInWith = useCallback(
+    async (providerId: string) => {
+      setBusy(true);
+      setFailed(null);
+      try {
+        const result = await signInWithProvider(providerId);
+        // Closing the browser is a decision, not a failure; saying "something went wrong"
+        // about it would be telling somebody their own choice was a mistake.
+        if (result.outcome === "CANCELLED") return;
+        if (result.outcome === "FAILED") {
+          setFailed("generic");
+          return;
+        }
+        setUser(result.user);
+        setFirstSyncPending(await decideFirstSync());
+      } finally {
+        setBusy(false);
+      }
+    },
+    [decideFirstSync],
+  );
+
   const forgotPassword = useCallback(async () => {
     setBusy(true);
     await requestPasswordReset(email.trim());
@@ -211,6 +238,7 @@ export function useAccountLogic() {
     agreed,
     setAgreed,
     providers,
+    signInWith,
     resetSent,
     forgotPassword,
     // Completeness only, except the terms box: that is a required acknowledgement rather

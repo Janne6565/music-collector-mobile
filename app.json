@@ -25,7 +25,8 @@
           "cameraPermission": "Music Collector uses the camera to photograph your sleeves and scan barcodes."
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      "expo-web-browser"
     ],
     "ios": {
       "supportsTablet": true,

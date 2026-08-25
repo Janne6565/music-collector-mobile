@@ -1,10 +1,8 @@
-import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
 import { ArrowRight, Check, ChevronLeft, Disc3, Eye, EyeOff, Lock, Mail, User } from "lucide-react-native";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-import { API_BASE } from "@/api/config";
 import { passwordStrength } from "@janne6565/music-collector-shared";
 import type { useAccountLogic } from "@/features/auth/useAccountLogic";
 import { colors, fonts } from "@/theme/colors";
@@ -106,9 +104,11 @@ export function AuthForm({ logic }: { readonly logic: ReturnType<typeof useAccou
               key={provider.id}
               accessibilityRole="button"
               // Opened in the system browser: the provider will refuse an embedded webview,
-              // and the system browser is where any existing session already lives.
-              onPress={() => void Linking.openURL(`${API_BASE}/api/v1/auth/oauth/${provider.id}/authorize`)}
-              style={styles.secondary}
+              // and the system browser is where any existing session already lives. The
+              // browser hands control back to the app when it is done.
+              onPress={() => void logic.signInWith(provider.id)}
+              disabled={logic.busy}
+              style={[styles.secondary, logic.busy && styles.dim]}
             >
               <Text style={styles.secondaryText}>
                 {t("auth.continueWith", { provider: provider.displayName })}

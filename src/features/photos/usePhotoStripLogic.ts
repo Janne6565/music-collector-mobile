@@ -80,8 +80,9 @@ export function usePhotoStripLogic(copyId: string) {
   return {
     photos: photos.data ?? [],
     /**
-     * The first photo, for the detail hero to stand in with when the release has no
-     * artwork of its own.
+     * The first photo of this copy — its preview, which outranks the catalogue's artwork
+     * rather than standing in for it. Pass it through `copyPreviewSrc`, which is null
+     * when the catalogue art has been starred instead.
      */
     firstUri: first === undefined ? null : store.photoUri(first.id),
     uriFor: useCallback((photo: Photo) => store.photoUri(photo.id), [store]),

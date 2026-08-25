@@ -60,6 +60,23 @@ export async function authProviders(): Promise<AuthProvider[]> {
   return request<AuthProvider[]>("/api/v1/auth/providers", { noRetry: true }).catch(() => []);
 }
 
+/**
+ * Finishes an external sign-in by redeeming the one-time code the callback deep-linked
+ * back with.
+ *
+ * The code is not a credential on its own — it only becomes a session here, over the app's
+ * own connection, which is why it is safe for it to have travelled through a URL.
+ */
+export async function completeExternalSignIn(code: string): Promise<AccountUser> {
+  return adopt(
+    await request<SessionPayload>("/api/v1/auth/oauth/exchange", {
+      method: "POST",
+      body: { code },
+      noRetry: true,
+    }),
+  );
+}
+
 /** Always resolves: a different answer for a registered address would leak who has one. */
 export async function requestPasswordReset(email: string): Promise<void> {
   await request("/api/v1/auth/forgot-password", {

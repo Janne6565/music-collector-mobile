@@ -6,7 +6,7 @@ import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ReleaseArt } from "@/components/ReleaseArt";
 import type { Format } from "@janne6565/music-collector-shared";
-import { catalogArtShown, copyFormat } from "@janne6565/music-collector-shared";
+import { catalogArtShown, copyFormat, copyPreviewSrc } from "@janne6565/music-collector-shared";
 import { FORMAT_LABELS } from "@janne6565/music-collector-shared";
 import { type FormatFilter, type LibraryRow, useLibraryLogic } from "@/features/library/useLibraryLogic";
 import { useCoverPhotos } from "@/features/photos/useCoverPhotos";
@@ -74,7 +74,7 @@ export function LibraryScreen() {
             <GridItem
               row={item}
               onPress={() => router.push(`/copies/${item.copy.id}`)}
-              fallbackUri={covers.get(item.copy.id) ?? null}
+              previewUri={copyPreviewSrc(item.copy, covers.get(item.copy.id) ?? null)}
               allowCatalogArt={catalogArtShown(item.copy, true)}
             />
           )}
@@ -90,12 +90,12 @@ export function LibraryScreen() {
 function GridItem({
   row,
   onPress,
-  fallbackUri,
+  previewUri,
   allowCatalogArt,
 }: {
   readonly row: LibraryRow;
   readonly onPress: () => void;
-  readonly fallbackUri: string | null;
+  readonly previewUri: string | null;
   readonly allowCatalogArt: boolean;
 }) {
   return (
@@ -103,7 +103,7 @@ function GridItem({
       <ReleaseArt
         release={row.release}
         format={copyFormat(row.copy, row.release)}
-        fallbackUri={fallbackUri}
+        previewUri={previewUri}
         allowCatalogArt={allowCatalogArt}
       />
       <Text style={styles.itemTitle} numberOfLines={1}>

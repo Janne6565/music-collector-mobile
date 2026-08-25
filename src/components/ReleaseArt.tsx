@@ -48,7 +48,7 @@ export function ReleaseArt({
   release,
   style,
   variant = "sleeve",
-  fallbackUri = null,
+  previewUri = null,
   allowCatalogArt = true,
   format,
 }: {
@@ -56,13 +56,19 @@ export function ReleaseArt({
   readonly style?: ArtStyle;
   readonly variant?: "sleeve" | "bleed";
   /**
-   * What to show when the release's own cover turns out not to exist — the copy's first
-   * photo. Someone who photographs a sleeve the Cover Art Archive never had is telling us
-   * what this record looks like; the placeholder should not keep outranking that. Tried
-   * only once the archive URL is gone or has failed, so real artwork always wins — and a
-   * photo whose file is not on this device fails the same way, back to the placeholder.
+   * The copy's preview image — the first picture in its own list.
+   *
+   * It outranks the catalogue's artwork rather than standing in for it: the images of a
+   * copy are one ordered list with the catalogue art among them, and starring a photo is
+   * what puts it at the front. A preview that ranked below the archive would make that
+   * gesture do nothing on the four records in ten the archive does have — which is what
+   * this app did until the two clients were brought into line. Pass it through
+   * `copyPreviewSrc`, which is null when the catalogue art has been starred instead.
+   *
+   * The catalogue cover is still the next candidate, so a preview whose file is not on
+   * this device yet shows artwork rather than a placeholder.
    */
-  readonly fallbackUri?: string | null;
+  readonly previewUri?: string | null;
   /**
    * Whether the release's own cover art may be drawn at all.
    *
@@ -80,14 +86,24 @@ export function ReleaseArt({
   readonly format?: Format;
 }) {
   const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
-  // A set rather than one URL: with a fallback there are two addresses in play, and
+  // A set rather than one URL: with a preview there are two addresses in play, and
   // remembering only the last failure would let the first one look untried again.
   const [failed, setFailed] = useState<ReadonlySet<string>>(() => new Set());
   const cover = allowCatalogArt ? (release?.coverArtUrl ?? null) : null;
-  const url = cover === null || failed.has(cover) ? fallbackUri : cover;
+  // Preview first, catalogue second, and whichever has already failed is skipped.
+  const url =
+    [previewUri, cover].find((candidate) => candidate != null && !failed.has(candidate)) ?? null;
 
-  const gone = url === null || failed.has(url);
+  const gone = url === null;
   const shown = !gone && loadedUrl === url;
+  /**
+   * Whether the thing being waited for is a fetch.
+   *
+   * The breathing sleeve belongs to catalogue art and nothing else: a photo taken on this
+   * phone is already on it, so it paints on the frame it is asked for rather than
+   * inventing a wait for something that was never away.
+   */
+  const fetched = !gone && url !== previewUri;
   /**
    * The cover crosses over the sleeve rather than replacing it in one frame, which is
    * what stops a grid of covers arriving as a series of snaps.
@@ -115,7 +131,7 @@ export function ReleaseArt({
       <View style={[styles.frame, style]}>
         {/* Kept mounted underneath rather than swapped out, so nothing behind the frame
             is ever visible through an image that is still decoding. */}
-        {!shown && <FormatThumb format={format ?? release?.format ?? "OTHER"} waiting={!gone} />}
+        {!shown && <FormatThumb format={format ?? release?.format ?? "OTHER"} waiting={fetched} />}
         {art}
       </View>
     );
@@ -126,7 +142,7 @@ export function ReleaseArt({
       format={format ?? release?.format ?? "OTHER"}
       style={style}
       cover={art}
-      waiting={!gone && !shown}
+      waiting={fetched && !shown}
     />
   );
 }
