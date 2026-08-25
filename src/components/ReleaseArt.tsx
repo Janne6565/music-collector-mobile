@@ -1,7 +1,6 @@
 import { useRef, useState } from "react";
 import { Animated, StyleSheet, View, type ViewStyle } from "react-native";
 import { FormatThumb } from "@/components/FormatThumb";
-import { usePulse } from "@/components/Skeleton";
 import type { Release } from "@/domain/types";
 
 /**
@@ -12,18 +11,20 @@ import type { Release } from "@/domain/types";
 type ArtStyle = Pick<ViewStyle, "width" | "height" | "borderRadius" | "aspectRatio">;
 
 /**
- * A release's cover, falling back to the format placeholder.
+ * A release's cover.
  *
- * The fallback is not decoration. The server builds the Cover Art Archive URL from the
- * release mbid, and for a release it has not probed it cannot yet know whether any bytes
- * sit behind it — around four in ten do not. Without this the detail screen showed an
- * empty frame where the placeholder belonged.
+ * The format thumbnail underneath is not decoration, and it is not only a fallback. The
+ * server builds the Cover Art Archive URL from the release mbid, and for a release it has
+ * not probed it cannot yet know whether any bytes sit behind it — around four in ten do
+ * not. So the thumbnail holds the frame in all three cases: while the cover is on its way
+ * (the sleeve breathing to say so), when there turns out to be nothing behind the URL,
+ * and when there was never a URL at all.
  *
- * The same placeholder also holds the frame while the bytes are on their way, pulsing to
- * say the wait is still running. Using the silhouette rather than a grey block is what
- * keeps the two kinds of missing cover from reading as different things: the frame never
- * changes shape, the cover fades in over it, and a release that turns out to have no
- * cover simply keeps what was already on screen once the pulse stops.
+ * The cover is layered into the sleeve rather than over the tile. Replacing the whole
+ * composition would bury the very thing the silhouette is there to say — which format
+ * this copy is — in the one view where a release appears four times, once per format.
+ * `bleed` is the item detail's hero (screens 3a and 1j), which the deck draws as an
+ * edge-to-edge cover with no format furniture at all.
  *
  * The loaded and failed URLs are remembered rather than booleans, so the component
  * self-corrects when it is handed a different release without needing to be re-keyed by
@@ -34,9 +35,11 @@ type ArtStyle = Pick<ViewStyle, "width" | "height" | "borderRadius" | "aspectRat
 export function ReleaseArt({
   release,
   style,
+  variant = "sleeve",
 }: {
   readonly release: Release | undefined;
   readonly style?: ArtStyle;
+  readonly variant?: "sleeve" | "bleed";
 }) {
   const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
@@ -44,42 +47,46 @@ export function ReleaseArt({
 
   const gone = url === null || failedUrl === url;
   const shown = !gone && loadedUrl === url;
-  const pulse = usePulse(!gone && !shown);
   /**
-   * Separate from the pulse: the cover crosses over the silhouette rather than replacing
-   * it in one frame, which is what stops a grid of covers arriving as a series of snaps.
+   * The cover crosses over the sleeve rather than replacing it in one frame, which is
+   * what stops a grid of covers arriving as a series of snaps.
    */
   const reveal = useRef(new Animated.Value(0)).current;
 
+  const cover = gone ? null : (
+    <Animated.Image
+      source={{ uri: url }}
+      style={[StyleSheet.absoluteFill, { opacity: reveal }]}
+      // Reset here rather than on the URL changing: a component handed a second release
+      // would otherwise show its cover at full opacity the instant the source swapped,
+      // before any of its bytes had arrived.
+      onLoadStart={() => reveal.setValue(0)}
+      onLoad={() => {
+        setLoadedUrl(url);
+        Animated.timing(reveal, { toValue: 1, duration: 220, useNativeDriver: true }).start();
+      }}
+      onError={() => setFailedUrl(url)}
+    />
+  );
+
+  if (variant === "bleed") {
+    return (
+      <View style={[styles.frame, style]}>
+        {/* Kept mounted underneath rather than swapped out, so nothing behind the frame
+            is ever visible through an image that is still decoding. */}
+        {!shown && <FormatThumb format={release?.format ?? "OTHER"} waiting={!gone} />}
+        {cover}
+      </View>
+    );
+  }
+
   return (
-    <View style={[styles.frame, style]}>
-      {/* Kept mounted underneath rather than swapped out, so nothing behind the frame is
-          ever visible through an image that is still decoding. */}
-      {!shown && (
-        <Animated.View style={[StyleSheet.absoluteFill, { opacity: pulse }]}>
-          <FormatThumb format={release?.format ?? "OTHER"} />
-        </Animated.View>
-      )}
-      {!gone && (
-        <Animated.Image
-          source={{ uri: url }}
-          style={[StyleSheet.absoluteFill, { opacity: reveal }]}
-          // Reset here rather than on the URL changing: a component handed a second
-          // release would otherwise show its cover at full opacity the instant the
-          // source swapped, before any of its bytes had arrived.
-          onLoadStart={() => reveal.setValue(0)}
-          onLoad={() => {
-            setLoadedUrl(url);
-            Animated.timing(reveal, {
-              toValue: 1,
-              duration: 220,
-              useNativeDriver: true,
-            }).start();
-          }}
-          onError={() => setFailedUrl(url)}
-        />
-      )}
-    </View>
+    <FormatThumb
+      format={release?.format ?? "OTHER"}
+      style={style}
+      cover={cover}
+      waiting={!gone && !shown}
+    />
   );
 }
 

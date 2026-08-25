@@ -41,7 +41,7 @@ export function DetailScreen({ copyId }: { readonly copyId: string }) {
     <View style={[styles.root, { backgroundColor: chrome.background }]}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.cover}>
-          <ReleaseArt release={release} style={styles.coverImage} />
+          <ReleaseArt release={release} style={styles.coverImage} variant="bleed" />
           <SafeAreaView style={styles.backWrap} edges={["top"]}>
             <Pressable
               accessibilityRole="button"

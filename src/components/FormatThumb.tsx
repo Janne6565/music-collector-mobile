@@ -1,5 +1,7 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { StyleSheet, View, type ViewStyle } from "react-native";
+import type { ReactNode } from "react";
+import { Animated, StyleSheet, View, type ViewStyle } from "react-native";
+import { usePulse } from "@/components/Skeleton";
 import type { Format } from "@/domain/types";
 
 /**
@@ -12,11 +14,35 @@ import type { Format } from "@/domain/types";
  * React Native has no conic or repeating gradients, so the web version's textures are
  * approximated with layered views and a linear gradient sheen.
  */
-export function FormatThumb({ format, style }: { readonly format: Format; readonly style?: ViewStyle }) {
+export function FormatThumb({
+  format,
+  style,
+  cover,
+  waiting,
+}: {
+  readonly format: Format;
+  readonly style?: ViewStyle;
+  /**
+   * The real cover, drawn into the sleeve.
+   *
+   * Artwork belongs on the sleeve, not over the whole tile: a record sticks out past its
+   * cover, a CD sits in front of one. Which panel is the sleeve depends on the format —
+   * vinyl has a front panel over the record, the others use the full tile — and that is
+   * exactly the geometry this component already owns.
+   */
+  readonly cover?: ReactNode;
+  /** Breathes the sleeve while the cover it will hold is still on its way. */
+  readonly waiting?: boolean;
+}) {
+  const pulse = usePulse(waiting === true);
+  const vinyl = format === "VINYL";
+
   return (
     <View style={[styles.root, style]}>
-      <View style={styles.sleeve} />
-      {format === "VINYL" && <Vinyl />}
+      {/* For vinyl this is only the ground behind the record; the front panel below is
+          the sleeve that holds the cover. Every other format wears it as the sleeve. */}
+      <Sleeve style={styles.sleeve} fill={SLEEVE} pulse={pulse} cover={vinyl ? undefined : cover} />
+      {vinyl && <Vinyl cover={cover} pulse={pulse} />}
       {format === "CD" && <Disc />}
       {format === "CASSETTE" && <Cassette />}
       {(format === "DIGITAL" || format === "OTHER") && <Waveform />}
@@ -24,14 +50,41 @@ export function FormatThumb({ format, style }: { readonly format: Format; readon
   );
 }
 
-function Vinyl() {
+/**
+ * A sleeve panel: its paper, and whatever cover is printed on it.
+ *
+ * The paper is a sibling of the cover rather than the panel's own background, so it can
+ * breathe while the cover is still arriving without taking the cover with it.
+ */
+function Sleeve({
+  style,
+  fill,
+  pulse,
+  cover,
+}: {
+  readonly style: ViewStyle;
+  readonly fill: string;
+  readonly pulse: Animated.Value;
+  readonly cover?: ReactNode;
+}) {
+  return (
+    <View style={style}>
+      <Animated.View
+        style={[StyleSheet.absoluteFill, { backgroundColor: fill, opacity: pulse }]}
+      />
+      {cover}
+    </View>
+  );
+}
+
+function Vinyl({ cover, pulse }: { readonly cover?: ReactNode; readonly pulse: Animated.Value }) {
   return (
     <>
       <View style={styles.record}>
         <View style={styles.recordGroove} />
         <View style={styles.recordLabel} />
       </View>
-      <View style={styles.sleeveFront} />
+      <Sleeve style={styles.sleeveFront} fill="#eae6de" pulse={pulse} cover={cover} />
     </>
   );
 }
@@ -90,7 +143,7 @@ const SLEEVE = "#e7e2d9";
 
 const styles = StyleSheet.create({
   root: { width: "100%", aspectRatio: 1, position: "relative" },
-  sleeve: { ...StyleSheet.absoluteFill, backgroundColor: SLEEVE, borderRadius: 3 },
+  sleeve: { ...StyleSheet.absoluteFill, borderRadius: 3, overflow: "hidden" },
   sleeveFront: {
     position: "absolute",
     left: 0,
@@ -98,7 +151,7 @@ const styles = StyleSheet.create({
     width: "88%",
     height: "88%",
     borderRadius: 3,
-    backgroundColor: "#eae6de",
+    overflow: "hidden",
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: "rgba(25,23,19,0.14)",
   },
