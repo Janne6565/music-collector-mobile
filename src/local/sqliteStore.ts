@@ -337,6 +337,23 @@ export class SqliteLocalStore implements LocalStore {
     return rows.map(toPhoto);
   }
 
+  async listCoverPhotos(copyIds: readonly string[]): Promise<Map<string, Photo>> {
+    // An IN () with nothing in it is a syntax error, and the callers hit it on first paint.
+    if (copyIds.length === 0) return new Map();
+    const rows = await this.handle().getAllAsync<PhotoRow>(
+      `SELECT * FROM photos WHERE deletedAt IS NULL AND copyId IN (${copyIds.map(() => "?").join(",")}) ORDER BY sortIndex ASC`,
+      copyIds as string[],
+    );
+
+    const first = new Map<string, Photo>();
+    // Ordered by sortIndex, so the first row seen for a copy is the one the strip shows
+    // first — the same picture on the shelf as on the detail screen.
+    for (const row of rows) {
+      if (!first.has(row.copyId)) first.set(row.copyId, toPhoto(row));
+    }
+    return first;
+  }
+
   async getPhotoIncludingDeleted(id: string): Promise<Photo | undefined> {
     const row = await this.handle().getFirstAsync<PhotoRow>("SELECT * FROM photos WHERE id = ?", [id]);
     return row === null ? undefined : toPhoto(row);

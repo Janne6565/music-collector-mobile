@@ -15,6 +15,8 @@ export type PhotoSource = "CAMERA" | "LIBRARY";
  * On a phone the camera is the point — you are holding the record — so taking one is a
  * first-class action rather than a file picker afterthought.
  */
+export type PhotoStripLogic = ReturnType<typeof usePhotoStripLogic>;
+
 export function usePhotoStripLogic(copyId: string) {
   const { store, clock } = useStore();
   const queryClient = useQueryClient();
@@ -74,8 +76,15 @@ export function usePhotoStripLogic(copyId: string) {
     },
   });
 
+  const first = photos.data?.[0];
+
   return {
     photos: photos.data ?? [],
+    /**
+     * The first photo, for the detail hero to stand in with when the release has no
+     * artwork of its own.
+     */
+    firstUri: first === undefined ? null : store.photoUri(first.id),
     uriFor: useCallback((photo: Photo) => store.photoUri(photo.id), [store]),
     add: (source: PhotoSource) => add.mutate(source),
     adding: add.isPending,

@@ -50,6 +50,12 @@ export interface LocalStore {
 
   /** Live photos for one copy, in strip order. */
   listPhotos(copyId: string): Promise<Photo[]>;
+  /**
+   * The first photo of each of these copies, keyed by copy id, for the library grid to
+   * stand in with where a release has no artwork. One query rather than one per tile — a
+   * shelf of a few hundred records would otherwise open a few hundred of them.
+   */
+  listCoverPhotos(copyIds: readonly string[]): Promise<Map<string, Photo>>;
   getPhotoIncludingDeleted(id: string): Promise<Photo | undefined>;
   /** Photos whose bytes are on this device but not yet in object storage. */
   listPhotosAwaitingUpload(): Promise<Photo[]>;

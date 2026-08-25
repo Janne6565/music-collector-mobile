@@ -1,12 +1,14 @@
 import { useRouter } from "expo-router";
 import { Plus } from "lucide-react-native";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { FormatThumb } from "@/components/FormatThumb";
+import { ReleaseArt } from "@/components/ReleaseArt";
 import type { Format } from "@/domain/types";
 import { FORMAT_LABELS } from "@/domain/types";
 import { type FormatFilter, type LibraryRow, useLibraryLogic } from "@/features/library/useLibraryLogic";
+import { useCoverPhotos } from "@/features/photos/useCoverPhotos";
 import { colors, fonts } from "@/theme/colors";
 
 const FILTERS: readonly FormatFilter[] = ["ALL", "VINYL", "CD", "CASSETTE", "DIGITAL"];
@@ -15,6 +17,7 @@ export function LibraryScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const logic = useLibraryLogic();
+  const covers = useCoverPhotos(useMemo(() => logic.rows.map((row) => row.copy.id), [logic.rows]));
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
@@ -66,7 +69,13 @@ export function LibraryScreen() {
           contentContainerStyle={styles.grid}
           refreshing={logic.loading}
           onRefresh={logic.refetch}
-          renderItem={({ item }) => <GridItem row={item} onPress={() => router.push(`/copies/${item.copy.id}`)} />}
+          renderItem={({ item }) => (
+            <GridItem
+              row={item}
+              onPress={() => router.push(`/copies/${item.copy.id}`)}
+              fallbackUri={covers.get(item.copy.id) ?? null}
+            />
+          )}
           ListEmptyComponent={
             logic.loading ? null : <Text style={styles.emptyBody}>{t("library.noMatches")}</Text>
           }
@@ -76,10 +85,18 @@ export function LibraryScreen() {
   );
 }
 
-function GridItem({ row, onPress }: { readonly row: LibraryRow; readonly onPress: () => void }) {
+function GridItem({
+  row,
+  onPress,
+  fallbackUri,
+}: {
+  readonly row: LibraryRow;
+  readonly onPress: () => void;
+  readonly fallbackUri: string | null;
+}) {
   return (
     <Pressable onPress={onPress} style={styles.item}>
-      <FormatThumb format={row.release?.format ?? "OTHER"} />
+      <ReleaseArt release={row.release} fallbackUri={fallbackUri} />
       <Text style={styles.itemTitle} numberOfLines={1}>
         {row.release?.title ?? "—"}
       </Text>

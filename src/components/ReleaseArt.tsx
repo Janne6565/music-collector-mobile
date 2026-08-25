@@ -36,16 +36,28 @@ export function ReleaseArt({
   release,
   style,
   variant = "sleeve",
+  fallbackUri = null,
 }: {
   readonly release: Release | undefined;
   readonly style?: ArtStyle;
   readonly variant?: "sleeve" | "bleed";
+  /**
+   * What to show when the release's own cover turns out not to exist — the copy's first
+   * photo. Someone who photographs a sleeve the Cover Art Archive never had is telling us
+   * what this record looks like; the placeholder should not keep outranking that. Tried
+   * only once the archive URL is gone or has failed, so real artwork always wins — and a
+   * photo whose file is not on this device fails the same way, back to the placeholder.
+   */
+  readonly fallbackUri?: string | null;
 }) {
   const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
-  const [failedUrl, setFailedUrl] = useState<string | null>(null);
-  const url = release?.coverArtUrl ?? null;
+  // A set rather than one URL: with a fallback there are two addresses in play, and
+  // remembering only the last failure would let the first one look untried again.
+  const [failed, setFailed] = useState<ReadonlySet<string>>(() => new Set());
+  const cover = release?.coverArtUrl ?? null;
+  const url = cover === null || failed.has(cover) ? fallbackUri : cover;
 
-  const gone = url === null || failedUrl === url;
+  const gone = url === null || failed.has(url);
   const shown = !gone && loadedUrl === url;
   /**
    * The cover crosses over the sleeve rather than replacing it in one frame, which is
@@ -53,7 +65,7 @@ export function ReleaseArt({
    */
   const reveal = useRef(new Animated.Value(0)).current;
 
-  const cover = gone ? null : (
+  const art = gone ? null : (
     <Animated.Image
       source={{ uri: url }}
       style={[StyleSheet.absoluteFill, { opacity: reveal }]}
@@ -65,7 +77,7 @@ export function ReleaseArt({
         setLoadedUrl(url);
         Animated.timing(reveal, { toValue: 1, duration: 220, useNativeDriver: true }).start();
       }}
-      onError={() => setFailedUrl(url)}
+      onError={() => setFailed((seen) => new Set(seen).add(url))}
     />
   );
 
@@ -75,7 +87,7 @@ export function ReleaseArt({
         {/* Kept mounted underneath rather than swapped out, so nothing behind the frame
             is ever visible through an image that is still decoding. */}
         {!shown && <FormatThumb format={release?.format ?? "OTHER"} waiting={!gone} />}
-        {cover}
+        {art}
       </View>
     );
   }
@@ -84,7 +96,7 @@ export function ReleaseArt({
     <FormatThumb
       format={release?.format ?? "OTHER"}
       style={style}
-      cover={cover}
+      cover={art}
       waiting={!gone && !shown}
     />
   );

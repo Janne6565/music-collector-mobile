@@ -11,12 +11,14 @@ import { type DetailChrome, chromeFor } from "@/features/detail/theme";
 import { CopyEditor } from "@/features/detail/CopyEditor";
 import { useDetailLogic } from "@/features/detail/useDetailLogic";
 import { PhotoStrip } from "@/features/photos/PhotoStrip";
+import { usePhotoStripLogic } from "@/features/photos/usePhotoStripLogic";
 import { fonts } from "@/theme/colors";
 
 export function DetailScreen({ copyId }: { readonly copyId: string }) {
   const { t } = useTranslation();
   const router = useRouter();
   const logic = useDetailLogic(copyId);
+  const photos = usePhotoStripLogic(copyId);
   const [editing, setEditing] = useState(false);
 
   if (logic.loading) {
@@ -41,7 +43,12 @@ export function DetailScreen({ copyId }: { readonly copyId: string }) {
     <View style={[styles.root, { backgroundColor: chrome.background }]}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.cover}>
-          <ReleaseArt release={release} style={styles.coverImage} variant="bleed" />
+          <ReleaseArt
+            release={release}
+            style={styles.coverImage}
+            variant="bleed"
+            fallbackUri={photos.firstUri}
+          />
           <SafeAreaView style={styles.backWrap} edges={["top"]}>
             <Pressable
               accessibilityRole="button"
@@ -107,7 +114,7 @@ export function DetailScreen({ copyId }: { readonly copyId: string }) {
             </>
           )}
 
-          <PhotoStrip copyId={copy.id} chrome={chrome} />
+          <PhotoStrip logic={photos} chrome={chrome} />
 
           <View style={[styles.card, { backgroundColor: chrome.surface }]}>
             <Text style={[styles.fieldKey, { color: chrome.muted }]}>{t("detail.notes")}</Text>

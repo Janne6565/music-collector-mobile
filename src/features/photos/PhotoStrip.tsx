@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useRef } from "react";
 import { ActivityIndicator, Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import type { DetailChrome } from "@/features/detail/theme";
-import { usePhotoStripLogic } from "@/features/photos/usePhotoStripLogic";
+import type { PhotoStripLogic } from "@/features/photos/usePhotoStripLogic";
 
 /**
  * One thumbnail, over a tile that holds its place until the file has decoded.
@@ -37,14 +37,13 @@ function PhotoThumb({ uri, chrome }: { readonly uri: string; readonly chrome: De
  * brings them to your other devices.
  */
 export function PhotoStrip({
-  copyId,
+  logic,
   chrome,
 }: {
-  readonly copyId: string;
+  readonly logic: PhotoStripLogic;
   readonly chrome: DetailChrome;
 }) {
   const { t } = useTranslation();
-  const logic = usePhotoStripLogic(copyId);
 
   return (
     <View style={styles.root}>
