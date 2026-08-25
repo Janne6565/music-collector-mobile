@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { lookupRelease } from "@/api/releases";
-import type { Copy, CopyDraft, Release } from "@janne6565/music-collector-shared";
+import type { Copy, CopyPatch, Release } from "@janne6565/music-collector-shared";
 import { applyCopyPatch, tombstoneCopy } from "@janne6565/music-collector-shared";
 import { useStore } from "@/local/StoreProvider";
 
@@ -53,7 +53,7 @@ export function useDetailLogic(copyId: string) {
   };
 
   const save = useMutation({
-    mutationFn: async (patch: Partial<CopyDraft>) => {
+    mutationFn: async (patch: CopyPatch) => {
       const copy = await store.getCopy(copyId);
       if (copy === undefined) return;
       await store.putCopy(applyCopyPatch(copy, patch, clock));
@@ -76,7 +76,7 @@ export function useDetailLogic(copyId: string) {
   return {
     data: detailQuery.data ?? null,
     loading: detailQuery.isLoading,
-    save: (patch: Partial<CopyDraft>) => save.mutate(patch),
+    save: (patch: CopyPatch) => save.mutate(patch),
     saving: save.isPending,
     remove: () => remove.mutate(),
     removing: remove.isPending,

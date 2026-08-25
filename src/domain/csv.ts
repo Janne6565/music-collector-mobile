@@ -35,6 +35,19 @@ export const CSV_COLUMNS = [
 
 export interface CsvRow {
   readonly releaseId: string;
+  /**
+   * The pressing as the file names it, for a row whose `releaseId` is a `local:` one.
+   *
+   * A hand-entered copy has no archive entry to look up, so these columns — written for
+   * the person reading the spreadsheet — are the only record of what it is. Re-importing
+   * without them would turn every bootleg in an export into a skipped row.
+   */
+  readonly title: string;
+  readonly artist: string;
+  readonly year: number | null;
+  readonly format: Format;
+  readonly label: string | null;
+  readonly catalogNumber: string | null;
   readonly mediaCondition: Condition | null;
   readonly sleeveCondition: Condition | null;
   readonly pricePaidCents: number | null;
@@ -169,8 +182,15 @@ export function fromCsv(text: string): { rows: CsvRow[]; skipped: number } {
       continue;
     }
     const rating = Number.parseInt(at(row, "rating"), 10);
+    const year = Number.parseInt(at(row, "year"), 10);
     rows.push({
       releaseId,
+      title: at(row, "title"),
+      artist: at(row, "artist"),
+      year: Number.isNaN(year) ? null : year,
+      format: asFormat(at(row, "format")),
+      label: at(row, "label") === "" ? null : at(row, "label"),
+      catalogNumber: at(row, "catalogNumber") === "" ? null : at(row, "catalogNumber"),
       mediaCondition: asCondition(at(row, "mediaCondition")),
       sleeveCondition: asCondition(at(row, "sleeveCondition")),
       pricePaidCents: parseMoneyToCents(at(row, "pricePaid")),

@@ -1,13 +1,19 @@
 import { Star } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
-import type { Condition, Copy, CopyDraft, DetailChrome } from "@janne6565/music-collector-shared";
-import { CONDITIONS, CONDITION_SHORT, useCopyEditorLogic } from "@janne6565/music-collector-shared";
+import type { Condition, Copy, CopyPatch, DetailChrome, Format } from "@janne6565/music-collector-shared";
+import {
+  CONDITIONS,
+  CONDITION_SHORT,
+  FORMATS,
+  FORMAT_LABELS,
+  useCopyEditorLogic,
+} from "@janne6565/music-collector-shared";
 interface CopyEditorProps {
   readonly copy: Copy;
   readonly chrome: DetailChrome;
   readonly saving: boolean;
-  readonly onSave: (patch: Partial<CopyDraft>) => void;
+  readonly onSave: (patch: CopyPatch) => void;
   readonly onCancel: () => void;
 }
 
@@ -18,6 +24,67 @@ export function CopyEditor({ copy, chrome, saving, onSave, onCancel }: CopyEdito
 
   return (
     <View style={styles.root}>
+      {/* Only a hand-entered copy carries the pressing's own facts, and only it can correct
+          them — no archive is ever going to fix a typo in a bootleg nobody has listed. */}
+      {editor.manual && (
+        <>
+          <Labelled label={t("manual.artist")} chrome={chrome}>
+            <TextInput
+              value={editor.fields.artist}
+              onChangeText={(value) => editor.set("artist", value)}
+              placeholder={t("manual.artistPlaceholder")}
+              placeholderTextColor={chrome.muted}
+              style={[styles.input, { color: chrome.ink }]}
+            />
+          </Labelled>
+          <Labelled label={t("manual.title")} chrome={chrome}>
+            <TextInput
+              value={editor.fields.title}
+              onChangeText={(value) => editor.set("title", value)}
+              placeholder={t("manual.titlePlaceholder")}
+              placeholderTextColor={chrome.muted}
+              style={[styles.input, { color: chrome.ink }]}
+            />
+          </Labelled>
+          <Labelled label={t("manual.year")} chrome={chrome}>
+            <TextInput
+              value={editor.fields.year}
+              onChangeText={(value) => editor.set("year", value)}
+              keyboardType="number-pad"
+              maxLength={4}
+              placeholder="————"
+              placeholderTextColor={chrome.muted}
+              style={[styles.input, { color: chrome.ink }]}
+            />
+          </Labelled>
+          <Labelled label={t("manual.labelAndCatalog")} chrome={chrome}>
+            <TextInput
+              value={editor.fields.label}
+              onChangeText={(value) => editor.set("label", value)}
+              placeholder={t("manual.labelPlaceholder")}
+              placeholderTextColor={chrome.muted}
+              style={[styles.input, { color: chrome.ink }]}
+            />
+          </Labelled>
+          <Text style={[styles.legend, { color: chrome.muted }]}>{t("manual.format")}</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chips}
+          >
+            {FORMATS.map((format) => (
+              <Chip
+                key={format}
+                label={FORMAT_LABELS[format]}
+                active={editor.fields.format === format}
+                chrome={chrome}
+                onPress={() => editor.set("format", format as Format)}
+              />
+            ))}
+          </ScrollView>
+        </>
+      )}
+
       <GradeRow
         label={t("detail.mediaCondition")}
         value={editor.fields.condition}
@@ -112,8 +179,13 @@ export function CopyEditor({ copy, chrome, saving, onSave, onCancel }: CopyEdito
         <Pressable
           accessibilityRole="button"
           onPress={editor.submit}
-          disabled={saving}
-          style={[styles.primary, { backgroundColor: chrome.ink }, saving && styles.dim]}
+          // A hand-entered copy cleared of its artist or title has nothing left to name it.
+          disabled={saving || !editor.canSave}
+          style={[
+            styles.primary,
+            { backgroundColor: chrome.ink },
+            (saving || !editor.canSave) && styles.dim,
+          ]}
         >
           {saving ? (
             <ActivityIndicator size="small" color={chrome.background} />

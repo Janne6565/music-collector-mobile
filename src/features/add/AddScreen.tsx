@@ -184,16 +184,11 @@ function Body({ logic, onScan }: { readonly logic: Logic; readonly onScan: () =>
               {t("add.releaseCount", { count: logic.unfilteredCount })}
             </Text>
             {/* The deck puts the way into manual entry here, beside the releases it is an
-                alternative to. The form is still undesigned, so it reads as plainly
-                unavailable rather than being left out — the same call as on screens 5a
-                and 8c, where hiding it would only make it harder to find later. */}
-            <Text
-              accessibilityState={{ disabled: true }}
-              accessibilityLabel={`${t("add.enterManually")} — ${t("add.manualSoon")}`}
-              style={styles.sectionAction}
-            >
-              {t("add.manualCard.title")} · {t("add.soon")}
-            </Text>
+                alternative to: the moment you can see the archive's answer is not the one
+                you are holding is the moment you want to type it in yourself. */}
+            <Pressable accessibilityRole="button" onPress={() => router.push("/manual")}>
+              <Text style={styles.sectionAction}>{t("add.manualCard.title")}</Text>
+            </Pressable>
           </View>
         </>
       }
@@ -290,6 +285,7 @@ function SearchingRows() {
 /** Screen 5a — nothing searched yet. */
 function BeforeTyping({ logic, onScan }: { readonly logic: Logic; readonly onScan: () => void }) {
   const { t } = useTranslation();
+  const router = useRouter();
 
   return (
     <ScrollView contentContainerStyle={styles.list} keyboardShouldPersistTaps="handled">
@@ -299,22 +295,16 @@ function BeforeTyping({ logic, onScan }: { readonly logic: Logic; readonly onSca
           <Text style={styles.shortcutTitle}>{t("add.scanCard.title")}</Text>
           <Text style={styles.shortcutBody}>{t("add.scanCard.body")}</Text>
         </Pressable>
-        {/* Manual entry is in the deck but its form has not been designed. Shown rather
-            than hidden, so the way in is discoverable before it works — disabled and
-            labelled, so it never looks like a card that failed to respond. */}
-        <View
+        {/* The second card of screen 5a: the two ways in that are not a title search. */}
+        <Pressable
           accessibilityRole="button"
-          accessibilityState={{ disabled: true }}
-          accessibilityLabel={`${t("add.manualCard.title")} — ${t("add.manualSoon")}`}
-          style={[styles.shortcut, styles.shortcutDisabled]}
+          onPress={() => router.push("/manual")}
+          style={styles.shortcut}
         >
-          <PencilLine size={20} color="rgba(255,255,255,0.55)" strokeWidth={1.6} />
-          <View style={styles.shortcutTitleRow}>
-            <Text style={styles.shortcutTitleDim}>{t("add.manualCard.title")}</Text>
-            <Text style={styles.soon}>{t("add.soon")}</Text>
-          </View>
-          <Text style={styles.shortcutBody}>{t("add.manualSoon")}</Text>
-        </View>
+          <PencilLine size={20} color="#fff" strokeWidth={1.6} />
+          <Text style={styles.shortcutTitle}>{t("add.manualCard.title")}</Text>
+          <Text style={styles.shortcutBody}>{t("add.manualBody")}</Text>
+        </Pressable>
       </View>
 
       {logic.recentSearches.length > 0 && (
@@ -379,6 +369,7 @@ function BeforeTyping({ logic, onScan }: { readonly logic: Logic; readonly onSca
 /** Screen 8c — the barcode scanned fine and matched nothing. */
 function BarcodeNotFound({ logic, onScan }: { readonly logic: Logic; readonly onScan: () => void }) {
   const { t } = useTranslation();
+  const router = useRouter();
 
   return (
     <ScrollView contentContainerStyle={styles.list} keyboardShouldPersistTaps="handled">
@@ -401,19 +392,16 @@ function BarcodeNotFound({ logic, onScan }: { readonly logic: Logic; readonly on
         <Text style={styles.emptyBody}>{t("add.barcodeMissing.body")}</Text>
       </View>
 
-      {/* The deck makes manual entry the primary way out of here. The form does not exist
-          yet, so the button is present and plainly disabled rather than missing — a dead
-          end you can see is better than one you go looking for. */}
-      <View
+      {/* The deck makes manual entry the primary way out of here: a barcode the archive
+          does not know is the clearest possible sign that nobody has catalogued this. */}
+      <Pressable
         accessibilityRole="button"
-        accessibilityState={{ disabled: true }}
-        accessibilityLabel={`${t("add.enterManually")} — ${t("add.manualSoon")}`}
-        style={[styles.primaryAction, styles.actionDisabled]}
+        onPress={() => router.push("/manual")}
+        style={styles.primaryAction}
       >
-        <PencilLine size={16} color="rgba(20,19,17,0.45)" strokeWidth={1.9} />
+        <PencilLine size={16} color={colors.night} strokeWidth={1.9} />
         <Text style={styles.primaryActionText}>{t("add.enterManually")}</Text>
-        <Text style={styles.soonDark}>{t("add.soon")}</Text>
-      </View>
+      </Pressable>
       <Pressable
         accessibilityRole="button"
         onPress={() => logic.setTerm("")}
@@ -555,32 +543,7 @@ const styles = StyleSheet.create({
   list: { paddingHorizontal: 18, paddingTop: 14, paddingBottom: 28 },
   shortcuts: { flexDirection: "row", gap: 10 },
   shortcut: { flex: 1, gap: 9, padding: 14, borderRadius: 12, backgroundColor: RAISED },
-  shortcutDisabled: { opacity: 0.6 },
-  shortcutTitleRow: { flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" },
   shortcutTitle: { fontSize: 13, fontWeight: "600", color: "#fff" },
-  shortcutTitleDim: { fontSize: 13, fontWeight: "600", color: "rgba(255,255,255,0.7)" },
-  soon: {
-    fontSize: 9,
-    letterSpacing: 0.8,
-    textTransform: "uppercase",
-    color: "rgba(255,255,255,0.5)",
-    backgroundColor: "rgba(255,255,255,0.1)",
-    borderRadius: 999,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    overflow: "hidden",
-  },
-  soonDark: {
-    fontSize: 9,
-    letterSpacing: 0.8,
-    textTransform: "uppercase",
-    color: "rgba(20,19,17,0.45)",
-    backgroundColor: "rgba(20,19,17,0.08)",
-    borderRadius: 999,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    overflow: "hidden",
-  },
   shortcutBody: { fontSize: 11, lineHeight: 16, color: "rgba(255,255,255,0.45)" },
   sectionRow: {
     flexDirection: "row",
@@ -686,8 +649,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: "#fff",
   },
-  primaryActionText: { fontSize: 14, fontWeight: "600", color: "rgba(20,19,17,0.45)" },
-  actionDisabled: { opacity: 0.55 },
+  primaryActionText: { fontSize: 14, fontWeight: "600", color: colors.night },
   secondaryAction: {
     flexDirection: "row",
     alignItems: "center",

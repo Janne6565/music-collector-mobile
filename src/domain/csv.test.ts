@@ -23,6 +23,12 @@ const release: Release = {
 const copy: Copy = {
   id: "c1",
   releaseId: "r1",
+  manualTitle: null,
+  manualArtist: null,
+  manualYear: null,
+  manualLabel: null,
+  manualCatalogNumber: null,
+  manualFormat: null,
   condition: "VG_PLUS",
   sleeveCondition: "NM",
   catalogArt: "AUTO",
@@ -47,6 +53,14 @@ describe("csv", () => {
     expect(rows).toEqual([
       {
         releaseId: "r1",
+        // Carried through even for a catalogued row: which columns describe the pressing
+        // does not depend on where the pressing came from.
+        title: 'Bitches Brew, "complete"',
+        artist: "Miles Davis",
+        year: 1970,
+        format: "VINYL",
+        label: "Columbia",
+        catalogNumber: "GP 26",
         mediaCondition: "VG_PLUS",
         sleeveCondition: "NM",
         pricePaidCents: 3400,
@@ -57,6 +71,25 @@ describe("csv", () => {
         notes: "Gatefold, faint ring wear.\nPlays clean after a wash.",
       },
     ]);
+  });
+
+  it("keeps a hand-entered pressing readable, so an export of it can come back", () => {
+    // A `local:` row has no archive entry to look up on re-import — these columns are the
+    // only record of what the record is.
+    const { rows } = fromCsv(
+      "releaseId,title,artist,year,format,label,catalogNumber\n" +
+        "local:c9,Untitled live tape,Sun Ra Arkestra,1978,CASSETTE,Saturn,ES 9956\n",
+    );
+
+    expect(rows[0]).toMatchObject({
+      releaseId: "local:c9",
+      title: "Untitled live tape",
+      artist: "Sun Ra Arkestra",
+      year: 1978,
+      format: "CASSETTE",
+      label: "Saturn",
+      catalogNumber: "ES 9956",
+    });
   });
 
   it("locates columns by name, not position", () => {

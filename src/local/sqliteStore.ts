@@ -2,7 +2,12 @@ import * as FileSystem from "expo-file-system/legacy";
 import * as SQLite from "expo-sqlite";
 import * as Crypto from "expo-crypto";
 import type { CollectionStats, Copy, Format, Photo, Release, WishlistItem } from "@janne6565/music-collector-shared";
-import { FORMATS } from "@janne6565/music-collector-shared";
+import {
+  FORMATS,
+  isManualReleaseId,
+  manualRelease,
+  manualReleaseCopyId,
+} from "@janne6565/music-collector-shared";
 import type { LibraryFilter, LocalStore } from "@/local/LocalStore";
 
 const DATABASE = "music-collector.db";
@@ -78,6 +83,12 @@ export class SqliteLocalStore implements LocalStore {
       CREATE TABLE IF NOT EXISTS copies (
         id              TEXT PRIMARY KEY NOT NULL,
         releaseId     TEXT NOT NULL,
+        manualTitle     TEXT,
+        manualArtist    TEXT,
+        manualYear      INTEGER,
+        manualLabel     TEXT,
+        manualCatalogNumber TEXT,
+        manualFormat    TEXT,
         condition       TEXT,
         sleeveCondition TEXT,
         pricePaidCents  INTEGER,
@@ -150,6 +161,18 @@ export class SqliteLocalStore implements LocalStore {
     if (!columns.some((column) => column.name === "sleeveCondition")) {
       await db.execAsync("ALTER TABLE copies ADD COLUMN sleeveCondition TEXT");
     }
+    // The pressing a hand-entered copy describes itself (14a). Columns rather than a blob
+    // so the library's filter, search and sort can keep being one SQL statement.
+    if (!columns.some((column) => column.name === "manualTitle")) {
+      await db.execAsync(`
+        ALTER TABLE copies ADD COLUMN manualTitle TEXT;
+        ALTER TABLE copies ADD COLUMN manualArtist TEXT;
+        ALTER TABLE copies ADD COLUMN manualYear INTEGER;
+        ALTER TABLE copies ADD COLUMN manualLabel TEXT;
+        ALTER TABLE copies ADD COLUMN manualCatalogNumber TEXT;
+        ALTER TABLE copies ADD COLUMN manualFormat TEXT;
+      `);
+    }
     await this.qualifyIds(db, columns);
     this.db = db;
   }
@@ -195,22 +218,29 @@ export class SqliteLocalStore implements LocalStore {
     const clauses = ["c.deletedAt IS NULL"];
     const params: (string | number)[] = [];
 
+    // A hand-entered copy joins to no release row — it *is* its release — so every
+    // reference to the archive's columns falls back to the copy's own.
+    const title = "COALESCE(r.title, c.manualTitle)";
+    const artist = "COALESCE(r.artistName, c.manualArtist)";
+
     if (filter.format !== undefined && filter.format !== "ALL") {
-      clauses.push("r.format = ?");
+      clauses.push("COALESCE(r.format, c.manualFormat) = ?");
       params.push(filter.format);
     }
     const term = filter.search?.trim();
     if (term !== undefined && term !== "") {
-      clauses.push("(r.title LIKE ? OR r.artistName LIKE ? OR r.catalogNumber LIKE ? OR c.notes LIKE ?)");
+      clauses.push(
+        `(${title} LIKE ? OR ${artist} LIKE ? OR COALESCE(r.catalogNumber, c.manualCatalogNumber) LIKE ? OR c.notes LIKE ?)`,
+      );
       const like = `%${term}%`;
       params.push(like, like, like, like);
     }
 
     const order =
       filter.sort === "ARTIST_ASC"
-        ? "r.artistName COLLATE NOCASE ASC"
+        ? `${artist} COLLATE NOCASE ASC`
         : filter.sort === "YEAR_DESC"
-          ? "r.year DESC"
+          ? "COALESCE(r.year, c.manualYear) DESC"
           : "c.createdAt DESC";
 
     const rows = await this.handle().getAllAsync<CopyRow>(
@@ -235,6 +265,16 @@ export class SqliteLocalStore implements LocalStore {
   }
 
   async listCopiesInReleaseGroup(albumId: string): Promise<Copy[]> {
+    // A hand-entered pressing is its own album, under its own copy's id, so it is found
+    // directly rather than through a `releases` row it does not have.
+    const manualCopyId = manualReleaseCopyId(albumId);
+    if (manualCopyId !== null) {
+      const row = await this.handle().getFirstAsync<CopyRow>(
+        "SELECT * FROM copies WHERE id = ? AND deletedAt IS NULL",
+        [manualCopyId],
+      );
+      return row === null ? [] : [toCopy(row)];
+    }
     const rows = await this.handle().getAllAsync<CopyRow>(
       `SELECT c.* FROM copies c JOIN releases r ON r.id = c.releaseId
        WHERE r.albumId = ? AND c.deletedAt IS NULL`,
@@ -256,12 +296,20 @@ export class SqliteLocalStore implements LocalStore {
   private async write(copy: Copy): Promise<void> {
     await this.handle().runAsync(
       `INSERT OR REPLACE INTO copies
-        (id, releaseId, condition, sleeveCondition, pricePaidCents, currency, purchasedOn,
-         purchasedAt, notes, notesConflict, rating, createdAt, deletedAt, fieldClocks)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (id, releaseId, manualTitle, manualArtist, manualYear, manualLabel,
+         manualCatalogNumber, manualFormat, condition, sleeveCondition, pricePaidCents,
+         currency, purchasedOn, purchasedAt, notes, notesConflict, rating, createdAt,
+         deletedAt, fieldClocks)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         copy.id,
         copy.releaseId,
+        copy.manualTitle,
+        copy.manualArtist,
+        copy.manualYear,
+        copy.manualLabel,
+        copy.manualCatalogNumber,
+        copy.manualFormat,
         copy.condition,
         copy.sleeveCondition,
         copy.pricePaidCents,
@@ -291,7 +339,7 @@ export class SqliteLocalStore implements LocalStore {
       for (const release of releases) {
         await db.runAsync(
           `INSERT OR REPLACE INTO releases
-            (mbid, albumId, title, artistName, year, format, label, catalogNumber,
+            (id, albumId, title, artistName, year, format, label, catalogNumber,
              country, barcode, coverArtUrl, coverTheme, cachedAt)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
@@ -315,6 +363,15 @@ export class SqliteLocalStore implements LocalStore {
   }
 
   async getRelease(releaseId: string): Promise<Release | undefined> {
+    // A manual release is never cached: it is derived from the copy that describes it, so
+    // that a device which pulled the copy resolves it with no cache row at all.
+    const copyId = manualReleaseCopyId(releaseId);
+    if (copyId !== null) {
+      const row = await this.handle().getFirstAsync<CopyRow>("SELECT * FROM copies WHERE id = ?", [
+        copyId,
+      ]);
+      return row === null ? undefined : manualRelease(toCopy(row));
+    }
     const row = await this.handle().getFirstAsync<ReleaseRow>("SELECT * FROM releases WHERE id = ?", [releaseId]);
     return row === null ? undefined : toRelease(row);
   }
@@ -322,11 +379,31 @@ export class SqliteLocalStore implements LocalStore {
   async getReleases(releaseIds: readonly string[]): Promise<Map<string, Release>> {
     const unique = [...new Set(releaseIds)];
     if (unique.length === 0) return new Map();
-    const rows = await this.handle().getAllAsync<ReleaseRow>(
-      `SELECT * FROM releases WHERE id IN (${unique.map(() => "?").join(",")})`,
-      unique,
-    );
-    return new Map(rows.map((row) => [row.id, toRelease(row)]));
+    const found = new Map<string, Release>();
+
+    const manualCopyIds = unique
+      .map(manualReleaseCopyId)
+      .filter((id): id is string => id !== null);
+    if (manualCopyIds.length > 0) {
+      const copies = await this.handle().getAllAsync<CopyRow>(
+        `SELECT * FROM copies WHERE id IN (${manualCopyIds.map(() => "?").join(",")})`,
+        manualCopyIds,
+      );
+      for (const row of copies) {
+        const copy = toCopy(row);
+        found.set(copy.releaseId, manualRelease(copy));
+      }
+    }
+
+    const cachedIds = unique.filter((id) => !isManualReleaseId(id));
+    if (cachedIds.length > 0) {
+      const rows = await this.handle().getAllAsync<ReleaseRow>(
+        `SELECT * FROM releases WHERE id IN (${cachedIds.map(() => "?").join(",")})`,
+        cachedIds,
+      );
+      for (const row of rows) found.set(row.id, toRelease(row));
+    }
+    return found;
   }
 
   async listPhotos(copyId: string): Promise<Photo[]> {
@@ -486,13 +563,16 @@ export class SqliteLocalStore implements LocalStore {
       "SELECT COUNT(*) AS copyCount, SUM(COALESCE(pricePaidCents, 0)) AS totalSpentCents FROM copies WHERE deletedAt IS NULL",
     );
     const groups = await db.getFirstAsync<{ releaseGroupCount: number }>(
-      `SELECT COUNT(DISTINCT r.albumId) AS releaseGroupCount
-       FROM copies c JOIN releases r ON r.id = c.releaseId WHERE c.deletedAt IS NULL`,
+      // LEFT JOIN, and a hand-entered copy counts as its own album: an inner join drops
+      // every manual copy out of the count, so a shelf of nothing but bootlegs would
+      // report zero releases.
+      `SELECT COUNT(DISTINCT COALESCE(r.albumId, c.releaseId)) AS releaseGroupCount
+       FROM copies c LEFT JOIN releases r ON r.id = c.releaseId WHERE c.deletedAt IS NULL`,
     );
     const perFormat = await db.getAllAsync<{ format: string; n: number }>(
-      `SELECT r.format AS format, COUNT(*) AS n
-       FROM copies c JOIN releases r ON r.id = c.releaseId
-       WHERE c.deletedAt IS NULL GROUP BY r.format`,
+      `SELECT COALESCE(r.format, c.manualFormat) AS format, COUNT(*) AS n
+       FROM copies c LEFT JOIN releases r ON r.id = c.releaseId
+       WHERE c.deletedAt IS NULL GROUP BY COALESCE(r.format, c.manualFormat)`,
     );
 
     const byFormat = Object.fromEntries(FORMATS.map((format) => [format, 0])) as Record<Format, number>;

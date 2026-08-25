@@ -26,6 +26,14 @@ function toCopy(raw: unknown): Copy | null {
   return {
     id: dto.id,
     releaseId: dto.releaseId,
+    // The pressing a hand-entered copy describes itself. Null throughout on a matched one,
+    // and on anything a server older than the fields sends back.
+    manualTitle: dto.manualTitle ?? null,
+    manualArtist: dto.manualArtist ?? null,
+    manualYear: dto.manualYear ?? null,
+    manualLabel: dto.manualLabel ?? null,
+    manualCatalogNumber: dto.manualCatalogNumber ?? null,
+    manualFormat: dto.manualFormat ?? null,
     condition: dto.condition ?? null,
     sleeveCondition: dto.sleeveCondition ?? null,
     // Absent means a server older than the field, which is the same as not preferring it.
