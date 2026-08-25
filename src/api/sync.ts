@@ -29,7 +29,7 @@ function toCopy(raw: unknown): Copy | null {
     condition: dto.condition ?? null,
     sleeveCondition: dto.sleeveCondition ?? null,
     // Absent means a server older than the field, which is the same as not preferring it.
-    preferCatalogArt: dto.preferCatalogArt ?? false,
+    catalogArt: dto.catalogArt ?? "AUTO",
     pricePaidCents: dto.pricePaidCents ?? null,
     currency: dto.currency,
     purchasedOn: dto.purchasedOn ?? null,

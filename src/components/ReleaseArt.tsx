@@ -49,6 +49,7 @@ export function ReleaseArt({
   style,
   variant = "sleeve",
   fallbackUri = null,
+  allowCatalogArt = true,
 }: {
   readonly release: CoverSubject | undefined;
   readonly style?: ArtStyle;
@@ -61,12 +62,20 @@ export function ReleaseArt({
    * photo whose file is not on this device fails the same way, back to the placeholder.
    */
   readonly fallbackUri?: string | null;
+  /**
+   * Whether the release's own cover art may be drawn at all.
+   *
+   * False for a copy that has dropped it: what the archive holds for a pressing is
+   * sometimes the wrong cover, and a copy that said so should fall back to its own photo
+   * or the silhouette rather than keep being handed what it discarded.
+   */
+  readonly allowCatalogArt?: boolean;
 }) {
   const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
   // A set rather than one URL: with a fallback there are two addresses in play, and
   // remembering only the last failure would let the first one look untried again.
   const [failed, setFailed] = useState<ReadonlySet<string>>(() => new Set());
-  const cover = release?.coverArtUrl ?? null;
+  const cover = allowCatalogArt ? (release?.coverArtUrl ?? null) : null;
   const url = cover === null || failed.has(cover) ? fallbackUri : cover;
 
   const gone = url === null || failed.has(url);

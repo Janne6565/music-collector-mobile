@@ -61,6 +61,7 @@ export function DetailScreen({
             style={styles.coverImage}
             variant="bleed"
             fallbackUri={photos.firstUri}
+            allowCatalogArt={copy.catalogArt !== "HIDDEN"}
           />
           <SafeAreaView style={styles.backWrap} edges={["top"]}>
             <Pressable

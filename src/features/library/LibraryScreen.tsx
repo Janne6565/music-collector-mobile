@@ -6,6 +6,7 @@ import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ReleaseArt } from "@/components/ReleaseArt";
 import type { Format } from "@janne6565/music-collector-shared";
+import { catalogArtShown } from "@janne6565/music-collector-shared";
 import { FORMAT_LABELS } from "@janne6565/music-collector-shared";
 import { type FormatFilter, type LibraryRow, useLibraryLogic } from "@/features/library/useLibraryLogic";
 import { useCoverPhotos } from "@/features/photos/useCoverPhotos";
@@ -74,6 +75,7 @@ export function LibraryScreen() {
               row={item}
               onPress={() => router.push(`/copies/${item.copy.id}`)}
               fallbackUri={covers.get(item.copy.id) ?? null}
+              allowCatalogArt={catalogArtShown(item.copy, true)}
             />
           )}
           ListEmptyComponent={
@@ -89,14 +91,20 @@ function GridItem({
   row,
   onPress,
   fallbackUri,
+  allowCatalogArt,
 }: {
   readonly row: LibraryRow;
   readonly onPress: () => void;
   readonly fallbackUri: string | null;
+  readonly allowCatalogArt: boolean;
 }) {
   return (
     <Pressable onPress={onPress} style={styles.item}>
-      <ReleaseArt release={row.release} fallbackUri={fallbackUri} />
+      <ReleaseArt
+        release={row.release}
+        fallbackUri={fallbackUri}
+        allowCatalogArt={allowCatalogArt}
+      />
       <Text style={styles.itemTitle} numberOfLines={1}>
         {row.release?.title ?? "—"}
       </Text>

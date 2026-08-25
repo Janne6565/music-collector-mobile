@@ -25,7 +25,7 @@ const copy: Copy = {
   releaseId: "r1",
   condition: "VG_PLUS",
   sleeveCondition: "NM",
-  preferCatalogArt: false,
+  catalogArt: "AUTO",
   pricePaidCents: 3400,
   currency: "EUR",
   purchasedOn: "2026-08-12",
