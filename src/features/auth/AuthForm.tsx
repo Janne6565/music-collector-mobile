@@ -5,12 +5,15 @@ import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { passwordStrength } from "@janne6565/music-collector-shared";
 import type { useAccountLogic } from "@/features/auth/useAccountLogic";
+import { useStore } from "@/local/StoreProvider";
+import { readLocalOnlyNoticeSeen } from "@/local/settings";
 import { colors, fonts } from "@/theme/colors";
 
 /** Screens 4a and 4b. */
 export function AuthForm({ logic }: { readonly logic: ReturnType<typeof useAccountLogic> }) {
   const { t } = useTranslation();
   const router = useRouter();
+  const { store } = useStore();
   const registering = logic.mode === "REGISTER";
 
   /**
@@ -19,6 +22,18 @@ export function AuthForm({ logic }: { readonly logic: ReturnType<typeof useAccou
    * there is no stack to pop — leaving is a sideways move, not a retreat.
    */
   const leave = () => router.replace("/");
+
+  /**
+   * The no-account path goes past the local-only notice the first time (17b).
+   *
+   * Once only: showing it on every visit would turn a disclosure into an obstacle, and the
+   * same text stays reachable from the Datenschutzerklärung afterwards.
+   */
+  const leaveWithoutAccount = () => {
+    void readLocalOnlyNoticeSeen(store).then((seen) => {
+      router.replace(seen ? "/" : "/local-only");
+    });
+  };
 
   return (
     <View style={styles.root}>
@@ -67,9 +82,26 @@ export function AuthForm({ logic }: { readonly logic: ReturnType<typeof useAccou
       <PasswordInput logic={logic} registering={registering} />
 
       {registering ? (
-        <Toggle checked={logic.agreed} onPress={() => logic.setAgreed(!logic.agreed)}>
-          {t("auth.agreeTerms")}
-        </Toggle>
+        <View style={styles.consents}>
+          <Toggle checked={logic.agreed} onPress={() => logic.setAgreed(!logic.agreed)}>
+            {t("auth.agreeTerms")}
+          </Toggle>
+          <View style={styles.consentLinks}>
+            <Pressable accessibilityRole="link" onPress={() => router.push("/legal/nutzungsbedingungen")}>
+              <Text style={styles.consentLink}>{t("legal.terms")}</Text>
+            </Pressable>
+            <Text style={styles.consentSeparator}>·</Text>
+            <Pressable accessibilityRole="link" onPress={() => router.push("/legal/datenschutz")}>
+              <Text style={styles.consentLink}>{t("legal.privacy")}</Text>
+            </Pressable>
+          </View>
+          <Toggle
+            checked={logic.ageConfirmed}
+            onPress={() => logic.setAgeConfirmed(!logic.ageConfirmed)}
+          >
+            {t("auth.confirmAge")}
+          </Toggle>
+        </View>
       ) : (
         <Toggle checked={logic.rememberMe} onPress={() => logic.setRememberMe(!logic.rememberMe)}>
           {t("auth.rememberMe")}
@@ -99,6 +131,12 @@ export function AuthForm({ logic }: { readonly logic: ReturnType<typeof useAccou
             <Text style={styles.dividerText}>{t("auth.or")}</Text>
             <View style={styles.rule} />
           </View>
+          {registering && (
+            /* The provider buttons have no form to put tick boxes in, so the agreement is
+               stated beside them instead. The account they create records the same consent
+               a password sign-up does. */
+            <Text style={styles.providerConsent}>{t("auth.providerConsent")}</Text>
+          )}
           {logic.providers.map((provider) => (
             <Pressable
               key={provider.id}
@@ -125,7 +163,7 @@ export function AuthForm({ logic }: { readonly logic: ReturnType<typeof useAccou
           a provider button — it is a destination, not a handoff. */}
       <Pressable
         accessibilityRole="button"
-        onPress={leave}
+        onPress={leaveWithoutAccount}
         style={[styles.secondary, styles.without]}
       >
         <HardDrive size={16} color={colors.inkSubtle} strokeWidth={1.75} />
@@ -258,6 +296,13 @@ function errorText(error: NonNullable<ReturnType<typeof useAccountLogic>["failed
 }
 
 const styles = StyleSheet.create({
+  consents: { gap: 12 },
+  providerConsent: { fontSize: 11, lineHeight: 17, color: colors.inkSubtle, marginBottom: 4 },
+  // Indented to the checkbox label, so the two document names read as belonging to the
+  // sentence above them rather than to the age tick below.
+  consentLinks: { flexDirection: "row", alignItems: "center", gap: 8, marginLeft: 31, marginTop: -4 },
+  consentLink: { fontSize: 12, fontWeight: "600", color: colors.accent },
+  consentSeparator: { fontSize: 12, color: colors.inkSubtle },
   root: { gap: 14 },
   logo: {
     width: 52,

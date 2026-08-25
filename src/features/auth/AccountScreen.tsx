@@ -3,7 +3,6 @@ import { ChevronRight, LogOut } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
-  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -158,6 +157,21 @@ function SignedIn({ logic }: { readonly logic: ReturnType<typeof useAccountLogic
         </Pressable>
       </View>
 
+      <Text style={styles.section}>{t("legal.title")}</Text>
+      <View style={styles.card}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push("/legal")}
+          style={styles.row}
+        >
+          <View style={styles.rowText}>
+            <Text style={styles.rowTitle}>{t("legal.title")}</Text>
+            <Text style={styles.rowBody}>{t("legal.rowBody")}</Text>
+          </View>
+          <ChevronRight size={16} color={colors.inkSubtle} strokeWidth={1.75} />
+        </Pressable>
+      </View>
+
       <Pressable
         accessibilityRole="button"
         onPress={() => void logic.signOut()}
@@ -169,22 +183,13 @@ function SignedIn({ logic }: { readonly logic: ReturnType<typeof useAccountLogic
       </Pressable>
       <Text style={styles.footnote}>{t("auth.signOutKeepsData")}</Text>
 
+      {/* Deletion lives on Your data with the rest of the DSGVO actions, behind the typed
+          confirmation. Two ways to delete an account is one too many, and the one that
+          asked less would be the one somebody hit by accident. */}
       <Pressable
         accessibilityRole="button"
-        // Irreversible on the server, so it asks. The wording spells out what survives,
-        // because "delete account" reads like "delete my collection" and does not mean it.
-        onPress={() =>
-          Alert.alert(t("account.delete.title"), t("account.delete.confirm"), [
-            { text: t("common.cancel"), style: "cancel" },
-            {
-              text: t("account.delete.action"),
-              style: "destructive",
-              onPress: () => void logic.deleteAccount(),
-            },
-          ])
-        }
-        disabled={logic.busy}
-        style={[styles.delete, logic.busy && styles.dim]}
+        onPress={() => router.push("/legal/data")}
+        style={styles.delete}
       >
         <Text style={styles.deleteText}>{t("account.delete.title")}</Text>
       </Pressable>

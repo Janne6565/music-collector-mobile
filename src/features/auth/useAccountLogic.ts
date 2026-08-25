@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   type AccountUser,
   type AuthProvider,
+  accountExport,
   authProviders,
   createAccount,
   deleteAccount,
@@ -36,7 +37,15 @@ export function useAccountLogic() {
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
+  /**
+   * Two ticks, neither pre-checked (screen 17a).
+   *
+   * Separate booleans because they are two statements: agreeing to the terms is a contract,
+   * confirming an age is a declaration of fact, and one box covering both would let somebody
+   * agree to one by accepting the other.
+   */
   const [agreed, setAgreed] = useState(false);
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [providers, setProviders] = useState<AuthProvider[]>([]);
   const [resetSent, setResetSent] = useState(false);
   const [failed, setFailed] = useState<AuthError | null>(null);
@@ -119,7 +128,7 @@ export function useAccountLogic() {
     try {
       const account =
         mode === "REGISTER"
-          ? await createAccount(email.trim(), password, displayName.trim())
+          ? await createAccount(email.trim(), password, displayName.trim(), agreed, ageConfirmed)
           : await signIn(email.trim(), password, rememberMe);
       setUser(account);
       setFirstSyncPending(await decideFirstSync());
@@ -204,6 +213,33 @@ export function useAccountLogic() {
     }
   }, [store]);
 
+  /**
+   * The whole record as JSON: the server's copy when there is an account, the device's own
+   * store when there is not. A "download my data" that quietly returned an empty file to
+   * somebody with no account would be the wrong kind of correct.
+   */
+  const exportJson = useCallback(async () => {
+    const body = user === null ? await localExport() : await accountExport();
+    const file = `${FileSystem.cacheDirectory}music-collector-export-${new Date().toISOString().slice(0, 10)}.json`;
+    await FileSystem.writeAsStringAsync(file, JSON.stringify(body, null, 2));
+    if (await Sharing.isAvailableAsync()) {
+      await Sharing.shareAsync(file, { mimeType: "application/json", UTI: "public.json" });
+    }
+  }, [store, user]);
+
+  /** What a device with no account has to hand over: its own store, and nothing else. */
+  async function localExport() {
+    const copies = await store.listCopies();
+    const releases = await store.getReleases(copies.map((copy) => copy.releaseId));
+    return {
+      exportedAt: new Date().toISOString(),
+      account: null,
+      copies,
+      releases: [...releases.values()],
+      wishes: await store.listWishlist(),
+    };
+  }
+
   const removeAccount = useCallback(async () => {
     setBusy(true);
     try {
@@ -259,6 +295,7 @@ export function useAccountLogic() {
     ),
     lastSyncedAt,
     exportCsv,
+    exportJson,
     deleteAccount: removeAccount,
     firstSyncPending,
     mode,
@@ -275,6 +312,8 @@ export function useAccountLogic() {
     rememberMe,
     setRememberMe,
     agreed,
+    ageConfirmed,
+    setAgeConfirmed,
     setAgreed,
     providers,
     signInWith,
@@ -283,7 +322,9 @@ export function useAccountLogic() {
     // Completeness only, except the terms box: that is a required acknowledgement rather
     // than a format rule, so it does gate the button.
     canSubmit:
-      email.trim().length > 0 && password.length > 0 && (mode === "SIGN_IN" || agreed),
+      email.trim().length > 0 &&
+      password.length > 0 &&
+      (mode === "SIGN_IN" || (agreed && ageConfirmed)),
     submit,
     busy,
     failed,

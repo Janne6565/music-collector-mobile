@@ -41,18 +41,42 @@ export async function signIn(
   );
 }
 
+/**
+ * The two consent ticks travel with the registration (design turn 17).
+ *
+ * The server refuses without them and stamps its own record of which documents, in which
+ * version, were accepted -- so what is sent here is only *that* the boxes were ticked.
+ */
 export async function createAccount(
   email: string,
   password: string,
   displayName: string,
+  acceptedTerms: boolean,
+  confirmedAge: boolean,
 ): Promise<AccountUser> {
   return adopt(
     await request<SessionPayload>("/api/v1/auth/register", {
       method: "POST",
-      body: { email, password, displayName },
+      body: { email, password, displayName, acceptedTerms, confirmedAge },
       noRetry: true,
     }),
   );
+}
+
+export interface ConsentRecord {
+  readonly document: "TERMS" | "PRIVACY" | "AGE";
+  readonly version: string;
+  readonly acceptedAt: string;
+}
+
+/** What the Legal & privacy screen prints under a document: "accepted 4 Mar 2026". */
+export async function accountConsents(): Promise<ConsentRecord[]> {
+  return request<ConsentRecord[]>("/api/v1/account/consents");
+}
+
+/** The Art. 15 / Art. 20 answer for what the server holds. Only meaningful with an account. */
+export async function accountExport(): Promise<unknown> {
+  return request<unknown>("/api/v1/account/export");
 }
 
 /** Only providers the server can actually complete a flow with. */

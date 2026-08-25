@@ -299,7 +299,10 @@ const enCommon = {
     or: "or",
     forgot: "Forgot?",
     rememberMe: "Keep me signed in",
-    agreeTerms: "I agree to the terms and privacy policy.",
+    agreeTerms: "I accept the Nutzungsbedingungen and have read the Datenschutzerklärung.",
+    confirmAge: "I am 16 or older.",
+    providerConsent:
+      "Continuing with a provider also accepts the Nutzungsbedingungen and the Datenschutzerklärung, and confirms you are 16 or older.",
     showPassword: "Show password",
     hidePassword: "Hide password",
     passwordHint: "Ten characters minimum. A passphrase beats a password.",
@@ -375,6 +378,92 @@ const enCommon = {
     wherePlaceholder: "Shop, market, website",
     notesPlaceholder: "Pressing, condition detail, where it came from",
     rate: "Rate {{count}} out of 5",
+  },
+  legal: {
+    title: "Legal & privacy",
+    rowBody: "Documents, your data, and the language they are read in",
+    impressum: "Impressum",
+    privacy: "Datenschutzerklärung",
+    privacyShort: "Datenschutz",
+    terms: "Nutzungsbedingungen",
+    termsShort: "AGB",
+    documents: "Documents",
+    documentLanguage: "Document language",
+    yourData: "Your data",
+    accepted: "Accepted {{date}}",
+    unknownDocument: "There is no such document.",
+    effective: "Effective {{date}} · version {{version}}",
+    translationNotice:
+      "Translation for convenience. In case of dispute the German original is the version that applies.",
+    bindingNotice: "The German version is the binding one; English is a courtesy translation.",
+    rightsNote: "Art. 15–21 DSGVO. Requests are answered within one month; nothing has to go through e-mail.",
+    language: { de: "Deutsch", en: "English" },
+    subtitle: {
+      impressum: "Provider identification, § 5 DDG",
+      privacy: "How your data is handled",
+      terms: "What you agreed to",
+    },
+    data: {
+      lede: "Everything the DSGVO entitles you to, without writing an e-mail.",
+      ledeLocal:
+        "There is no account, so we hold nothing about you. What follows is built from this device's own storage.",
+      deleteNoAccount: "Nothing to delete — there is no account",
+      export: {
+        title: "Export everything",
+        body: "Account details, all copies, photos, notes and your wishlist.",
+        bodyLocal: "Everything on this device: copies, releases and your wishlist.",
+        hint: "JSON is the complete record; CSV is the copies in a spreadsheet.",
+      },
+      correct: {
+        title: "Correct my details",
+        body: "Name, e-mail and handle can be changed directly in the You tab.",
+        action: "Open account",
+      },
+      withdraw: {
+        title: "Withdraw sharing consent",
+        body: "Turns off the public link, handle search and friend access. Your lists stay, they just go private.",
+        action: "Open sharing settings",
+      },
+      delete: {
+        title: "Delete account",
+        body: "Deletes the account, all copies and all photos. Backups clear within 30 days. Export first if you want to keep the shelf.",
+        action: "Delete my account",
+      },
+      otherRequests:
+        "Requests we cannot handle automatically are answered within one month, per Art. 12 (3) DSGVO.",
+    },
+    delete: {
+      title: "Delete everything?",
+      body_one:
+        "{{count}} copy and your wishlist go with the account. Friends lose access immediately; backups are cleared within 30 days.",
+      body_other:
+        "{{count}} copies and your wishlist go with the account. Friends lose access immediately; backups are cleared within 30 days.",
+      exportFirst: "Export a copy first",
+      exportAction: "Export",
+      typeToConfirm: "Type LÖSCHEN to confirm",
+      confirm: "Delete account permanently",
+      keep: "Keep my account",
+    },
+  },
+  localOnly: {
+    title: "Staying on this device",
+    lede: "No account, no server. Here is exactly what that means.",
+    stays: {
+      title: "Your collection stays here",
+      body: "Items, photos, prices and notes are stored in this app's own storage. We never see them.",
+    },
+    lookups: {
+      title: "Catalog lookups leave the device",
+      body: "Searching a release or scanning a barcode sends the query and your IP address to MusicBrainz and Discogs. Skip it by entering copies by hand.",
+    },
+    delete: {
+      title: "Delete the app, lose the shelf",
+      body: "There is no backup without an account. You can export a file at any time from the You tab.",
+    },
+    tdddg:
+      "Local storage in this mode is technically necessary for the app to work, so it needs no consent — § 25 Abs. 2 TDDDG. Details in the Datenschutzerklärung.",
+    start: "Start collecting",
+    createInstead: "Create an account instead",
   },
   common: {
     save: "Save",
@@ -699,7 +788,10 @@ const deCommon: CommonSchema = {
     or: "oder",
     forgot: "Vergessen?",
     rememberMe: "Angemeldet bleiben",
-    agreeTerms: "Ich stimme den Bedingungen und der Datenschutzerklärung zu.",
+    agreeTerms: "Ich akzeptiere die Nutzungsbedingungen und habe die Datenschutzerklärung gelesen.",
+    confirmAge: "Ich bin 16 Jahre oder älter.",
+    providerConsent:
+      "Mit der Anmeldung über einen Anbieter akzeptierst du ebenfalls die Nutzungsbedingungen und die Datenschutzerklärung und bestätigst, dass du 16 Jahre oder älter bist.",
     showPassword: "Passwort anzeigen",
     hidePassword: "Passwort verbergen",
     passwordHint: "Mindestens zehn Zeichen. Eine Passphrase schlägt ein Passwort.",
@@ -776,6 +868,94 @@ const deCommon: CommonSchema = {
     wherePlaceholder: "Laden, Markt, Website",
     notesPlaceholder: "Pressung, Zustand, Herkunft",
     rate: "{{count}} von 5 bewerten",
+  },
+  legal: {
+    title: "Rechtliches & Datenschutz",
+    rowBody: "Dokumente, deine Daten und die Sprache, in der du sie liest",
+    impressum: "Impressum",
+    privacy: "Datenschutzerklärung",
+    privacyShort: "Datenschutz",
+    terms: "Nutzungsbedingungen",
+    termsShort: "AGB",
+    documents: "Dokumente",
+    documentLanguage: "Sprache der Dokumente",
+    yourData: "Deine Daten",
+    accepted: "Angenommen am {{date}}",
+    unknownDocument: "Dieses Dokument gibt es nicht.",
+    effective: "Stand: {{date}} · Version {{version}}",
+    translationNotice:
+      "Übersetzung zur Information. Im Streitfall gilt die deutsche Originalfassung.",
+    bindingNotice:
+      "Die deutsche Fassung ist die verbindliche; Englisch ist eine Übersetzung zur Information.",
+    rightsNote:
+      "Art. 15–21 DSGVO. Anfragen werden innerhalb eines Monats beantwortet; nichts muss per E-Mail laufen.",
+    language: { de: "Deutsch", en: "English" },
+    subtitle: {
+      impressum: "Anbieterkennzeichnung, § 5 DDG",
+      privacy: "Wie mit deinen Daten umgegangen wird",
+      terms: "Was du akzeptiert hast",
+    },
+    data: {
+      lede: "Alles, worauf dir die DSGVO ein Recht gibt — ohne eine E-Mail zu schreiben.",
+      ledeLocal:
+        "Es gibt kein Konto, also liegt bei uns nichts über dich. Was folgt, entsteht aus dem Speicher dieses Geräts.",
+      deleteNoAccount: "Nichts zu löschen — es gibt kein Konto",
+      export: {
+        title: "Alles exportieren",
+        body: "Kontodaten, alle Exemplare, Fotos, Notizen und deine Wunschliste.",
+        bodyLocal: "Alles auf diesem Gerät: Exemplare, Releases und deine Wunschliste.",
+        hint: "JSON ist der vollständige Datensatz, CSV sind die Exemplare für eine Tabelle.",
+      },
+      correct: {
+        title: "Meine Angaben berichtigen",
+        body: "Name, E-Mail und Handle änderst du direkt im Du-Tab.",
+        action: "Konto öffnen",
+      },
+      withdraw: {
+        title: "Einwilligung zum Teilen widerrufen",
+        body: "Schaltet öffentlichen Link, Handle-Suche und Freundeszugriff ab. Deine Listen bleiben, sie werden nur privat.",
+        action: "Freigabe-Einstellungen öffnen",
+      },
+      delete: {
+        title: "Konto löschen",
+        body: "Löscht das Konto, alle Exemplare und alle Fotos. Backups sind binnen 30 Tagen bereinigt. Exportiere vorher, wenn du die Sammlung behalten willst.",
+        action: "Mein Konto löschen",
+      },
+      otherRequests:
+        "Anfragen, die wir nicht automatisch erledigen können, beantworten wir innerhalb eines Monats nach Art. 12 Abs. 3 DSGVO.",
+    },
+    delete: {
+      title: "Wirklich alles löschen?",
+      body_one:
+        "{{count}} Exemplar und deine Wunschliste gehen mit dem Konto. Freunde verlieren sofort den Zugriff; Backups sind binnen 30 Tagen bereinigt.",
+      body_other:
+        "{{count}} Exemplare und deine Wunschliste gehen mit dem Konto. Freunde verlieren sofort den Zugriff; Backups sind binnen 30 Tagen bereinigt.",
+      exportFirst: "Vorher eine Kopie exportieren",
+      exportAction: "Exportieren",
+      typeToConfirm: "Zum Bestätigen LÖSCHEN eingeben",
+      confirm: "Konto endgültig löschen",
+      keep: "Konto behalten",
+    },
+  },
+  localOnly: {
+    title: "Bleibt auf diesem Gerät",
+    lede: "Kein Konto, kein Server. Was das genau heißt:",
+    stays: {
+      title: "Deine Sammlung bleibt hier",
+      body: "Exemplare, Fotos, Preise und Notizen liegen im Speicher dieser App. Wir sehen sie nie.",
+    },
+    lookups: {
+      title: "Katalogabfragen verlassen das Gerät",
+      body: "Bei Suche und Barcode-Scan gehen Suchbegriff und IP-Adresse an MusicBrainz und Discogs. Wer das vermeiden will, legt Exemplare von Hand an.",
+    },
+    delete: {
+      title: "App gelöscht, Sammlung weg",
+      body: "Ohne Konto gibt es kein Backup. Du kannst jederzeit im Du-Tab eine Datei exportieren.",
+    },
+    tdddg:
+      "Die lokale Speicherung ist in diesem Modus technisch erforderlich und daher einwilligungsfrei — § 25 Abs. 2 TDDDG. Details in der Datenschutzerklärung.",
+    start: "Los geht's",
+    createInstead: "Doch ein Konto anlegen",
   },
   common: {
     save: "Speichern",
