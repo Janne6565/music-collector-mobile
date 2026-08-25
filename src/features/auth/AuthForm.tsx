@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { API_BASE } from "@/api/config";
-import { passwordStrength } from "@/domain/passwordStrength";
+import { passwordStrength } from "@janne6565/music-collector-shared";
 import type { useAccountLogic } from "@/features/auth/useAccountLogic";
 import { colors, fonts } from "@/theme/colors";
 

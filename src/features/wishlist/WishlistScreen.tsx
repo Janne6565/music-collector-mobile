@@ -3,8 +3,8 @@ import { useTranslation } from "react-i18next";
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FormatThumb } from "@/components/FormatThumb";
-import type { WishlistItem } from "@/domain/types";
-import { FORMAT_LABELS } from "@/domain/types";
+import type { WishlistItem } from "@janne6565/music-collector-shared";
+import { FORMAT_LABELS } from "@janne6565/music-collector-shared";
 import { useWishlistLogic } from "@/features/wishlist/useWishlistLogic";
 import { colors, fonts } from "@/theme/colors";
 

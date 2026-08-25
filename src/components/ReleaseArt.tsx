@@ -1,8 +1,7 @@
 import { useRef, useState } from "react";
 import { Animated, StyleSheet, View, type ViewStyle } from "react-native";
 import { FormatThumb } from "@/components/FormatThumb";
-import type { Format } from "@/domain/types";
-
+import type { Format } from "@janne6565/music-collector-shared";
 /**
  * Everything the art actually needs: a URL to try, and a format to fall back to.
  *

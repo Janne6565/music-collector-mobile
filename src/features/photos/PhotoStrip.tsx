@@ -2,7 +2,7 @@ import { Camera, ImagePlus, Trash2 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { useRef } from "react";
 import { ActivityIndicator, Animated, Pressable, StyleSheet, Text, View } from "react-native";
-import type { DetailChrome } from "@/features/detail/theme";
+import type { DetailChrome } from "@janne6565/music-collector-shared";
 import type { PhotoStripLogic } from "@/features/photos/usePhotoStripLogic";
 
 /**

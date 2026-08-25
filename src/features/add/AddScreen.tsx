@@ -28,8 +28,8 @@ import { ArtistResults } from "@/features/add/ArtistResults";
 import { FormatThumb } from "@/components/FormatThumb";
 import { Skeleton } from "@/components/Skeleton";
 import { ReleaseArt } from "@/components/ReleaseArt";
-import type { Artist, Format, Release, WishlistItem } from "@/domain/types";
-import { FORMAT_LABELS } from "@/domain/types";
+import type { Artist, Format, Release, WishlistItem } from "@janne6565/music-collector-shared";
+import { FORMAT_LABELS } from "@janne6565/music-collector-shared";
 import { FORMAT_FILTERS, useAddLogic } from "@/features/add/useAddLogic";
 import { colors, fonts } from "@/theme/colors";
 

@@ -15,7 +15,8 @@ import { refreshSession } from "@/api/client";
 import { toCsv } from "@/domain/csv";
 import { useStore } from "@/local/StoreProvider";
 import { readLastSyncedAt, readSyncEnabled, writeLastSyncedAt, writeSyncEnabled } from "@/local/settings";
-import { type FirstSyncStrategy, SyncEngine } from "@/sync/syncEngine";
+import { createSyncEngine } from "@/sync/transport";
+import type { FirstSyncStrategy } from "@janne6565/music-collector-shared";
 
 export type AuthMode = "SIGN_IN" | "REGISTER";
 export type AuthError = "badCredentials" | "emailTaken" | "generic";
@@ -74,7 +75,7 @@ export function useAccountLogic() {
   useEffect(() => {
     if (user === null || firstSyncPending) return;
 
-    const engine = new SyncEngine(store, clock);
+    const engine = createSyncEngine(store, clock);
     const run = async () => {
       // A slow sync must not stack up behind itself on a flaky connection.
       if (syncing.current) return;
@@ -130,7 +131,7 @@ export function useAccountLogic() {
     async (strategy: FirstSyncStrategy) => {
       setBusy(true);
       try {
-        await new SyncEngine(store, clock).firstSync(strategy);
+        await createSyncEngine(store, clock).firstSync(strategy);
         setFirstSyncPending(false);
       } finally {
         setBusy(false);

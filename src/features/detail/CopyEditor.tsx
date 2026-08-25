@@ -1,12 +1,8 @@
 import { Star } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
-import type { Condition, Copy } from "@/domain/types";
-import { CONDITIONS, CONDITION_SHORT } from "@/domain/types";
-import type { DetailChrome } from "@/features/detail/theme";
-import { useCopyEditorLogic } from "@/features/detail/useCopyEditorLogic";
-import type { CopyDraft } from "@/local/copyWrites";
-
+import type { Condition, Copy, CopyDraft, DetailChrome } from "@janne6565/music-collector-shared";
+import { CONDITIONS, CONDITION_SHORT, useCopyEditorLogic } from "@janne6565/music-collector-shared";
 interface CopyEditorProps {
   readonly copy: Copy;
   readonly chrome: DetailChrome;

@@ -3,10 +3,9 @@ import * as Crypto from "expo-crypto";
 import * as FileSystem from "expo-file-system/legacy";
 import * as ImagePicker from "expo-image-picker";
 import { useCallback } from "react";
-import type { Photo } from "@/domain/types";
+import type { Photo } from "@janne6565/music-collector-shared";
+import { createPhoto, tombstonePhoto } from "@janne6565/music-collector-shared";
 import { useStore } from "@/local/StoreProvider";
-import { createPhoto, tombstonePhoto } from "@/local/photoWrites";
-
 export type PhotoSource = "CAMERA" | "LIBRARY";
 
 /**

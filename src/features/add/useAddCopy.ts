@@ -2,9 +2,9 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import * as Crypto from "expo-crypto";
 import { useRouter } from "expo-router";
 import { lookupRelease } from "@/api/releases";
-import type { Release } from "@/domain/types";
+import type { Release } from "@janne6565/music-collector-shared";
+import { createCopy } from "@janne6565/music-collector-shared";
 import type { LocalStore } from "@/local/LocalStore";
-import { createCopy } from "@/local/copyWrites";
 import { useStore } from "@/local/StoreProvider";
 
 /**

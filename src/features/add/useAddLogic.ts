@@ -1,11 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { lookupByBarcode, searchReleases } from "@/api/releases";
-import type { Format, Release } from "@/domain/types";
+import type { Format, Release } from "@janne6565/music-collector-shared";
+import { createWishlistItem } from "@janne6565/music-collector-shared";
 import { useAddCopy } from "@/features/add/useAddCopy";
 import { useArtistSearchLogic } from "@/features/add/useArtistSearchLogic";
 import { clearRecentSearches, readRecentSearches, rememberSearch } from "@/local/settings";
-import { createWishlistItem } from "@/local/wishWrites";
 import { useStore } from "@/local/StoreProvider";
 import * as Crypto from "expo-crypto";
 

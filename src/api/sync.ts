@@ -1,13 +1,6 @@
 import { request } from "@/api/client";
-import type { Copy, Photo, WishlistItem } from "@/domain/types";
+import type { Copy, Photo, SyncPage, WishlistItem } from "@janne6565/music-collector-shared";
 
-export interface SyncPage {
-  readonly copies: Copy[];
-  readonly wishes: WishlistItem[];
-  readonly photos: Photo[];
-  readonly cursor: number;
-  readonly hasMore: boolean;
-}
 
 interface SyncPayload {
   copies?: unknown[];

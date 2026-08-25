@@ -1,9 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { searchReleases } from "@/api/releases";
-import type { WishlistItem } from "@/domain/types";
-import { createCopy } from "@/local/copyWrites";
+import type { WishlistItem } from "@janne6565/music-collector-shared";
+import { createCopy, tombstoneWishlistItem } from "@janne6565/music-collector-shared";
 import { useStore } from "@/local/StoreProvider";
-import { tombstoneWishlistItem } from "@/local/wishWrites";
 import * as Crypto from "expo-crypto";
 
 export function useWishlistLogic() {

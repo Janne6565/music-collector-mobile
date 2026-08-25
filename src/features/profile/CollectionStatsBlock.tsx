@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, Text, View } from "react-native";
-import { FORMAT_LABELS } from "@/domain/types";
+import { FORMAT_LABELS } from "@janne6565/music-collector-shared";
 import { useStore } from "@/local/StoreProvider";
 import { colors, fonts } from "@/theme/colors";
 

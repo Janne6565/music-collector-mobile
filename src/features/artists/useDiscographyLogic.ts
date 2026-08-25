@@ -1,8 +1,7 @@
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { type Discography, lookupDiscography, lookupPressings } from "@/api/releases";
-import type { Album } from "@/domain/types";
-
+import type { Album } from "@janne6565/music-collector-shared";
 /**
  * The primary types the artist screen offers, in the order the deck lists them.
  *

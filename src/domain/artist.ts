@@ -1,5 +1,4 @@
-import type { Artist } from "@/domain/types";
-
+import type { Artist } from "@janne6565/music-collector-shared";
 /**
  * The line under an artist's name: "Group · GB · 2010–".
  *

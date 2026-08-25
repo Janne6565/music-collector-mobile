@@ -1,7 +1,6 @@
 import { API_BASE } from "@/api/config";
-import type { Album, Artist, CoverTheme, Format, Release } from "@/domain/types";
-import { FORMATS } from "@/domain/types";
-
+import type { Album, Artist, CoverTheme, Format, Release } from "@janne6565/music-collector-shared";
+import { FORMATS } from "@janne6565/music-collector-shared";
 /**
  * Thin client over the metadata proxy.
  *
@@ -21,6 +20,9 @@ interface ReleasePayload {
   catalogNumber?: string;
   country?: string;
   barcode?: string;
+  releaseDate?: string;
+  trackCount?: number;
+  discCount?: number;
   coverArtUrl?: string;
   coverTheme?: {
     dominantColor?: string;
@@ -69,6 +71,9 @@ export function toRelease(payload: ReleasePayload, now: number): Release | null 
     catalogNumber: payload.catalogNumber ?? null,
     country: payload.country ?? null,
     barcode: payload.barcode ?? null,
+    releaseDate: payload.releaseDate ?? null,
+    trackCount: payload.trackCount ?? null,
+    discCount: payload.discCount ?? null,
     coverArtUrl: payload.coverArtUrl ?? null,
     coverTheme: toCoverTheme(payload.coverTheme),
     cachedAt: now,

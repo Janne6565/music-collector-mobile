@@ -1,8 +1,8 @@
 import * as FileSystem from "expo-file-system/legacy";
 import * as SQLite from "expo-sqlite";
 import * as Crypto from "expo-crypto";
-import type { CollectionStats, Copy, Format, Photo, Release, WishlistItem } from "@/domain/types";
-import { FORMATS } from "@/domain/types";
+import type { CollectionStats, Copy, Format, Photo, Release, WishlistItem } from "@janne6565/music-collector-shared";
+import { FORMATS } from "@janne6565/music-collector-shared";
 import type { LibraryFilter, LocalStore } from "@/local/LocalStore";
 
 const DATABASE = "music-collector.db";

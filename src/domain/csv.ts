@@ -1,7 +1,5 @@
-import { formatCentsForInput, parseMoneyToCents } from "@/domain/money";
-import type { Condition, Copy, Format, Release } from "@/domain/types";
-import { CONDITIONS, FORMATS } from "@/domain/types";
-
+import type { Condition, Copy, Format, Release } from "@janne6565/music-collector-shared";
+import { CONDITIONS, FORMATS, formatCentsForInput, parseMoneyToCents } from "@janne6565/music-collector-shared";
 /**
  * The collection as a spreadsheet: one row per copy.
  *

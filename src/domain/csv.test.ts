@@ -1,7 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { fromCsv, parseCsv, toCsv } from "@/domain/csv";
-import type { Copy, Release } from "@/domain/types";
-
+import type { Copy, Release } from "@janne6565/music-collector-shared";
 const release: Release = {
   id: "r1",
   albumId: "rg1",
@@ -13,6 +12,9 @@ const release: Release = {
   catalogNumber: "GP 26",
   country: "US",
   barcode: null,
+  releaseDate: null,
+  trackCount: null,
+  discCount: null,
   coverArtUrl: null,
   coverTheme: null,
   cachedAt: 0,

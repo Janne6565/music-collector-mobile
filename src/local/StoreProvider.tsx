@@ -1,11 +1,11 @@
 import { createContext, type ReactNode, useContext, useEffect, useState } from "react";
-import { hlcDecode, hlcEncode, hlcInitial, hlcTick } from "@/domain/hlc";
-import type { ClockSource } from "@/local/copyWrites";
-import type { LocalStore } from "@/local/LocalStore";
+import type { ClockSource } from "@janne6565/music-collector-shared";
+import { hlcDecode, hlcEncode, hlcInitial, hlcTick } from "@janne6565/music-collector-shared";
+import type { NativeLocalStore } from "@/local/LocalStore";
 import { SqliteLocalStore } from "@/local/sqliteStore";
 
 interface StoreContextValue {
-  readonly store: LocalStore;
+  readonly store: NativeLocalStore;
   readonly clock: ClockSource;
 }
 
