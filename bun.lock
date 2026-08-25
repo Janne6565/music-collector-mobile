@@ -5,7 +5,7 @@
     "": {
       "name": "music-collector-mobile",
       "dependencies": {
-        "@janne6565/music-collector-shared": "^0.1.0",
+        "@janne6565/music-collector-shared": "^0.2.0",
         "@reduxjs/toolkit": "^2.5.0",
         "@tanstack/react-query": "^5.62.0",
         "expo": "~57.0.16",
@@ -254,7 +254,7 @@
 
     "@isaacs/ttlcache": ["@isaacs/ttlcache@1.4.1", "", {}, "sha512-RQgQ4uQ+pLbqXfOmieB91ejmLwvSgv9nLx6sT6sD83s7umBypgg+OIBOBbEUiJXrfpnp9j0mRhYYdzp9uqq3lA=="],
 
-    "@janne6565/music-collector-shared": ["@janne6565/music-collector-shared@0.1.0", "https://npm.pkg.github.com/download/@janne6565/music-collector-shared/0.1.0/184d725987dcc86f52cf897c95071b2e2d65e434", { "peerDependencies": { "react": ">=18" } }, "sha512-mTcUdDADVBm5pLDQC5nvcBZjTGOBpdaDjWJ0sDky0obRfQBTD9Pes7C7lbvBdZzojlje2iusyRIN4eENyoLIVw=="],
+    "@janne6565/music-collector-shared": ["@janne6565/music-collector-shared@0.2.0", "https://npm.pkg.github.com/download/@janne6565/music-collector-shared/0.2.0/669fe5b12204317419bb968c16654f95fbc7b024", { "peerDependencies": { "react": ">=18" } }, "sha512-wiPjiN0XMbrSX/3lmdG5r1wBk/7surqHF/Cs/YspdyAjdBmf4bs+Z172H8V8WBctZS1O5ZzJv7Nx4hjC6/9ofQ=="],
 
     "@jest/schemas": ["@jest/schemas@29.6.3", "", { "dependencies": { "@sinclair/typebox": "^0.27.8" } }, "sha512-mo5j5X+jIZmJQveBKeS/clAueipV7KgiX1vMgCxam1RNYiqE1w62n0/tJJnHtjW8ZHcQco5gY85jA3mi0L+nSA=="],
 

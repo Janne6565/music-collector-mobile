@@ -31,6 +31,7 @@ export function useAddCopy() {
         {
           condition: null,
           sleeveCondition: null,
+          preferCatalogArt: false,
           pricePaidCents: null,
           currency: "EUR",
           purchasedOn: null,
