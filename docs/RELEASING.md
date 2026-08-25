@@ -37,13 +37,15 @@ run and the install that matters happens later, on EAS's servers. So the token i
 on EAS as a project secret:
 
 ```sh
-# Needs the read:packages scope. A fine-grained PAT is better than `gh auth token`
+# Needs the read:packages scope. A dedicated PAT is better than `gh auth token`
 # here: `gh auth token` is your full CLI token and it rotates out from under the build.
-eas env:create --name NODE_AUTH_TOKEN --type secret --scope project \
+# Note --visibility (not --type) carries the secrecy; --type is string|file.
+eas env:create --name NODE_AUTH_TOKEN --value "<ghp_...>" \
+  --type string --visibility secret --scope project \
   --environment development --environment preview --environment production
 ```
 
-Verify with `eas env:list`.
+Verify with `eas env:list development` (the environment is a positional argument).
 
 > Prefer a dedicated PAT from <https://github.com/settings/tokens> with only
 > `read:packages`. Rotating it means re-running `eas env:update`, nothing else.
