@@ -142,7 +142,10 @@ export class SqliteLocalStore implements LocalStore {
 
       CREATE TABLE IF NOT EXISTS photos (
         id            TEXT PRIMARY KEY NOT NULL,
-        copyId        TEXT NOT NULL,
+        -- A photo pictures a copy or a wishlist entry, so neither owner is NOT NULL and
+        -- exactly one of them is set on any row.
+        copyId        TEXT,
+        wishId        TEXT,
         storageKey    TEXT,
         contentType   TEXT NOT NULL,
         byteSize      INTEGER NOT NULL,
@@ -152,6 +155,7 @@ export class SqliteLocalStore implements LocalStore {
         fieldClocks   TEXT NOT NULL
       );
       CREATE INDEX IF NOT EXISTS photos_copy_idx ON photos (copyId);
+      CREATE INDEX IF NOT EXISTS photos_wish_idx ON photos (wishId);
 
       CREATE TABLE IF NOT EXISTS meta (
         key   TEXT PRIMARY KEY NOT NULL,
@@ -197,8 +201,60 @@ export class SqliteLocalStore implements LocalStore {
     if (!wishColumns.some((column) => column.name === "sortIndex")) {
       await db.execAsync("ALTER TABLE wishlist ADD COLUMN sortIndex INTEGER");
     }
+    await this.widenPhotoOwner(db);
     await this.qualifyIds(db, columns);
     this.db = db;
+  }
+
+  /**
+   * A photo can picture a wishlist entry as well as a copy (18a).
+   *
+   * Two steps, because SQLite can add a column in place but cannot drop a NOT NULL: the
+   * new owner is an ordinary ALTER, and relaxing `copyId` means rebuilding the table. The
+   * rebuild is guarded on what the database actually reports rather than on a stored
+   * version number, matching how every other migration here decides whether it has run.
+   */
+  private async widenPhotoOwner(db: SQLite.SQLiteDatabase): Promise<void> {
+    const columns = await db.getAllAsync<{ name: string; notnull: number }>(
+      "PRAGMA table_info(photos)",
+    );
+    if (columns.length === 0) return;
+
+    if (!columns.some((column) => column.name === "wishId")) {
+      await db.execAsync(`
+        ALTER TABLE photos ADD COLUMN wishId TEXT;
+        CREATE INDEX IF NOT EXISTS photos_wish_idx ON photos (wishId);
+      `);
+    }
+
+    if (!columns.some((column) => column.name === "copyId" && column.notnull === 1)) return;
+
+    // Rebuild, copying every row across. A wish's photo would otherwise fail to insert on
+    // the next sync — and it would fail silently, as one row of a batch.
+    await db.execAsync(`
+      BEGIN;
+      CREATE TABLE photos_widened (
+        id            TEXT PRIMARY KEY NOT NULL,
+        copyId        TEXT,
+        wishId        TEXT,
+        storageKey    TEXT,
+        contentType   TEXT NOT NULL,
+        byteSize      INTEGER NOT NULL,
+        sortIndex     INTEGER NOT NULL,
+        createdAt     INTEGER NOT NULL,
+        deletedAt     INTEGER,
+        fieldClocks   TEXT NOT NULL
+      );
+      INSERT INTO photos_widened
+        SELECT id, copyId, wishId, storageKey, contentType, byteSize, sortIndex,
+               createdAt, deletedAt, fieldClocks
+        FROM photos;
+      DROP TABLE photos;
+      ALTER TABLE photos_widened RENAME TO photos;
+      CREATE INDEX IF NOT EXISTS photos_copy_idx ON photos (copyId);
+      CREATE INDEX IF NOT EXISTS photos_wish_idx ON photos (wishId);
+      COMMIT;
+    `);
   }
 
   /**
@@ -480,7 +536,7 @@ export class SqliteLocalStore implements LocalStore {
     // An IN () with nothing in it is a syntax error, and the callers hit it on first paint.
     if (copyIds.length === 0) return new Map();
     const rows = await this.handle().getAllAsync<PhotoRow>(
-      `SELECT * FROM photos WHERE deletedAt IS NULL AND copyId IN (${copyIds.map(() => "?").join(",")}) ORDER BY sortIndex ASC`,
+      `SELECT * FROM photos WHERE deletedAt IS NULL AND copyId IS NOT NULL AND copyId IN (${copyIds.map(() => "?").join(",")}) ORDER BY sortIndex ASC`,
       copyIds as string[],
     );
 
@@ -488,9 +544,26 @@ export class SqliteLocalStore implements LocalStore {
     // Ordered by sortIndex, so the first row seen for a copy is the one the strip shows
     // first — the same picture on the shelf as on the detail screen.
     for (const row of rows) {
-      if (!first.has(row.copyId)) first.set(row.copyId, toPhoto(row));
+      if (row.copyId !== null && !first.has(row.copyId)) first.set(row.copyId, toPhoto(row));
     }
     return first;
+  }
+
+  async listWishPhotos(wishIds: readonly string[]): Promise<Map<string, Photo>> {
+    // An IN () with nothing in it is a syntax error, and the callers hit it on first paint.
+    if (wishIds.length === 0) return new Map();
+    const rows = await this.handle().getAllAsync<PhotoRow>(
+      `SELECT * FROM photos WHERE deletedAt IS NULL AND wishId IS NOT NULL AND wishId IN (${wishIds.map(() => "?").join(",")}) ORDER BY createdAt DESC`,
+      wishIds as string[],
+    );
+
+    const covers = new Map<string, Photo>();
+    // Newest first: replacing a picture writes a second one, and the tombstone of the
+    // first may not have reached this device yet.
+    for (const row of rows) {
+      if (row.wishId !== null && !covers.has(row.wishId)) covers.set(row.wishId, toPhoto(row));
+    }
+    return covers;
   }
 
   async getPhotoIncludingDeleted(id: string): Promise<Photo | undefined> {
@@ -524,11 +597,12 @@ export class SqliteLocalStore implements LocalStore {
   private async writePhoto(photo: Photo): Promise<void> {
     await this.handle().runAsync(
       `INSERT OR REPLACE INTO photos
-        (id, copyId, storageKey, contentType, byteSize, sortIndex, createdAt, deletedAt, fieldClocks)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (id, copyId, wishId, storageKey, contentType, byteSize, sortIndex, createdAt, deletedAt, fieldClocks)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         photo.id,
         photo.copyId,
+        photo.wishId,
         photo.storageKey,
         photo.contentType,
         photo.byteSize,

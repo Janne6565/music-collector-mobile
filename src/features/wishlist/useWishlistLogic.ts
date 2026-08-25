@@ -1,4 +1,5 @@
 import { lookupAlbumCovers } from "@/api/releases";
+import { useWishPhotos } from "@/features/wishlist/useWishPhotos";
 import { useStore } from "@/local/StoreProvider";
 import { readWishlistSort, writeWishlistSort } from "@/local/settings";
 import type { WishPatch, WishSort, WishlistItem } from "@janne6565/music-collector-shared";
@@ -55,6 +56,17 @@ export function useWishlistLogic() {
    * it is a fact about a catalogue that any client may re-ask for, not part of the
    * collection, and a phone offline simply draws the format silhouette instead.
    */
+  /**
+   * The pictures people uploaded for records no catalogue has. Only those entries can
+   * carry one, so this is the whole of the hand-entered half of the list.
+   */
+  const ownPhotos = useWishPhotos(
+    useMemo(
+      () => items.filter((item) => isManualReleaseId(item.albumId)).map((item) => item.id),
+      [items],
+    ),
+  );
+
   const covers = useQuery({
     queryKey: ["albumCovers", albumIds],
     enabled: albumIds.length > 0,
@@ -108,8 +120,16 @@ export function useWishlistLogic() {
     loading: wishlist.isLoading,
     sort,
     manual: hasManualOrder(items),
-    /** Null both while the answer is on its way and when there is none to have. */
-    coverOf: (albumId: string): string | null => covers.data?.get(albumId) ?? null,
+    /** The album's artwork, resolved by the server. Null while on its way, and when none. */
+    coverOf: (item: WishlistItem): string | null => covers.data?.get(item.albumId) ?? null,
+    /**
+     * The picture somebody uploaded for this entry, which only a hand-entered one can have.
+     *
+     * Kept apart from the catalogue's cover rather than folded into it: this one is a file
+     * on the device, so it paints on the frame it is asked for, and the sweep that says
+     * "on its way" belongs to artwork that genuinely is.
+     */
+    pictureOf: (item: WishlistItem): string | null => ownPhotos.get(item.id) ?? null,
     setSort: (next: WishSort) => chooseSort.mutate(next),
     reorder: (from: number, to: number) => reorder.mutate({ from, to }),
     edit: (item: WishlistItem, patch: WishPatch) => edit.mutate({ item, patch }),

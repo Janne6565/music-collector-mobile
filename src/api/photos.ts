@@ -21,15 +21,21 @@ export function setBinaryAccessToken(token: string | null): void {
   accessTokenForBinary = token;
 }
 
+/** A photo pictures a copy or a wishlist entry, never both — the server rejects the pair. */
+export type PhotoOwner = { readonly copyId: string } | { readonly wishId: string };
+
 export async function uploadPhotoBytes(
   photoId: string,
-  copyId: string,
+  owner: PhotoOwner,
   fileUri: string,
   contentType: string,
 ): Promise<UploadedPhoto | null> {
   const form = new FormData();
   form.append("photoId", photoId);
-  form.append("copyId", copyId);
+  form.append(
+    "copyId" in owner ? "copyId" : "wishId",
+    "copyId" in owner ? owner.copyId : owner.wishId,
+  );
   // React Native's FormData takes a file descriptor rather than a Blob.
   form.append("file", { uri: fileUri, name: photoId, type: contentType } as unknown as Blob);
 

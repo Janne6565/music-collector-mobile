@@ -52,7 +52,8 @@ export function WishEntryScreen({ wishId }: { readonly wishId: string }) {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.hero}>
           <ReleaseArt
-            release={{ coverArtUrl: logic.coverOf(entry.albumId) }}
+            release={{ coverArtUrl: logic.coverOf(entry) }}
+            previewUri={logic.pictureOf(entry)}
             format={entry.desiredFormat ?? "OTHER"}
           />
         </View>

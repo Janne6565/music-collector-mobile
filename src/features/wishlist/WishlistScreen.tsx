@@ -191,7 +191,8 @@ export function WishlistScreen() {
                       vinyl of a record you already have on CD should look like the thing
                       you are hunting. */}
                   <ReleaseArt
-                    release={{ coverArtUrl: logic.coverOf(item.albumId) }}
+                    release={{ coverArtUrl: logic.coverOf(item) }}
+                    previewUri={logic.pictureOf(item)}
                     format={item.desiredFormat ?? "OTHER"}
                   />
                 </View>

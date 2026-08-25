@@ -84,10 +84,12 @@ function toWish(raw: unknown): WishlistItem | null {
 
 function toPhoto(raw: unknown): Photo | null {
   const dto = raw as Partial<Photo> | null;
+  // An owner is required, but which one is not: a photo pictures a copy or a wishlist
+  // entry. A row naming neither is unreachable and is dropped rather than stored.
   if (
     dto === null ||
     dto.id === undefined ||
-    dto.copyId === undefined ||
+    (dto.copyId == null && dto.wishId == null) ||
     dto.createdAt === undefined ||
     dto.fieldClocks === undefined
   ) {
@@ -95,7 +97,8 @@ function toPhoto(raw: unknown): Photo | null {
   }
   return {
     id: dto.id,
-    copyId: dto.copyId,
+    copyId: dto.copyId ?? null,
+    wishId: dto.wishId ?? null,
     storageKey: dto.storageKey ?? null,
     contentType: dto.contentType ?? "image/jpeg",
     byteSize: dto.byteSize ?? 0,

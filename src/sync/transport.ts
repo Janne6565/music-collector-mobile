@@ -36,8 +36,14 @@ export function createSyncTransport(store: NativeLocalStore): SyncTransport {
       return page;
     },
 
+    // Whichever owner the photo carries: the server takes one and refuses both.
     uploadPhoto: (photo) =>
-      uploadPhotoBytes(photo.id, photo.copyId, store.photoUri(photo.id), photo.contentType),
+      uploadPhotoBytes(
+        photo.id,
+        photo.copyId === null ? { wishId: photo.wishId as string } : { copyId: photo.copyId },
+        store.photoUri(photo.id),
+        photo.contentType,
+      ),
 
     /**
      * The catalogue behind the copies that just arrived. It does not travel inside a sync
