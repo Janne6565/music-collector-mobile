@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Switch,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -81,6 +82,11 @@ function SignedIn({ logic }: { readonly logic: ReturnType<typeof useAccountLogic
       <View style={styles.tiles}>
         <Tile value={stats.data?.copyCount} label={t("account.stat.copies")} />
         <Tile value={stats.data?.releaseGroupCount} label={t("account.stat.releases")} />
+      </View>
+
+      <Text style={styles.section}>{t("account.section.profile")}</Text>
+      <View style={styles.card}>
+        <NameRow logic={logic} />
       </View>
 
       <Text style={styles.section}>{t("account.section.signIn")}</Text>
@@ -163,6 +169,54 @@ function SignedIn({ logic }: { readonly logic: ReturnType<typeof useAccountLogic
         <Text style={styles.deleteText}>{t("account.delete.title")}</Text>
       </Pressable>
     </>
+  );
+}
+
+/**
+ * The one field on this screen that is written back to the server.
+ *
+ * The field and its button sit on their own line under the label rather than at the end of
+ * a row: a name is long enough that the sliver left beside a label on a phone would show
+ * about four letters of it.
+ */
+function NameRow({ logic }: { readonly logic: ReturnType<typeof useAccountLogic> }) {
+  const { t } = useTranslation();
+  const busy = logic.renaming;
+  const canSave = logic.nameChanged && !busy;
+  return (
+    <View style={[styles.row, styles.rowLast, styles.nameRow]}>
+      <Text style={styles.rowTitle}>{t("account.name.title")}</Text>
+      <View style={styles.nameField}>
+        <TextInput
+          value={logic.nameDraft}
+          onChangeText={logic.editName}
+          placeholder={t("account.name.placeholder")}
+          placeholderTextColor={colors.inkSubtle}
+          maxLength={120}
+          autoCapitalize="words"
+          textContentType="name"
+          returnKeyType="done"
+          onSubmitEditing={() => void logic.saveName()}
+          accessibilityLabel={t("account.name.title")}
+          style={styles.nameInput}
+        />
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => void logic.saveName()}
+          disabled={!canSave}
+          style={[styles.nameSave, !canSave && styles.dim]}
+        >
+          {busy ? (
+            <ActivityIndicator color={colors.paper} size="small" />
+          ) : (
+            <Text style={styles.nameSaveText}>{t("common.save")}</Text>
+          )}
+        </Pressable>
+      </View>
+      <Text style={[styles.rowBody, logic.renameFailed && styles.nameFailed]}>
+        {logic.renameFailed ? t("account.name.failed") : t("account.name.body")}
+      </Text>
+    </View>
   );
 }
 
@@ -268,6 +322,30 @@ const styles = StyleSheet.create({
   rowTitle: { fontSize: 13.5, color: colors.ink },
   rowBody: { fontSize: 11, color: colors.inkSubtle, marginTop: 2 },
   rowValue: { fontSize: 12.5, color: colors.inkSubtle, flexShrink: 1 },
+  nameRow: { flexDirection: "column", alignItems: "stretch", gap: 8 },
+  nameField: { flexDirection: "row", alignItems: "center", gap: 8 },
+  nameInput: {
+    flex: 1,
+    height: 40,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    fontSize: 14,
+    color: colors.ink,
+    backgroundColor: colors.paper,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.line,
+  },
+  nameSave: {
+    height: 40,
+    minWidth: 82,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 16,
+    borderRadius: 999,
+    backgroundColor: colors.ink,
+  },
+  nameSaveText: { fontSize: 13, fontWeight: "600", color: colors.paper },
+  nameFailed: { color: colors.accent },
   signOut: {
     flexDirection: "row",
     alignItems: "center",

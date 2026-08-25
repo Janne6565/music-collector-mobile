@@ -86,6 +86,17 @@ export async function requestPasswordReset(email: string): Promise<void> {
   }).catch(() => undefined);
 }
 
+/**
+ * Renames the account.
+ *
+ * Returns the account as the server now reads it rather than echoing what was sent: the
+ * server trims the name and turns a blank one back into "no name", and the screen should
+ * show what was actually stored.
+ */
+export async function updateDisplayName(displayName: string): Promise<AccountUser> {
+  return request<AccountUser>("/api/v1/auth/me", { method: "PATCH", body: { displayName } });
+}
+
 export async function signOut(): Promise<void> {
   // Best effort: the local session is cleared either way, so a failed call cannot strand
   // someone in a half-signed-out state.

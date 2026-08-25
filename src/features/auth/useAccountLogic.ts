@@ -10,6 +10,7 @@ import {
   requestPasswordReset,
   signIn,
   signOut,
+  updateDisplayName,
 } from "@/api/auth";
 import { refreshSession } from "@/api/client";
 import { signInWithProvider } from "@/features/auth/externalSignIn";
@@ -40,6 +41,16 @@ export function useAccountLogic() {
   const [resetSent, setResetSent] = useState(false);
   const [failed, setFailed] = useState<AuthError | null>(null);
   const [busy, setBusy] = useState(false);
+  /**
+   * The name in the field, or null while it is still just showing the account's own.
+   *
+   * Null rather than a copy of the current name, because the session is restored from the
+   * keychain after this screen has mounted: a draft seeded up front would sit there empty
+   * until the person touched it.
+   */
+  const [nameDraft, setNameDraft] = useState<string | null>(null);
+  const [renaming, setRenaming] = useState(false);
+  const [renameFailed, setRenameFailed] = useState(false);
   const [syncEnabled, setSyncEnabledState] = useState(true);
   const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
   const syncing = useRef(false);
@@ -207,9 +218,37 @@ export function useAccountLogic() {
     }
   }, [store]);
 
+  const accountName = user?.displayName ?? "";
+  const saveName = useCallback(async () => {
+    const next = nameDraft;
+    if (next === null || next.trim() === accountName) return;
+    setRenaming(true);
+    setRenameFailed(false);
+    try {
+      setUser(await updateDisplayName(next.trim()));
+      // Back to following the account, which now says what was just typed.
+      setNameDraft(null);
+    } catch {
+      setRenameFailed(true);
+    } finally {
+      setRenaming(false);
+    }
+  }, [nameDraft, accountName]);
+
   return {
     user,
     restoring,
+    /** What the name field shows, which is the account's own name until it is edited. */
+    nameDraft: nameDraft ?? accountName,
+    editName: useCallback((next: string) => {
+      setNameDraft(next);
+      setRenameFailed(false);
+    }, []),
+    /** A rename is only offered once it would actually change something. */
+    nameChanged: nameDraft !== null && nameDraft.trim() !== accountName,
+    saveName,
+    renaming,
+    renameFailed,
     syncEnabled,
     setSyncEnabled: useCallback(
       async (enabled: boolean) => {

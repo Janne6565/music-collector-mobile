@@ -207,7 +207,13 @@ const enCommon = {
     title: "Account",
     passwordBody: "Change it from the reset link on the sign-in screen.",
     stat: { copies: "copies", releases: "releases" },
-    section: { signIn: "Sign-in", storage: "Storage and sync" },
+    section: { profile: "Profile", signIn: "Sign-in", storage: "Storage and sync" },
+    name: {
+      title: "Display name",
+      body: "What the app calls you. Leave it empty to go by your e-mail.",
+      placeholder: "Your name",
+      failed: "That name could not be saved. Try again in a moment.",
+    },
     sync: {
       title: "Sync across devices",
       last: "Last synced {{when}}",
@@ -461,7 +467,13 @@ const deCommon: CommonSchema = {
     title: "Konto",
     passwordBody: "Änderbar über den Zurücksetzen-Link auf der Anmeldeseite.",
     stat: { copies: "Exemplare", releases: "Veröffentlichungen" },
-    section: { signIn: "Anmeldung", storage: "Speicher und Sync" },
+    section: { profile: "Profil", signIn: "Anmeldung", storage: "Speicher und Sync" },
+    name: {
+      title: "Anzeigename",
+      body: "Wie die App dich nennt. Leer lassen, dann steht deine E-Mail dort.",
+      placeholder: "Dein Name",
+      failed: "Der Name konnte nicht gespeichert werden. Versuche es gleich noch einmal.",
+    },
     sync: {
       title: "Zwischen Geräten synchronisieren",
       last: "Zuletzt synchronisiert {{when}}",
