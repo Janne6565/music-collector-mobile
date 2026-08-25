@@ -186,6 +186,23 @@ eas submit --platform ios --latest      # submit an already-finished build
 
 - **The build dies at `bun install` with a 401.** `NODE_AUTH_TOKEN` is missing or expired
   on EAS — step 1. This is the single most likely first-build failure in this repo.
+- **iOS build fails at "Failed to sync capabilities".** Apple answers the capability
+  PATCH with a misleading *"The bundle '…' cannot be deleted. Delete all the Apps related
+  to this bundle to proceed."* — nothing is being deleted, and the bundle identifier is
+  registered fine; only the capability patch fails. eas-cli tries to switch capabilities
+  the app config doesn't declare (e.g. `APPLE_ID_AUTH`) **off**. This app needs no special
+  entitlements at all — auth is plain email/password, and the camera, photo-library and
+  Keychain access it does use are Info.plist usage strings, not capabilities. So there is
+  nothing for the sync to do, and it is safe to skip:
+
+  ```sh
+  EXPO_NO_CAPABILITY_SYNC=1 eas build --platform ios --profile development
+  ```
+
+  Revisit only if the app ever gains a real entitlement — Sign in with Apple, push
+  notifications, associated domains, app groups — in which case enable it by hand at
+  <https://developer.apple.com/account/resources/identifiers> instead.
+
 - **`appVersionSource: remote`** means EAS owns the build number and `versionCode`;
   `production.autoIncrement` bumps them server-side. Don't hand-edit `version` in
   `app.json` expecting it to drive the store build number — it's the user-facing version
