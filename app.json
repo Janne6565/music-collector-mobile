@@ -9,6 +9,7 @@
     "userInterfaceStyle": "light",
     "plugins": [
       "expo-router",
+      "expo-dev-client",
       [
         "expo-camera",
         {
@@ -28,7 +29,10 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "de.jannekeipert.musiccollector"
+      "bundleIdentifier": "de.jannekeipert.musiccollector",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "de.jannekeipert.musiccollector",
@@ -38,13 +42,24 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "experiments": {
       "typedRoutes": true
+    },
+    "owner": "janne6565",
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "0aa09257-7b1a-416d-a2ac-e0f7882fa4e7"
+      }
     }
   }
 }

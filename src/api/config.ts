@@ -16,4 +16,20 @@ function developmentBase(): string | null {
   return host === undefined || host === "" ? null : `http://${host}:8080`;
 }
 
-export const API_BASE = __DEV__ ? (developmentBase() ?? STAGING) : PRODUCTION;
+/**
+ * An explicit build-time override, set per EAS build profile in `eas.json`.
+ *
+ * It has to be read as a literal `process.env.EXPO_PUBLIC_*` member expression: the Expo
+ * bundler substitutes the value by matching the source text, so a computed lookup would
+ * survive the build as `undefined`. Absent from the `development` and `production`
+ * profiles, where the fallbacks below are already right; `preview` sets it to staging so
+ * a QA build cannot write test copies into the real collection.
+ */
+const OVERRIDE = process.env.EXPO_PUBLIC_API_BASE;
+
+export const API_BASE =
+  OVERRIDE !== undefined && OVERRIDE !== ""
+    ? OVERRIDE
+    : __DEV__
+      ? (developmentBase() ?? STAGING)
+      : PRODUCTION;

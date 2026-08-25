@@ -17,9 +17,15 @@ lucide-react-native · typed react-i18next · expo-camera (barcode scanning) · 
 
 ```bash
 bun install
-bun start          # then press i / a, or scan the QR code
+bun start          # Expo Go — then press i / a, or scan the QR code
+bun run dev        # against an installed dev-client build
 bun run typecheck
 ```
+
+Every native module the app uses ships in the Expo Go runtime, so `bun start` is enough
+for most work. Real device builds and store releases run through **EAS** — profiles live
+in `eas.json`, and the setup (including the GitHub Packages token the EAS worker needs)
+is in [`docs/RELEASING.md`](docs/RELEASING.md).
 
 ## Gotchas
 

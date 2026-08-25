@@ -1,0 +1,67 @@
+{
+  // EAS Build + Submit config. `appVersionSource: remote` lets EAS own the
+  // build/version numbers so `production.autoIncrement` bumps the iOS build
+  // number / Android versionCode server-side on every store build.
+  "cli": {
+    "version": ">= 12.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    // Shared by every profile: the collection domain, the merge and the sync
+    // engine come from @janne6565/music-collector-shared on GitHub Packages,
+    // which authenticates reads even though the package is public. `.npmrc`
+    // expands ${NODE_AUTH_TOKEN}, so the install step on the EAS worker fails
+    // with a 401 unless that variable exists. It is a secret and therefore
+    // lives on EAS, not in this file — see docs/RELEASING.md:
+    //   eas env:create --name NODE_AUTH_TOKEN --type secret --scope project
+    "base": {
+      "node": "20.19.2"
+    },
+    // Dev-client build for day-to-day work on a device/simulator. Internal
+    // distribution installs directly (no store).
+    "development": {
+      "extends": "base",
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    // Release-configured binary, still installed via an internal link (ad-hoc /
+    // shareable) for pre-store QA. Pointed at staging so a QA build cannot
+    // write test copies into the production collection.
+    "preview": {
+      "extends": "base",
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_BASE": "https://music-staging.jannekeipert.de"
+      }
+    },
+    // Store build: signed for TestFlight / Play, build number auto-incremented.
+    // No EXPO_PUBLIC_API_BASE — src/api/config.ts falls back to production.
+    "production": {
+      "extends": "base",
+      "autoIncrement": true
+    }
+  },
+  // Store credentials are deliberately absent from this file. Both the Google
+  // Service Account key and the App Store Connect API key are uploaded to and
+  // held by EAS (`eas credentials`), so no key paths, Apple IDs or team IDs —
+  // all machine- and account-specific — are committed. EAS resolves the target
+  // app from the bundle identifier / package name in app.json.
+  // Full setup walkthrough: docs/RELEASING.md.
+  "submit": {
+    "production": {
+      // iOS submission needs `ascAppId` here — App Store Connect's numeric app
+      // ID (App Information → General → "Apple ID"). It only exists once the
+      // app record is created by hand, and eas.json rejects an empty string, so
+      // the key is omitted entirely rather than stubbed. A --non-interactive
+      // submit fails with "Set ascAppId in the submit profile" until it is
+      // added, which is why store submission stays gated behind the
+      // EAS_AUTO_SUBMIT repo variable. Not a secret: the same number appears in
+      // every App Store URL. See docs/RELEASING.md.
+      "android": {
+        // First submission must be "internal" (Play internal testing track);
+        // the app has to exist in the Play Console before EAS can submit to it.
+        "track": "internal"
+      }
+    }
+  }
+}
