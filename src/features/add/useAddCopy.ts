@@ -1,7 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import * as Crypto from "expo-crypto";
 import { useRouter } from "expo-router";
+import { lookupRelease } from "@/api/releases";
 import type { Release } from "@/domain/types";
+import type { LocalStore } from "@/local/LocalStore";
 import { createCopy } from "@/local/copyWrites";
 import { useStore } from "@/local/StoreProvider";
 
@@ -43,9 +45,14 @@ export function useAddCopy() {
       await store.putCopy(copy);
       return copy;
     },
-    onSuccess: async (copy) => {
+    onSuccess: async (copy, release) => {
       await queryClient.invalidateQueries({ queryKey: ["copies"] });
       await queryClient.invalidateQueries({ queryKey: ["stats"] });
+      // A search result carries no cover theme — only the detail lookup samples one, and on
+      // a cover the server has never seen that takes seconds. Warm it now, so the record
+      // that was just filed opens already themed instead of changing colour under the user.
+      // Fire and forget: it changes nothing here, and failing is a non-event.
+      void warmCoverTheme(release, store);
       // Replace rather than push: the screen that added the copy is a step on the way to
       // it, and going back from a record you just filed should return to the search, not
       // to the list you picked it from.
@@ -63,4 +70,18 @@ export function useAddCopy() {
     /** Which release is being written, so only its own row shows a spinner. */
     addingMbid: addCopy.isPending ? addCopy.variables?.id : undefined,
   };
+}
+
+/**
+ * Fetches and stores one release's cover theme without anyone waiting for it.
+ *
+ * Failures are swallowed on purpose: the theme is decoration, the copy is already saved,
+ * and the detail screen asks again for itself if this never lands.
+ */
+async function warmCoverTheme(release: Release, store: LocalStore): Promise<void> {
+  if (release.coverTheme !== null) return;
+  const enriched = await lookupRelease(release.id).catch(() => null);
+  if (enriched !== null && enriched.coverTheme !== null) {
+    await store.cacheReleases([enriched]).catch(() => undefined);
+  }
 }
