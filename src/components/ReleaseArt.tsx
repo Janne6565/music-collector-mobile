@@ -50,6 +50,7 @@ export function ReleaseArt({
   variant = "sleeve",
   fallbackUri = null,
   allowCatalogArt = true,
+  format,
 }: {
   readonly release: CoverSubject | undefined;
   readonly style?: ArtStyle;
@@ -70,6 +71,13 @@ export function ReleaseArt({
    * or the silhouette rather than keep being handed what it discarded.
    */
   readonly allowCatalogArt?: boolean;
+  /**
+   * The format to draw the silhouette in, when the caller knows better than the release.
+   *
+   * A copy may be a cassette of a pressing the archive lists as vinyl, and the tile it
+   * sits in should say what is on the shelf — see `copyFormat`.
+   */
+  readonly format?: Format;
 }) {
   const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
   // A set rather than one URL: with a fallback there are two addresses in play, and
@@ -107,7 +115,7 @@ export function ReleaseArt({
       <View style={[styles.frame, style]}>
         {/* Kept mounted underneath rather than swapped out, so nothing behind the frame
             is ever visible through an image that is still decoding. */}
-        {!shown && <FormatThumb format={release?.format ?? "OTHER"} waiting={!gone} />}
+        {!shown && <FormatThumb format={format ?? release?.format ?? "OTHER"} waiting={!gone} />}
         {art}
       </View>
     );
@@ -115,7 +123,7 @@ export function ReleaseArt({
 
   return (
     <FormatThumb
-      format={release?.format ?? "OTHER"}
+      format={format ?? release?.format ?? "OTHER"}
       style={style}
       cover={art}
       waiting={!gone && !shown}

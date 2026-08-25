@@ -7,7 +7,13 @@ import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, V
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ReleaseArt } from "@/components/ReleaseArt";
 import type { Copy, DetailChrome, Release } from "@janne6565/music-collector-shared";
-import { CONDITION_LABELS, CONDITION_SHORT, FORMAT_LABELS, chromeFor } from "@janne6565/music-collector-shared";
+import {
+  CONDITION_LABELS,
+  CONDITION_SHORT,
+  FORMAT_LABELS,
+  chromeFor,
+  copyFormat,
+} from "@janne6565/music-collector-shared";
 import { CopyEditor } from "@/features/detail/CopyEditor";
 import { useCoverWash } from "@/features/detail/useCoverWash";
 import { useDetailLogic } from "@/features/detail/useDetailLogic";
@@ -143,6 +149,7 @@ function DetailBody({
         <View style={styles.cover}>
           <ReleaseArt
             release={release}
+            format={copyFormat(copy, release)}
             style={styles.coverImage}
             variant="bleed"
             fallbackUri={photos.firstUri}
@@ -162,11 +169,11 @@ function DetailBody({
 
         <View style={styles.body}>
           <View style={styles.badges}>
-            {release !== undefined && (
-              <Badge chrome={chrome} strong>
-                {FORMAT_LABELS[release.format]}
-              </Badge>
-            )}
+            {/* The copy's format, not the release's: a tape of a record listed as vinyl
+                is still a tape on your shelf. */}
+            <Badge chrome={chrome} strong>
+              {FORMAT_LABELS[copyFormat(copy, release)]}
+            </Badge>
             {copy.condition !== null && <Badge chrome={chrome}>{CONDITION_SHORT[copy.condition]}</Badge>}
           </View>
 
@@ -196,6 +203,7 @@ function DetailBody({
           {editing ? (
             <CopyEditor
               copy={copy}
+              catalogFormat={release?.format}
               chrome={chrome}
               saving={logic.saving}
               onSave={(patch) => {
@@ -247,7 +255,9 @@ function DetailBody({
                     style={[styles.card, styles.otherCard, { backgroundColor: chrome.surface }]}
                   >
                     <Text style={[styles.fieldKey, { color: chrome.muted }]}>
-                      {siblingRelease === undefined ? "—" : FORMAT_LABELS[siblingRelease.format]}
+                      {siblingRelease === undefined && sibling.manualFormat === null
+                        ? "—"
+                        : FORMAT_LABELS[copyFormat(sibling, siblingRelease)]}
                     </Text>
                     <Text style={[styles.otherValue, { color: chrome.ink }]}>
                       {siblingRelease?.year ?? ""}

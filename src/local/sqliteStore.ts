@@ -224,7 +224,8 @@ export class SqliteLocalStore implements LocalStore {
     const artist = "COALESCE(r.artistName, c.manualArtist)";
 
     if (filter.format !== undefined && filter.format !== "ALL") {
-      clauses.push("COALESCE(r.format, c.manualFormat) = ?");
+      // The copy's own format first: it overrides the archive's where it is set.
+      clauses.push("COALESCE(c.manualFormat, r.format) = ?");
       params.push(filter.format);
     }
     const term = filter.search?.trim();
@@ -570,9 +571,9 @@ export class SqliteLocalStore implements LocalStore {
        FROM copies c LEFT JOIN releases r ON r.id = c.releaseId WHERE c.deletedAt IS NULL`,
     );
     const perFormat = await db.getAllAsync<{ format: string; n: number }>(
-      `SELECT COALESCE(r.format, c.manualFormat) AS format, COUNT(*) AS n
+      `SELECT COALESCE(c.manualFormat, r.format) AS format, COUNT(*) AS n
        FROM copies c LEFT JOIN releases r ON r.id = c.releaseId
-       WHERE c.deletedAt IS NULL GROUP BY COALESCE(r.format, c.manualFormat)`,
+       WHERE c.deletedAt IS NULL GROUP BY COALESCE(c.manualFormat, r.format)`,
     );
 
     const byFormat = Object.fromEntries(FORMATS.map((format) => [format, 0])) as Record<Format, number>;

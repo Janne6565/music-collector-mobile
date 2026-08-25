@@ -1,5 +1,11 @@
 import type { Condition, Copy, Format, Release } from "@janne6565/music-collector-shared";
-import { CONDITIONS, FORMATS, formatCentsForInput, parseMoneyToCents } from "@janne6565/music-collector-shared";
+import {
+  CONDITIONS,
+  FORMATS,
+  copyFormat,
+  formatCentsForInput,
+  parseMoneyToCents,
+} from "@janne6565/music-collector-shared";
 /**
  * The collection as a spreadsheet: one row per copy.
  *
@@ -73,7 +79,7 @@ export function toCsv(copies: readonly Copy[], releases: ReadonlyMap<string, Rel
         release?.title ?? "",
         release?.artistName ?? "",
         release?.year === null || release?.year === undefined ? "" : String(release.year),
-        release?.format ?? "",
+        copyFormat(copy, release),
         release?.label ?? "",
         release?.catalogNumber ?? "",
         release?.country ?? "",

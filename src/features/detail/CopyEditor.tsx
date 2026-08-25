@@ -11,6 +11,8 @@ import {
 } from "@janne6565/music-collector-shared";
 interface CopyEditorProps {
   readonly copy: Copy;
+  /** What the archive says this pressing is, so the chips start where it stands. */
+  readonly catalogFormat?: Format;
   readonly chrome: DetailChrome;
   readonly saving: boolean;
   readonly onSave: (patch: CopyPatch) => void;
@@ -18,9 +20,16 @@ interface CopyEditorProps {
 }
 
 /** Editing a copy — what you paid, its condition, where it came from. */
-export function CopyEditor({ copy, chrome, saving, onSave, onCancel }: CopyEditorProps) {
+export function CopyEditor({
+  copy,
+  catalogFormat,
+  chrome,
+  saving,
+  onSave,
+  onCancel,
+}: CopyEditorProps) {
   const { t } = useTranslation();
-  const editor = useCopyEditorLogic(copy, onSave);
+  const editor = useCopyEditorLogic(copy, onSave, catalogFormat);
 
   return (
     <View style={styles.root}>
@@ -66,24 +75,25 @@ export function CopyEditor({ copy, chrome, saving, onSave, onCancel }: CopyEdito
               style={[styles.input, { color: chrome.ink }]}
             />
           </Labelled>
-          <Text style={[styles.legend, { color: chrome.muted }]}>{t("manual.format")}</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.chips}
-          >
-            {FORMATS.map((format) => (
-              <Chip
-                key={format}
-                label={FORMAT_LABELS[format]}
-                active={editor.fields.format === format}
-                chrome={chrome}
-                onPress={() => editor.set("format", format as Format)}
-              />
-            ))}
-          </ScrollView>
         </>
       )}
+
+      {/* Outside the block above: every copy may say what it is. The archive answers for
+          the pressing, but what is on your shelf can be a tape of a record it only lists
+          as vinyl — and picking the catalogue's format again puts the copy back to
+          following it. */}
+      <Text style={[styles.legend, { color: chrome.muted }]}>{t("manual.format")}</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+        {FORMATS.map((format) => (
+          <Chip
+            key={format}
+            label={FORMAT_LABELS[format]}
+            active={editor.fields.format === format}
+            chrome={chrome}
+            onPress={() => editor.set("format", format as Format)}
+          />
+        ))}
+      </ScrollView>
 
       <GradeRow
         label={t("detail.mediaCondition")}

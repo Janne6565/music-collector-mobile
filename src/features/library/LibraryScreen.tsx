@@ -6,7 +6,7 @@ import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ReleaseArt } from "@/components/ReleaseArt";
 import type { Format } from "@janne6565/music-collector-shared";
-import { catalogArtShown } from "@janne6565/music-collector-shared";
+import { catalogArtShown, copyFormat } from "@janne6565/music-collector-shared";
 import { FORMAT_LABELS } from "@janne6565/music-collector-shared";
 import { type FormatFilter, type LibraryRow, useLibraryLogic } from "@/features/library/useLibraryLogic";
 import { useCoverPhotos } from "@/features/photos/useCoverPhotos";
@@ -102,6 +102,7 @@ function GridItem({
     <Pressable onPress={onPress} style={styles.item}>
       <ReleaseArt
         release={row.release}
+        format={copyFormat(row.copy, row.release)}
         fallbackUri={fallbackUri}
         allowCatalogArt={allowCatalogArt}
       />
