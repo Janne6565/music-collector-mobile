@@ -247,3 +247,32 @@ export async function lookupAlbumCovers(
   }
   return covers;
 }
+
+/** The same hundred-id cap as the covers endpoint, so a large collection asks in pages. */
+const RELEASE_BATCH = 100;
+
+/**
+ * The releases behind a set of ids, straight from the mirror.
+ *
+ * What the phone asks for after signing in: sync hands it copies that *name* releases,
+ * never the releases themselves, so without this every record pulled onto a second device
+ * is an untitled placeholder. Ids the mirror cannot answer for — hand-entered `local:`
+ * releases among them — are simply absent, and the caller keeps whatever it had.
+ *
+ * Mirrors `lookupReleases` in music-collector-frontend/src/api/releases.ts.
+ */
+export async function lookupReleases(releaseIds: readonly string[]): Promise<Release[]> {
+  const now = Date.now();
+  const releases: Release[] = [];
+  for (let start = 0; start < releaseIds.length; start += RELEASE_BATCH) {
+    const query = releaseIds
+      .slice(start, start + RELEASE_BATCH)
+      .map((releaseId) => `releaseId=${encodeURIComponent(releaseId)}`)
+      .join("&");
+    for (const payload of await getJson<ReleasePayload[]>(`/api/v1/metadata/releases?${query}`)) {
+      const release = toRelease(payload, now);
+      if (release !== null) releases.push(release);
+    }
+  }
+  return releases;
+}

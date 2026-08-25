@@ -1,4 +1,5 @@
 import { downloadPhotoBytes, uploadPhotoBytes } from "@/api/photos";
+import { lookupReleases } from "@/api/releases";
 import { pullChanges, pushChanges } from "@/api/sync";
 import type { NativeLocalStore } from "@/local/LocalStore";
 import type { ClockSource, SyncTransport } from "@janne6565/music-collector-shared";
@@ -37,6 +38,16 @@ export function createSyncTransport(store: NativeLocalStore): SyncTransport {
 
     uploadPhoto: (photo) =>
       uploadPhotoBytes(photo.id, photo.copyId, store.photoUri(photo.id), photo.contentType),
+
+    /**
+     * The catalogue behind the copies that just arrived. It does not travel inside a sync
+     * batch — a release is a shared cache, not somebody's record — so the engine asks for
+     * it separately, and without this a phone that has only ever pulled shows a shelf of
+     * untitled placeholders.
+     */
+    async fetchReleases(releaseIds) {
+      return lookupReleases(releaseIds);
+    },
 
     async downloadPhoto(photo) {
       await store.putPhotoBytes(photo.id, await downloadPhotoBytes(photo.id), photo.contentType);
