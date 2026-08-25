@@ -14,7 +14,7 @@ import {
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
-  FlatList,
+  Animated,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -25,6 +25,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { releaseDisambiguation } from "@/api/releases";
 import { ArtistResults } from "@/features/add/ArtistResults";
+import { useCross } from "@/lib/motion";
 import { FormatThumb } from "@/components/FormatThumb";
 import { Skeleton } from "@/components/Skeleton";
 import { ReleaseArt } from "@/components/ReleaseArt";
@@ -122,6 +123,13 @@ export function AddScreen() {
 function Body({ logic, onScan }: { readonly logic: Logic; readonly onScan: () => void }) {
   const { t } = useTranslation();
   const router = useRouter();
+  /*
+   * A Cross on the block, never per row — keyed on the term that was actually searched, so
+   * it runs when the answer changes rather than on every keystroke. While the debounce is
+   * pending the old results stay put at full opacity, and the spinner in the field is the
+   * only thing that says anything is happening.
+   */
+  const crossing = useCross(logic.submittedTerm);
 
   if (logic.searching) return <SearchingRows />;
   if (logic.failed) return <Text style={styles.hint}>{t("add.failed")}</Text>;
@@ -159,7 +167,8 @@ function Body({ logic, onScan }: { readonly logic: Logic; readonly onScan: () =>
     });
 
   return (
-    <FlatList
+    <Animated.FlatList
+      style={{ opacity: crossing }}
       data={logic.results}
       keyExtractor={(release) => release.id}
       contentContainerStyle={styles.list}

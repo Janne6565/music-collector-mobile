@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import * as Crypto from "expo-crypto";
 import { useRouter } from "expo-router";
+import { useState } from "react";
 import { lookupRelease } from "@/api/releases";
 import type { Release } from "@janne6565/music-collector-shared";
 import { createCopy } from "@janne6565/music-collector-shared";
@@ -16,10 +17,13 @@ import { useStore } from "@/local/StoreProvider";
  * and a second implementation of that is how the two paths start producing copies that
  * differ in ways nobody intended.
  */
-export function useAddCopy() {
+export function useAddCopy(options: { readonly stay?: boolean } = {}) {
   const { store, clock } = useStore();
   const queryClient = useQueryClient();
   const router = useRouter();
+
+  /** Which pressing was just added, for the row that is staying put to ring itself. */
+  const [added, setAdded] = useState<string | null>(null);
 
   const addCopy = useMutation({
     mutationFn: async (release: Release) => {
@@ -54,6 +58,16 @@ export function useAddCopy() {
       // that was just filed opens already themed instead of changing colour under the user.
       // Fire and forget: it changes nothing here, and failing is a non-event.
       void warmCoverTheme(release, store);
+      /*
+       * A pressing added from a discography (10c) stays where it is: the reader is mid-
+       * list, and moving the list under them to celebrate would cost them their place.
+       * The row says so itself, with a tick and the Mark ring.
+       */
+      if (options.stay === true) {
+        setAdded(copy.releaseId);
+        return;
+      }
+
       // Replace rather than push: the screen that added the copy is a step on the way to
       // it, and going back from a record you just filed should return to the search, not
       // to the list you picked it from.
@@ -68,6 +82,7 @@ export function useAddCopy() {
 
   return {
     add: (release: Release) => addCopy.mutate(release),
+    added,
     /** Which release is being written, so only its own row shows a spinner. */
     addingMbid: addCopy.isPending ? addCopy.variables?.id : undefined,
   };

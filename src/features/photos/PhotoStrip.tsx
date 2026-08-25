@@ -1,9 +1,11 @@
 import { Camera, ImagePlus, Trash2 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { useRef } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
 import { ActivityIndicator, Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import type { DetailChrome } from "@janne6565/music-collector-shared";
 import type { PhotoStripLogic } from "@/features/photos/usePhotoStripLogic";
+import { curve, useReducedMotion } from "@/lib/motion";
+import { DURATION } from "@janne6565/music-collector-shared";
 
 /**
  * One thumbnail, over a tile that holds its place until the file has decoded.
@@ -51,7 +53,7 @@ export function PhotoStrip({
 
       <View style={styles.strip}>
         {logic.photos.map((photo) => (
-          <View key={photo.id} style={styles.tile}>
+          <PhotoTile key={photo.id}>
             <PhotoThumb uri={logic.uriFor(photo)} chrome={chrome} />
             <Pressable
               accessibilityRole="button"
@@ -71,7 +73,7 @@ export function PhotoStrip({
                 </Text>
               </View>
             )}
-          </View>
+          </PhotoTile>
         ))}
 
         <Pressable
@@ -140,3 +142,31 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 });
+
+/**
+ * One photo arriving.
+ *
+ * The bytes are already on this device — the camera or the picker just wrote them — so
+ * there is nothing to wait for and the tile appears at full opacity. What it does is
+ * scale up from .94, which reads as "this is the one that just landed" without pretending
+ * anything was fetched. `timing` rather than `spring`, so it matches the web.
+ */
+function PhotoTile({ children }: { readonly children: ReactNode }) {
+  const scale = useRef(new Animated.Value(0.94)).current;
+  const reduced = useReducedMotion();
+
+  useEffect(() => {
+    if (reduced) {
+      scale.setValue(1);
+      return;
+    }
+    Animated.timing(scale, {
+      toValue: 1,
+      duration: DURATION.base,
+      easing: curve.enter,
+      useNativeDriver: true,
+    }).start();
+  }, [scale, reduced]);
+
+  return <Animated.View style={[styles.tile, { transform: [{ scale }] }]}>{children}</Animated.View>;
+}

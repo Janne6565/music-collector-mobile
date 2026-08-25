@@ -1,13 +1,15 @@
+import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
 import { ChevronLeft, Pencil, Star, Trash2 } from "lucide-react-native";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ReleaseArt } from "@/components/ReleaseArt";
-import type { Copy, DetailChrome } from "@janne6565/music-collector-shared";
+import type { Copy, DetailChrome, Release } from "@janne6565/music-collector-shared";
 import { CONDITION_LABELS, CONDITION_SHORT, FORMAT_LABELS, chromeFor } from "@janne6565/music-collector-shared";
 import { CopyEditor } from "@/features/detail/CopyEditor";
+import { useCoverWash } from "@/features/detail/useCoverWash";
 import { useDetailLogic } from "@/features/detail/useDetailLogic";
 import { PhotoStrip } from "@/features/photos/PhotoStrip";
 import { usePhotoStripLogic } from "@/features/photos/usePhotoStripLogic";
@@ -29,10 +31,10 @@ export function DetailScreen({
   readonly startEditing?: boolean;
 }) {
   const { t } = useTranslation();
-  const router = useRouter();
   const logic = useDetailLogic(copyId);
   const photos = usePhotoStripLogic(copyId);
   const [editing, setEditing] = useState(startEditing);
+  const wash = useCoverWash(logic.data?.release?.coverTheme ?? null);
 
   if (logic.loading) {
     return (
@@ -50,10 +52,93 @@ export function DetailScreen({
   }
 
   const { copy, release, otherCopies } = logic.data;
-  const chrome = chromeFor(release?.coverTheme ?? null);
+
+  /*
+   * The screen is drawn in its destination chrome from the first frame; the paper it may
+   * be arriving from is a layer on top of the background, and the words it is arriving
+   * from are a second copy of this body fading out over 100ms. See `useCoverWash`.
+   */
+  return (
+    <View style={styles.root}>
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: wash.chrome.background }]} />
+      <Animated.View
+        pointerEvents="none"
+        style={[StyleSheet.absoluteFill, { backgroundColor: PAPER, opacity: wash.paper }]}
+      />
+      <DetailBody
+        chrome={wash.chrome}
+        accent={wash.accent}
+        copy={copy}
+        release={release}
+        otherCopies={otherCopies}
+        logic={logic}
+        photos={photos}
+        editing={editing}
+        setEditing={setEditing}
+      />
+      {wash.outgoing !== null && (
+        <Animated.View
+          pointerEvents="none"
+          style={[StyleSheet.absoluteFill, { opacity: wash.outgoingOpacity }]}
+        >
+          <DetailBody
+            chrome={wash.outgoing}
+            accent={wash.accent}
+            copy={copy}
+            release={release}
+            otherCopies={otherCopies}
+            logic={logic}
+            photos={photos}
+            editing={editing}
+            setEditing={setEditing}
+          />
+        </Animated.View>
+      )}
+      <StatusBar style={wash.barStyle} />
+    </View>
+  );
+}
+
+/** The paper the screen washes away from, and the only colour that is not the chrome's. */
+const PAPER = chromeFor(null).background;
+
+interface DetailBodyProps {
+  readonly chrome: DetailChrome;
+  readonly accent: Animated.Value;
+  readonly copy: Copy;
+  readonly release: Release | undefined;
+  readonly otherCopies: readonly { copy: Copy; release: Release | undefined }[];
+  readonly logic: ReturnType<typeof useDetailLogic>;
+  readonly photos: ReturnType<typeof usePhotoStripLogic>;
+  readonly editing: boolean;
+  readonly setEditing: (editing: boolean) => void;
+}
+
+/**
+ * Everything on the page, as a function of the chrome it is drawn in.
+ *
+ * Presentational on purpose: both hooks it needs are held by the screen above and handed
+ * down, so rendering a second copy during a wash costs a second tree and no second
+ * database read, no second photo list and no second scroll position to keep in step.
+ */
+function DetailBody({
+  chrome,
+  accent,
+  copy,
+  release,
+  otherCopies,
+  logic,
+  photos,
+  editing,
+  setEditing,
+}: DetailBodyProps) {
+  const { t } = useTranslation();
+  const router = useRouter();
 
   return (
-    <View style={[styles.root, { backgroundColor: chrome.background }]}>
+    // No background of its own: the layers behind it own the colour, which is what
+    // lets the paper one fade away on the native driver while this stays put.
+    <View style={styles.root}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.cover}>
           <ReleaseArt
@@ -91,7 +176,12 @@ export function DetailScreen({
             {release?.year == null ? "" : ` · ${release.year}`}
           </Text>
 
-          <View style={styles.stars}>
+          {/*
+           * The accent lands last, 120ms after the words have swapped. Until then the
+           * stars are drawn in a colour that was chosen against a chrome the screen has
+           * already left, so they are simply not shown yet.
+           */}
+          <Animated.View style={[styles.stars, { opacity: accent }]}>
             {[1, 2, 3, 4, 5].map((star) => (
               <Star
                 key={star}
@@ -101,7 +191,7 @@ export function DetailScreen({
                 fill={star <= (copy.rating ?? 0) ? chrome.accent : "transparent"}
               />
             ))}
-          </View>
+          </Animated.View>
 
           {editing ? (
             <CopyEditor

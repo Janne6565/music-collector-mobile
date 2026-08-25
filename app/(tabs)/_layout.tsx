@@ -9,6 +9,12 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
+        /*
+         * Turn 13i: nothing. Content swaps on the frame of the tap, and only the icon and
+         * label colour move. Three local screens do not need to slide past each other, and
+         * a transition here would put a wait in front of a read that has none.
+         */
+        animation: "none",
         tabBarActiveTintColor: colors.ink,
         tabBarInactiveTintColor: colors.inkMuted,
         tabBarStyle: { backgroundColor: colors.paper, borderTopColor: colors.line },

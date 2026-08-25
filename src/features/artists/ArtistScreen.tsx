@@ -1,7 +1,9 @@
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Search } from "lucide-react-native";
+import { Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Search } from "lucide-react-native";
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
+  Animated,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -18,6 +20,7 @@ import type { Album, Artist, Release } from "@janne6565/music-collector-shared";
 import { FORMAT_LABELS } from "@janne6565/music-collector-shared";
 import { ArtistAvatar } from "@/features/add/ArtistResults";
 import { useAddCopy } from "@/features/add/useAddCopy";
+import { useMarkRing } from "@/lib/motion";
 import { PRIMARY_TYPES, useDiscographyLogic } from "@/features/artists/useDiscographyLogic";
 import { colors } from "@/theme/colors";
 
@@ -44,7 +47,7 @@ export function ArtistScreen({ artist, fromQuery }: ArtistScreenProps) {
   const { t } = useTranslation();
   const router = useRouter();
   const logic = useDiscographyLogic(artist.mbid);
-  const { add, addingMbid } = useAddCopy();
+  const { add, addingMbid, added } = useAddCopy({ stay: true });
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
@@ -100,7 +103,7 @@ export function ArtistScreen({ artist, fromQuery }: ArtistScreenProps) {
           ))}
         </ScrollView>
 
-        <Discography logic={logic} add={add} addingMbid={addingMbid} />
+        <Discography logic={logic} add={add} addingMbid={addingMbid} added={added} />
 
         {logic.type === null && <RestDisclosure logic={logic} />}
 
@@ -182,10 +185,12 @@ function Discography({
   logic,
   add,
   addingMbid,
+  added,
 }: {
   readonly logic: Logic;
   readonly add: (release: Release) => void;
   readonly addingMbid: string | undefined;
+  readonly added: string | null;
 }) {
   const { t } = useTranslation();
 
@@ -216,6 +221,7 @@ function Discography({
                 logic={logic}
                 add={add}
                 addingMbid={addingMbid}
+                added={added}
               />
             ))
           )}
@@ -230,11 +236,13 @@ function AlbumRow({
   logic,
   add,
   addingMbid,
+  added,
 }: {
   readonly album: Album;
   readonly logic: Logic;
   readonly add: (release: Release) => void;
   readonly addingMbid: string | undefined;
+  readonly added: string | null;
 }) {
   const { t } = useTranslation();
   const expanded = logic.expandedAlbum === album.albumId;
@@ -272,7 +280,7 @@ function AlbumRow({
       </Pressable>
 
       {expanded && (
-        <Pressings logic={logic} add={add} addingMbid={addingMbid} />
+        <Pressings logic={logic} add={add} addingMbid={addingMbid} added={added} />
       )}
     </View>
   );
@@ -289,10 +297,12 @@ function Pressings({
   logic,
   add,
   addingMbid,
+  added,
 }: {
   readonly logic: Logic;
   readonly add: (release: Release) => void;
   readonly addingMbid: string | undefined;
+  readonly added: string | null;
 }) {
   const { t } = useTranslation();
 
@@ -320,13 +330,12 @@ function Pressings({
       {logic.pressings.map((pressing) => {
         const meta = releaseDisambiguation(pressing);
         return (
-          <Pressable
+          <PressingRow
             key={pressing.id}
-            accessibilityRole="button"
+            marked={added === pressing.id}
             accessibilityLabel={`${pressing.title} — ${t("add.add")}`}
             onPress={() => add(pressing)}
-            disabled={addingMbid !== undefined}
-            style={styles.pressingRow}
+            disabled={addingMbid !== undefined || added === pressing.id}
           >
             <View style={styles.rowBody}>
               <Text style={styles.pressingTitle} numberOfLines={1}>
@@ -340,10 +349,13 @@ function Pressings({
             </View>
             {addingMbid === pressing.id ? (
               <ActivityIndicator size="small" color="#fff" />
+            ) : added === pressing.id ? (
+              // The control itself is the answer: it became the tick, in place.
+              <Check size={15} color="#fff" strokeWidth={2} />
             ) : (
               <ChevronRight size={15} color="rgba(255,255,255,0.45)" strokeWidth={1.75} />
             )}
-          </Pressable>
+          </PressingRow>
         );
       })}
       <Text style={styles.pressingHint}>{t("artists.pickLater")}</Text>
@@ -513,6 +525,13 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingVertical: 10,
   },
+  /** The 2px accent ring, over the row rather than around it, so nothing reflows. */
+  markRing: {
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: "#d08a5f",
+    marginHorizontal: -6,
+  },
   pressingTitle: { fontSize: 12.5, fontWeight: "600", color: "#fff" },
   pressingHint: {
     fontSize: 11,
@@ -541,3 +560,42 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.4)",
   },
 });
+
+/**
+ * One pressing, and the ring it takes when it becomes a record you own.
+ *
+ * The row does not move and the list does not reorder under it — the reader is somewhere
+ * in a discography and that place is theirs. The ring is the whole celebration, and it is
+ * the same one the library grid gives a record that has just arrived.
+ */
+function PressingRow({
+  marked,
+  accessibilityLabel,
+  onPress,
+  disabled,
+  children,
+}: {
+  readonly marked: boolean;
+  readonly accessibilityLabel: string;
+  readonly onPress: () => void;
+  readonly disabled: boolean;
+  readonly children: ReactNode;
+}) {
+  const ring = useMarkRing(marked);
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      onPress={onPress}
+      disabled={disabled}
+      style={styles.pressingRow}
+    >
+      <Animated.View
+        pointerEvents="none"
+        style={[StyleSheet.absoluteFill, styles.markRing, { opacity: ring }]}
+      />
+      {children}
+    </Pressable>
+  );
+}
