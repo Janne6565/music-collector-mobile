@@ -1,4 +1,6 @@
 import type { LocalStore } from "@/local/LocalStore";
+import type { WishSort } from "@janne6565/music-collector-shared";
+import { parseWishSort } from "@janne6565/music-collector-shared";
 
 /**
  * The handful of device-local preferences the account screen exposes.
@@ -13,6 +15,14 @@ const LAST_SYNCED_AT = "lastSyncedAt";
 /** The last few things typed into the add search, newest first. */
 const RECENT_SEARCHES = "recentSearches";
 const RECENT_SEARCH_LIMIT = 6;
+/**
+ * How the wishlist is ordered on this device.
+ *
+ * A preference, not synced data — unlike the hand-built order itself, which is a
+ * `sortIndex` on every entry. Which column you happen to be reading a list by is a fact
+ * about the screen in front of you; where you dragged a row to is a fact about the list.
+ */
+const WISHLIST_SORT = "wishlistSort";
 
 /** Defaults to on: someone who signed in asked for sync, and asked for it silently. */
 export async function readSyncEnabled(store: LocalStore): Promise<boolean> {
@@ -63,4 +73,12 @@ export async function rememberSearch(store: LocalStore, term: string): Promise<v
 
 export async function clearRecentSearches(store: LocalStore): Promise<void> {
   await store.writeSetting(RECENT_SEARCHES, "[]");
+}
+
+export async function readWishlistSort(store: LocalStore): Promise<WishSort> {
+  return parseWishSort(await store.readSetting(WISHLIST_SORT));
+}
+
+export async function writeWishlistSort(store: LocalStore, sort: WishSort): Promise<void> {
+  await store.writeSetting(WISHLIST_SORT, sort);
 }

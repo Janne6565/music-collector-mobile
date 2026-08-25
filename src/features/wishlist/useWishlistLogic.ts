@@ -1,83 +1,128 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { searchReleases } from "@/api/releases";
-import type { WishlistItem } from "@janne6565/music-collector-shared";
-import { createCopy, tombstoneWishlistItem } from "@janne6565/music-collector-shared";
 import { useStore } from "@/local/StoreProvider";
-import * as Crypto from "expo-crypto";
+import { readWishlistSort, writeWishlistSort } from "@/local/settings";
+import type { WishPatch, WishSort, WishlistItem } from "@janne6565/music-collector-shared";
+import {
+  applyWishPatch,
+  hasManualOrder,
+  manualOrderWrites,
+  moveWish,
+  sortWishlist,
+  tombstoneWishlistItem,
+} from "@janne6565/music-collector-shared";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
 
+/**
+ * Screens 16a and 16b — the list, and what an entry can be told to do.
+ *
+ * Deliberately the same shape as the web hook of this name, down to the field names: the
+ * two screens are drawn differently but they are one feature, and a phone that decides
+ * "found it" means something else is a phone that empties the list wrongly.
+ */
 export function useWishlistLogic() {
   const { store, clock } = useStore();
   const queryClient = useQueryClient();
 
-  const wishlist = useQuery({
-    queryKey: ["wishlist"],
-    queryFn: () => store.listWishlist(),
+  const wishlist = useQuery({ queryKey: ["wishlist"], queryFn: () => store.listWishlist() });
+  const sortQuery = useQuery({
+    queryKey: ["wishlistSort"],
+    queryFn: () => readWishlistSort(store),
   });
 
-  const invalidate = async () => {
-    await queryClient.invalidateQueries({ queryKey: ["wishlist"] });
-    await queryClient.invalidateQueries({ queryKey: ["copies"] });
-    await queryClient.invalidateQueries({ queryKey: ["stats"] });
-  };
+  const sort: WishSort = sortQuery.data ?? "NEWEST";
+  const items = wishlist.data ?? [];
+  const ordered = useMemo(() => sortWishlist(items, sort), [items, sort]);
+
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["wishlist"] });
+
+  const chooseSort = useMutation({
+    mutationFn: (next: WishSort) => writeWishlistSort(store, next),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["wishlistSort"] }),
+  });
 
   /**
-   * "Got it" — the whole point of a wishlist.
+   * Dropping a row renumbers the list and switches the sort to "Your order".
    *
-   * Looks the album up so the new copy points at a real release rather than a placeholder,
-   * and only removes the wish once the copy exists: losing the wish and gaining nothing
-   * would be the worse of the two failures.
+   * Switching is the point, not a side effect: dragging while the list is ordered by title
+   * would otherwise produce a move the next render undoes.
    */
-  const collect = useMutation({
-    mutationFn: async (item: WishlistItem) => {
-      const query = `artist:"${item.artistName}" AND release:"${item.title}"`;
-      const candidates = await searchReleases(query, 10).catch(() => []);
-      const release =
-        candidates.find((candidate) => candidate.format === item.desiredFormat) ?? candidates[0];
-      if (release === undefined) {
-        throw new Error("No matching release found");
+  const reorder = useMutation({
+    mutationFn: async ({ from, to }: { readonly from: number; readonly to: number }) => {
+      const next = moveWish(ordered, from, to);
+      for (const { item, sortIndex } of manualOrderWrites(next)) {
+        await store.putWishlistItem(applyWishPatch(item, { sortIndex }, clock));
       }
-
-      await store.cacheReleases([release]);
-      await store.putCopy(
-        createCopy(
-          release,
-          {
-            condition: null,
-            sleeveCondition: null,
-            catalogArt: "AUTO",
-            pricePaidCents: null,
-            currency: "EUR",
-            purchasedOn: null,
-            purchasedAt: null,
-            // The wish note becomes the copy's note: "want an original Spoon press" is
-            // exactly the sort of thing you still want written down once you own it.
-            notes: item.note,
-            rating: null,
-          },
-          clock,
-          Date.now(),
-          Crypto.randomUUID(),
-        ),
-      );
-      await store.putWishlistItem(tombstoneWishlistItem(item, clock, Date.now()));
+      await writeWishlistSort(store, "MANUAL");
     },
+    onSuccess: async () => {
+      await invalidate();
+      await queryClient.invalidateQueries({ queryKey: ["wishlistSort"] });
+    },
+  });
+
+  const edit = useMutation({
+    mutationFn: ({ item, patch }: { readonly item: WishlistItem; readonly patch: WishPatch }) =>
+      store.putWishlistItem(applyWishPatch(item, patch, clock)),
     onSuccess: invalidate,
   });
 
   const remove = useMutation({
-    mutationFn: async (item: WishlistItem) => {
-      await store.putWishlistItem(tombstoneWishlistItem(item, clock, Date.now()));
-    },
+    mutationFn: (item: WishlistItem) =>
+      store.putWishlistItem(tombstoneWishlistItem(item, clock, Date.now())),
     onSuccess: invalidate,
   });
 
   return {
-    items: wishlist.data ?? [],
+    items: ordered,
+    count: items.length,
     loading: wishlist.isLoading,
-    collect: (item: WishlistItem) => collect.mutate(item),
-    collecting: collect.isPending ? collect.variables?.id : undefined,
-    collectFailed: collect.isError,
+    sort,
+    manual: hasManualOrder(items),
+    setSort: (next: WishSort) => chooseSort.mutate(next),
+    reorder: (from: number, to: number) => reorder.mutate({ from, to }),
+    edit: (item: WishlistItem, patch: WishPatch) => edit.mutate({ item, patch }),
     remove: (item: WishlistItem) => remove.mutate(item),
     removing: remove.isPending ? remove.variables?.id : undefined,
+  };
+}
+
+/** One entry, for screen 16b. Reads the same store rather than being handed down a list. */
+export function useWishEntryLogic(wishId: string) {
+  const { store } = useStore();
+  const logic = useWishlistLogic();
+
+  const entry = useQuery({
+    queryKey: ["wishlist", wishId],
+    queryFn: async () =>
+      (await store.listWishlist()).find((item) => item.id === wishId) ?? null,
+  });
+
+  /**
+   * The other records by this artist you already own (16b's footer).
+   *
+   * Matched on the artist name rather than an artist id: a wish carries the name it was
+   * created with and nothing else, and a footnote is not worth a lookup that can fail.
+   */
+  const alsoOwned = useQuery({
+    queryKey: ["wishlistAlsoOwned", wishId],
+    enabled: entry.data != null,
+    queryFn: async () => {
+      const artist = entry.data?.artistName.toLowerCase();
+      if (artist === undefined) return [];
+      const copies = await store.listCopies();
+      const releases = await store.getReleases(copies.map((copy) => copy.releaseId));
+      return copies
+        .map((copy) => releases.get(copy.releaseId))
+        .filter((release) => release !== undefined)
+        .filter((release) => release.artistName.toLowerCase() === artist)
+        .map((release) => release.title);
+    },
+  });
+
+  return {
+    ...logic,
+    entry: entry.data ?? null,
+    loading: entry.isLoading,
+    alsoOwned: [...new Set(alsoOwned.data ?? [])],
   };
 }

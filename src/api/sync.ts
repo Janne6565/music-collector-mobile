@@ -45,6 +45,8 @@ function toCopy(raw: unknown): Copy | null {
     notes: dto.notes ?? null,
     notesConflict: dto.notesConflict ?? null,
     rating: dto.rating ?? null,
+    // Absent means a server older than the field, which reads as not hidden.
+    hidden: dto.hidden ?? false,
     createdAt: dto.createdAt,
     deletedAt: dto.deletedAt ?? null,
     fieldClocks: dto.fieldClocks,
@@ -72,6 +74,8 @@ function toWish(raw: unknown): WishlistItem | null {
     year: dto.year ?? null,
     desiredFormat: dto.desiredFormat ?? null,
     note: dto.note ?? null,
+    // Absent means a server older than the field, which reads as never hand-placed.
+    sortIndex: dto.sortIndex ?? null,
     createdAt: dto.createdAt,
     deletedAt: dto.deletedAt ?? null,
     fieldClocks: dto.fieldClocks,

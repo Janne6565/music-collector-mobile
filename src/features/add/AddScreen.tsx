@@ -32,6 +32,7 @@ import { ReleaseArt } from "@/components/ReleaseArt";
 import type { Artist, Format, Release, WishlistItem } from "@janne6565/music-collector-shared";
 import { FORMAT_LABELS } from "@janne6565/music-collector-shared";
 import { FORMAT_FILTERS, useAddLogic } from "@/features/add/useAddLogic";
+import { WishSheet } from "@/features/wishlist/WishSheet";
 import { colors, fonts } from "@/theme/colors";
 
 type Logic = ReturnType<typeof useAddLogic>;
@@ -60,10 +61,14 @@ const SKELETON_ROWS: readonly (readonly [Percent, Percent, Percent])[] = [
  * and the camera it opens into is dark. Flashing a paper-white sheet on the way to a scan
  * is the one place the light theme actively hurts.
  */
-export function AddScreen() {
+/**
+ * `wish` arrives from screen 16b's "I found a copy": the entry's search, already run.
+ * A wish names an album, not a pressing, so which copy you found is still yours to pick.
+ */
+export function AddScreen({ seedTerm = "" }: { readonly seedTerm?: string } = {}) {
   const { t } = useTranslation();
   const router = useRouter();
-  const logic = useAddLogic();
+  const logic = useAddLogic(seedTerm);
   const [permission, requestPermission] = useCameraPermissions();
 
   if (logic.scanning) {
@@ -116,6 +121,10 @@ export function AddScreen() {
       {logic.showFormatFilter && <FormatChips logic={logic} />}
 
       <Body logic={logic} onScan={() => void scan()} />
+
+      {logic.wishFor !== null && (
+        <WishSheet onClose={logic.closeWish} release={logic.wishFor} />
+      )}
     </SafeAreaView>
   );
 }
@@ -202,8 +211,8 @@ function Body({ logic, onScan }: { readonly logic: Logic; readonly onScan: () =>
           release={item}
           adding={logic.addingMbid === item.id}
           onAdd={() => logic.addRelease(item)}
-          wishing={logic.wishingMbid === item.id}
-          onWish={() => logic.wishFor(item)}
+          wishing={false}
+          onWish={() => logic.openWish(item)}
         />
       )}
     />

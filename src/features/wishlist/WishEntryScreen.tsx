@@ -1,0 +1,234 @@
+import { FormatThumb } from "@/components/FormatThumb";
+import { WishSheet } from "@/features/wishlist/WishSheet";
+import { useWishEntryLogic } from "@/features/wishlist/useWishlistLogic";
+import { colors, fonts } from "@/theme/colors";
+import type { WishFormat } from "@janne6565/music-collector-shared";
+import { FORMAT_LABELS, asWishFormat } from "@janne6565/music-collector-shared";
+import { useRouter } from "expo-router";
+import { Check, ChevronLeft, Heart, HeartOff, Pencil } from "lucide-react-native";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+/** The four chips of screen 16b, matching the sheet. */
+const CHIPS: readonly (WishFormat | null)[] = ["VINYL", "CD", "CASSETTE", null];
+
+/**
+ * Screen 16b — one entry.
+ *
+ * A release, not a copy: the format you want, a note, the date it went on, and the three
+ * things you can do to it. What it is careful *not* to have is anything about a pressing —
+ * condition, price, where you bought it — because none of that is true yet.
+ */
+export function WishEntryScreen({ wishId }: { readonly wishId: string }) {
+  const { t, i18n } = useTranslation();
+  const router = useRouter();
+  const logic = useWishEntryLogic(wishId);
+  const [editing, setEditing] = useState(false);
+
+  const entry = logic.entry;
+
+  if (logic.loading) return <SafeAreaView style={styles.safe} edges={["top"]} />;
+  if (entry === null) {
+    return (
+      <SafeAreaView style={styles.safe} edges={["top"]}>
+        <Header onBack={() => router.back()} />
+        <Text style={styles.gone}>{t("wishlist.entryGone")}</Text>
+      </SafeAreaView>
+    );
+  }
+
+  const since = new Intl.DateTimeFormat(i18n.language, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(entry.createdAt);
+
+  return (
+    <SafeAreaView style={styles.safe} edges={["top"]}>
+      <Header onBack={() => router.back()} />
+
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.hero}>
+          <FormatThumb format={entry.desiredFormat ?? "OTHER"} />
+        </View>
+        <Text style={styles.title}>{entry.title}</Text>
+        <Text style={styles.subtitle}>
+          {entry.artistName}
+          {entry.year === null ? "" : ` · ${entry.year}`}
+        </Text>
+
+        <View style={styles.sinceRow}>
+          <View style={styles.sinceBadge}>
+            <Heart size={13} color={colors.accent} strokeWidth={2} />
+            <Text style={styles.sinceBadgeText}>{t("wishlist.onWishlist")}</Text>
+          </View>
+          <Text style={styles.sinceText}>{t("wishlist.since", { date: since })}</Text>
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.label}>{t("wishlist.wantedFormat")}</Text>
+          <View style={styles.chips}>
+            {CHIPS.map((chip) => {
+              const on = asWishFormat(entry.desiredFormat) === chip;
+              return (
+                <Pressable
+                  key={chip ?? "ANY"}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: on }}
+                  // Editable in place: the format you want is the one thing about an entry
+                  // that changes on its own — you give up on the original press, or you
+                  // stop caring — and a sheet in front of that is a sheet in the way.
+                  onPress={() => logic.edit(entry, { desiredFormat: chip })}
+                  style={[styles.chip, on && styles.chipOn]}
+                >
+                  <Text style={[styles.chipText, on && styles.chipTextOn]}>
+                    {chip === null ? t("wishlist.anyFormat") : FORMAT_LABELS[chip]}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          <View style={styles.divider} />
+
+          <Text style={styles.label}>{t("wishlist.note")}</Text>
+          <Text style={entry.note === null ? styles.noteEmpty : styles.note}>
+            {entry.note ?? t("wishlist.noNote")}
+          </Text>
+        </View>
+
+        {/*
+         * "I found a copy" hands over to the add flow with the entry's search already run.
+         * The entry stays on the list until a copy actually exists — backing out of the
+         * add flow has to cost nothing, and the removal is the add's business (16e).
+         */}
+        <Pressable
+          accessibilityRole="button"
+          onPress={() =>
+            router.push(`/add?wish=${encodeURIComponent(`${entry.artistName} ${entry.title}`.trim())}`)
+          }
+          style={styles.primary}
+        >
+          <Check size={17} color={colors.paper} strokeWidth={2} />
+          <Text style={styles.primaryText}>{t("wishlist.foundACopy")}</Text>
+        </Pressable>
+        <Text style={styles.primaryHint}>{t("wishlist.foundACopyHint")}</Text>
+
+        <View style={styles.secondaries}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => setEditing(true)}
+            style={styles.secondary}
+          >
+            <Pencil size={15} color={colors.ink} strokeWidth={1.75} />
+            <Text style={styles.secondaryText}>{t("wishlist.editNote")}</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => {
+              logic.remove(entry);
+              router.back();
+            }}
+            style={styles.secondary}
+          >
+            <HeartOff size={15} color={colors.ink} strokeWidth={1.75} />
+            <Text style={styles.secondaryText}>{t("wishlist.remove")}</Text>
+          </Pressable>
+        </View>
+
+        {logic.alsoOwned.length > 0 && (
+          <View style={styles.also}>
+            <Text style={styles.alsoTitle}>
+              {t("wishlist.alsoOwn", { artist: entry.artistName, count: logic.alsoOwned.length })}
+            </Text>
+            <Text style={styles.alsoList} numberOfLines={2}>
+              {logic.alsoOwned.join(" · ")}
+            </Text>
+          </View>
+        )}
+      </ScrollView>
+
+      {editing && <WishSheet onClose={() => setEditing(false)} entry={entry} />}
+    </SafeAreaView>
+  );
+}
+
+function Header({ onBack }: { readonly onBack: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <Pressable accessibilityRole="button" onPress={onBack} style={styles.back}>
+      <ChevronLeft size={20} color={colors.ink} strokeWidth={1.75} />
+      <Text style={styles.backText}>{t("nav.wishlist")}</Text>
+    </Pressable>
+  );
+}
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: colors.paper },
+  back: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 12, paddingVertical: 10 },
+  backText: { fontSize: 14, color: colors.ink },
+  gone: { padding: 18, fontSize: 13, color: colors.inkMuted },
+  content: { padding: 18, paddingBottom: 60 },
+  hero: { width: 128, alignSelf: "center" },
+  title: { fontFamily: fonts.serif, fontSize: 26, color: colors.ink, textAlign: "center", marginTop: 18 },
+  subtitle: { fontSize: 13, color: colors.inkMuted, textAlign: "center", marginTop: 4 },
+  sinceRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, marginTop: 12 },
+  sinceBadge: { flexDirection: "row", alignItems: "center", gap: 5 },
+  sinceBadgeText: { fontSize: 12, fontWeight: "600", color: colors.accent },
+  sinceText: { fontSize: 11.5, color: colors.inkSubtle },
+  card: {
+    marginTop: 22,
+    padding: 14,
+    borderRadius: 14,
+    backgroundColor: colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.line,
+  },
+  label: { fontSize: 10, letterSpacing: 1, textTransform: "uppercase", color: colors.inkSubtle },
+  chips: { flexDirection: "row", gap: 8, marginTop: 10 },
+  chip: {
+    paddingHorizontal: 13,
+    paddingVertical: 7,
+    borderRadius: 999,
+    backgroundColor: colors.paper,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.line,
+  },
+  chipOn: { backgroundColor: colors.ink, borderColor: colors.ink },
+  chipText: { fontSize: 12.5, color: colors.inkMuted, fontWeight: "500" },
+  chipTextOn: { color: colors.paper, fontWeight: "700" },
+  divider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.line, marginVertical: 16 },
+  note: { fontSize: 13.5, lineHeight: 20, color: colors.ink, marginTop: 8 },
+  noteEmpty: { fontSize: 13.5, color: colors.inkSubtle, marginTop: 8 },
+  primary: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    height: 52,
+    borderRadius: 999,
+    backgroundColor: colors.ink,
+    marginTop: 22,
+  },
+  primaryText: { fontFamily: fonts.sans, fontSize: 15, fontWeight: "700", color: colors.paper },
+  primaryHint: { fontSize: 11.5, lineHeight: 17, color: colors.inkMuted, textAlign: "center", marginTop: 10 },
+  secondaries: { flexDirection: "row", gap: 10, marginTop: 18 },
+  secondary: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+    height: 46,
+    borderRadius: 999,
+    backgroundColor: colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.line,
+  },
+  secondaryText: { fontSize: 13, fontWeight: "600", color: colors.ink },
+  also: { marginTop: 26 },
+  alsoTitle: { fontSize: 12.5, fontWeight: "600", color: colors.ink },
+  alsoList: { fontSize: 12, color: colors.inkMuted, marginTop: 3 },
+});

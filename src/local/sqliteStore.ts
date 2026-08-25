@@ -130,6 +130,7 @@ export class SqliteLocalStore implements LocalStore {
         year             INTEGER,
         desiredFormat    TEXT,
         note             TEXT,
+        sortIndex        INTEGER,
         createdAt        INTEGER NOT NULL,
         deletedAt        INTEGER,
         fieldClocks      TEXT NOT NULL DEFAULT '{}'
@@ -172,6 +173,12 @@ export class SqliteLocalStore implements LocalStore {
         ALTER TABLE copies ADD COLUMN manualCatalogNumber TEXT;
         ALTER TABLE copies ADD COLUMN manualFormat TEXT;
       `);
+    }
+    // Where a hand-sorted entry sits (16a). Nullable: null is "never placed by hand",
+    // which is not the same as position 0 and must not be written as one.
+    const wishColumns = await db.getAllAsync<{ name: string }>("PRAGMA table_info(wishlist)");
+    if (!wishColumns.some((column) => column.name === "sortIndex")) {
+      await db.execAsync("ALTER TABLE wishlist ADD COLUMN sortIndex INTEGER");
     }
     await this.qualifyIds(db, columns);
     this.db = db;
@@ -541,8 +548,8 @@ export class SqliteLocalStore implements LocalStore {
   private async writeWish(item: WishlistItem): Promise<void> {
     await this.handle().runAsync(
       `INSERT OR REPLACE INTO wishlist
-        (id, albumId, title, artistName, year, desiredFormat, note, createdAt, deletedAt, fieldClocks)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (id, albumId, title, artistName, year, desiredFormat, note, sortIndex, createdAt, deletedAt, fieldClocks)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         item.id,
         item.albumId,
@@ -551,6 +558,7 @@ export class SqliteLocalStore implements LocalStore {
         item.year,
         item.desiredFormat,
         item.note,
+        item.sortIndex,
         item.createdAt,
         item.deletedAt,
         JSON.stringify(item.fieldClocks),

@@ -6,6 +6,7 @@ import { lookupRelease } from "@/api/releases";
 import type { Release } from "@janne6565/music-collector-shared";
 import { createCopy } from "@janne6565/music-collector-shared";
 import type { LocalStore } from "@/local/LocalStore";
+import { useSatisfyWishes } from "@/features/wishlist/useSatisfyWishes";
 import { useStore } from "@/local/StoreProvider";
 
 /**
@@ -21,6 +22,7 @@ export function useAddCopy(options: { readonly stay?: boolean } = {}) {
   const { store, clock } = useStore();
   const queryClient = useQueryClient();
   const router = useRouter();
+  const satisfyWishes = useSatisfyWishes();
 
   /** Which pressing was just added, for the row that is staying put to ring itself. */
   const [added, setAdded] = useState<string | null>(null);
@@ -53,6 +55,9 @@ export function useAddCopy(options: { readonly stay?: boolean } = {}) {
     onSuccess: async (copy, release) => {
       await queryClient.invalidateQueries({ queryKey: ["copies"] });
       await queryClient.invalidateQueries({ queryKey: ["stats"] });
+      // Screen 16e: filing the record a wish was waiting for takes the entry off the list,
+      // whichever way in you used and whether or not you came from the wishlist at all.
+      await satisfyWishes(copy, release);
       // A search result carries no cover theme — only the detail lookup samples one, and on
       // a cover the server has never seen that takes seconds. Warm it now, so the record
       // that was just filed opens already themed instead of changing colour under the user.

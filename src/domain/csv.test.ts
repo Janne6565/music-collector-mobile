@@ -39,6 +39,7 @@ const copy: Copy = {
   notes: "Gatefold, faint ring wear.\nPlays clean after a wash.",
   notesConflict: null,
   rating: 4,
+  hidden: false,
   createdAt: 1,
   deletedAt: null,
   fieldClocks: {} as Copy["fieldClocks"],

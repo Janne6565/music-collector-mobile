@@ -2,12 +2,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { lookupByBarcode, searchReleases } from "@/api/releases";
 import type { Format, Release } from "@janne6565/music-collector-shared";
-import { createWishlistItem } from "@janne6565/music-collector-shared";
 import { useAddCopy } from "@/features/add/useAddCopy";
 import { useArtistSearchLogic } from "@/features/add/useArtistSearchLogic";
 import { clearRecentSearches, readRecentSearches, rememberSearch } from "@/local/settings";
 import { useStore } from "@/local/StoreProvider";
-import * as Crypto from "expo-crypto";
 
 /**
  * The format filter above the results (screens 2a and 10a).
@@ -41,11 +39,11 @@ const DEBOUNCE_MS = 350;
 /** Below this, a title search matches most of the archive and tells you nothing. */
 const MIN_TERM_LENGTH = 2;
 
-export function useAddLogic() {
-  const { store, clock } = useStore();
+export function useAddLogic(seedTerm = "") {
+  const { store } = useStore();
   const queryClient = useQueryClient();
-  const [term, setTerm] = useState("");
-  const [submitted, setSubmitted] = useState("");
+  const [term, setTerm] = useState(seedTerm);
+  const [submitted, setSubmitted] = useState(seedTerm);
   const [scanning, setScanning] = useState(false);
   const [format, setFormat] = useState<AddFormatFilter>("ALL");
 
@@ -61,32 +59,13 @@ export function useAddLogic() {
   const { add, addingMbid } = useAddCopy();
 
   /**
-   * Wishing for something you do not own yet. Keyed on the release *group*: you want the
-   * album on vinyl, not one particular pressing of it.
+   * Wishing for something you do not own yet.
+   *
+   * The heart opens the sheet (screen 16c) rather than writing the entry on the spot: an
+   * entry is a release *plus* the format you want and a note, and a heart that silently
+   * guessed both would produce a list nobody wrote.
    */
-  const addWish = useMutation({
-    mutationFn: async (release: Release) => {
-      if (await store.wishlistHas(release.albumId)) return;
-      await store.putWishlistItem(
-        createWishlistItem(
-          {
-            albumId: release.albumId,
-            title: release.title,
-            artistName: release.artistName,
-            year: release.year,
-            desiredFormat: release.format,
-            note: null,
-          },
-          clock,
-          Date.now(),
-          Crypto.randomUUID(),
-        ),
-      );
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["wishlist"] });
-    },
-  });
+  const [wishFor, setWishFor] = useState<Release | null>(null);
 
   /** The empty state of screen 5a: what you looked for last. */
   const recent = useQuery({
@@ -225,7 +204,8 @@ export function useAddLogic() {
       add(release);
     },
     addingMbid,
-    wishFor: (release: Release) => addWish.mutate(release),
-    wishingMbid: addWish.isPending ? addWish.variables?.id : undefined,
+    wishFor,
+    openWish: (release: Release) => setWishFor(release),
+    closeWish: () => setWishFor(null),
   };
 }
