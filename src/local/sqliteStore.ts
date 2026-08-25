@@ -77,7 +77,7 @@ export class SqliteLocalStore implements LocalStore {
 
       CREATE TABLE IF NOT EXISTS copies (
         id              TEXT PRIMARY KEY NOT NULL,
-        releaseMbid     TEXT NOT NULL,
+        releaseId     TEXT NOT NULL,
         condition       TEXT,
         sleeveCondition TEXT,
         pricePaidCents  INTEGER,
@@ -91,12 +91,12 @@ export class SqliteLocalStore implements LocalStore {
         deletedAt       INTEGER,
         fieldClocks     TEXT NOT NULL
       );
-      CREATE INDEX IF NOT EXISTS copies_release_idx ON copies (releaseMbid);
+      CREATE INDEX IF NOT EXISTS copies_release_idx ON copies (releaseId);
       CREATE INDEX IF NOT EXISTS copies_alive_idx ON copies (deletedAt);
 
       CREATE TABLE IF NOT EXISTS releases (
-        mbid             TEXT PRIMARY KEY NOT NULL,
-        releaseGroupMbid TEXT NOT NULL,
+        id               TEXT PRIMARY KEY NOT NULL,
+        albumId TEXT NOT NULL,
         title            TEXT NOT NULL,
         artistName       TEXT NOT NULL,
         year             INTEGER,
@@ -109,11 +109,11 @@ export class SqliteLocalStore implements LocalStore {
         coverTheme       TEXT,
         cachedAt         INTEGER NOT NULL
       );
-      CREATE INDEX IF NOT EXISTS releases_group_idx ON releases (releaseGroupMbid);
+      CREATE INDEX IF NOT EXISTS releases_group_idx ON releases (albumId);
 
       CREATE TABLE IF NOT EXISTS wishlist (
         id               TEXT PRIMARY KEY NOT NULL,
-        releaseGroupMbid TEXT NOT NULL,
+        albumId TEXT NOT NULL,
         title            TEXT NOT NULL,
         artistName       TEXT NOT NULL,
         year             INTEGER,
@@ -123,7 +123,7 @@ export class SqliteLocalStore implements LocalStore {
         deletedAt        INTEGER,
         fieldClocks      TEXT NOT NULL DEFAULT '{}'
       );
-      CREATE INDEX IF NOT EXISTS wishlist_group_idx ON wishlist (releaseGroupMbid);
+      CREATE INDEX IF NOT EXISTS wishlist_group_idx ON wishlist (albumId);
 
       CREATE TABLE IF NOT EXISTS photos (
         id            TEXT PRIMARY KEY NOT NULL,
@@ -150,7 +150,45 @@ export class SqliteLocalStore implements LocalStore {
     if (!columns.some((column) => column.name === "sleeveCondition")) {
       await db.execAsync("ALTER TABLE copies ADD COLUMN sleeveCondition TEXT");
     }
+    await this.qualifyIds(db, columns);
     this.db = db;
+  }
+
+  /**
+   * Ids become source-qualified, because the app now reads two catalogues.
+   *
+   * Every id written before today came from MusicBrainz, so prefixing is exactly right and
+   * nothing is lost. SQLite can rename a column in place, primary key included, which is
+   * why this is three statements rather than a table rebuild.
+   *
+   * The field clocks are keyed by field name, so a clock left under the old key would read
+   * as never-set — losing every edit that field has ever won in a merge.
+   */
+  private async qualifyIds(
+    db: SQLite.SQLiteDatabase,
+    copyColumns: readonly { name: string }[],
+  ): Promise<void> {
+    if (!copyColumns.some((column) => column.name === "releaseMbid")) {
+      return;
+    }
+    await db.execAsync(`
+      ALTER TABLE copies   RENAME COLUMN releaseMbid TO releaseId;
+      ALTER TABLE releases RENAME COLUMN mbid TO id;
+      ALTER TABLE releases RENAME COLUMN releaseGroupMbid TO albumId;
+      ALTER TABLE wishlist RENAME COLUMN releaseGroupMbid TO albumId;
+
+      UPDATE copies   SET releaseId = 'musicbrainz:' || releaseId WHERE releaseId NOT LIKE '%:%';
+      UPDATE releases SET id        = 'musicbrainz:' || id        WHERE id        NOT LIKE '%:%';
+      UPDATE releases SET albumId   = 'musicbrainz:' || albumId   WHERE albumId   NOT LIKE '%:%';
+      UPDATE wishlist SET albumId   = 'musicbrainz:' || albumId   WHERE albumId   NOT LIKE '%:%';
+
+      UPDATE copies
+         SET fieldClocks = replace(fieldClocks, '"releaseMbid"', '"releaseId"')
+       WHERE fieldClocks LIKE '%"releaseMbid"%';
+      UPDATE wishlist
+         SET fieldClocks = replace(fieldClocks, '"releaseGroupMbid"', '"albumId"')
+       WHERE fieldClocks LIKE '%"releaseGroupMbid"%';
+    `);
   }
 
   async listCopies(filter: LibraryFilter = {}): Promise<Copy[]> {
@@ -176,7 +214,7 @@ export class SqliteLocalStore implements LocalStore {
           : "c.createdAt DESC";
 
     const rows = await this.handle().getAllAsync<CopyRow>(
-      `SELECT c.* FROM copies c LEFT JOIN releases r ON r.mbid = c.releaseMbid
+      `SELECT c.* FROM copies c LEFT JOIN releases r ON r.id = c.releaseId
        WHERE ${clauses.join(" AND ")} ORDER BY ${order}`,
       params,
     );
@@ -196,11 +234,11 @@ export class SqliteLocalStore implements LocalStore {
     return row === null ? undefined : toCopy(row);
   }
 
-  async listCopiesInReleaseGroup(releaseGroupMbid: string): Promise<Copy[]> {
+  async listCopiesInReleaseGroup(albumId: string): Promise<Copy[]> {
     const rows = await this.handle().getAllAsync<CopyRow>(
-      `SELECT c.* FROM copies c JOIN releases r ON r.mbid = c.releaseMbid
-       WHERE r.releaseGroupMbid = ? AND c.deletedAt IS NULL`,
-      [releaseGroupMbid],
+      `SELECT c.* FROM copies c JOIN releases r ON r.id = c.releaseId
+       WHERE r.albumId = ? AND c.deletedAt IS NULL`,
+      [albumId],
     );
     return rows.map(toCopy);
   }
@@ -218,12 +256,12 @@ export class SqliteLocalStore implements LocalStore {
   private async write(copy: Copy): Promise<void> {
     await this.handle().runAsync(
       `INSERT OR REPLACE INTO copies
-        (id, releaseMbid, condition, sleeveCondition, pricePaidCents, currency, purchasedOn,
+        (id, releaseId, condition, sleeveCondition, pricePaidCents, currency, purchasedOn,
          purchasedAt, notes, notesConflict, rating, createdAt, deletedAt, fieldClocks)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         copy.id,
-        copy.releaseMbid,
+        copy.releaseId,
         copy.condition,
         copy.sleeveCondition,
         copy.pricePaidCents,
@@ -253,12 +291,12 @@ export class SqliteLocalStore implements LocalStore {
       for (const release of releases) {
         await db.runAsync(
           `INSERT OR REPLACE INTO releases
-            (mbid, releaseGroupMbid, title, artistName, year, format, label, catalogNumber,
+            (mbid, albumId, title, artistName, year, format, label, catalogNumber,
              country, barcode, coverArtUrl, coverTheme, cachedAt)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
-            release.mbid,
-            release.releaseGroupMbid,
+            release.id,
+            release.albumId,
             release.title,
             release.artistName,
             release.year,
@@ -276,19 +314,19 @@ export class SqliteLocalStore implements LocalStore {
     });
   }
 
-  async getRelease(mbid: string): Promise<Release | undefined> {
-    const row = await this.handle().getFirstAsync<ReleaseRow>("SELECT * FROM releases WHERE mbid = ?", [mbid]);
+  async getRelease(releaseId: string): Promise<Release | undefined> {
+    const row = await this.handle().getFirstAsync<ReleaseRow>("SELECT * FROM releases WHERE id = ?", [releaseId]);
     return row === null ? undefined : toRelease(row);
   }
 
-  async getReleases(mbids: readonly string[]): Promise<Map<string, Release>> {
-    const unique = [...new Set(mbids)];
+  async getReleases(releaseIds: readonly string[]): Promise<Map<string, Release>> {
+    const unique = [...new Set(releaseIds)];
     if (unique.length === 0) return new Map();
     const rows = await this.handle().getAllAsync<ReleaseRow>(
-      `SELECT * FROM releases WHERE mbid IN (${unique.map(() => "?").join(",")})`,
+      `SELECT * FROM releases WHERE id IN (${unique.map(() => "?").join(",")})`,
       unique,
     );
-    return new Map(rows.map((row) => [row.mbid, toRelease(row)]));
+    return new Map(rows.map((row) => [row.id, toRelease(row)]));
   }
 
   async listPhotos(copyId: string): Promise<Photo[]> {
@@ -387,10 +425,10 @@ export class SqliteLocalStore implements LocalStore {
     return row === null ? undefined : toWish(row);
   }
 
-  async wishlistHas(releaseGroupMbid: string): Promise<boolean> {
+  async wishlistHas(albumId: string): Promise<boolean> {
     const row = await this.handle().getFirstAsync<{ n: number }>(
-      "SELECT COUNT(*) AS n FROM wishlist WHERE releaseGroupMbid = ? AND deletedAt IS NULL",
-      [releaseGroupMbid],
+      "SELECT COUNT(*) AS n FROM wishlist WHERE albumId = ? AND deletedAt IS NULL",
+      [albumId],
     );
     return (row?.n ?? 0) > 0;
   }
@@ -408,11 +446,11 @@ export class SqliteLocalStore implements LocalStore {
   private async writeWish(item: WishlistItem): Promise<void> {
     await this.handle().runAsync(
       `INSERT OR REPLACE INTO wishlist
-        (id, releaseGroupMbid, title, artistName, year, desiredFormat, note, createdAt, deletedAt, fieldClocks)
+        (id, albumId, title, artistName, year, desiredFormat, note, createdAt, deletedAt, fieldClocks)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         item.id,
-        item.releaseGroupMbid,
+        item.albumId,
         item.title,
         item.artistName,
         item.year,
@@ -431,12 +469,12 @@ export class SqliteLocalStore implements LocalStore {
       "SELECT COUNT(*) AS copyCount, SUM(COALESCE(pricePaidCents, 0)) AS totalSpentCents FROM copies WHERE deletedAt IS NULL",
     );
     const groups = await db.getFirstAsync<{ releaseGroupCount: number }>(
-      `SELECT COUNT(DISTINCT r.releaseGroupMbid) AS releaseGroupCount
-       FROM copies c JOIN releases r ON r.mbid = c.releaseMbid WHERE c.deletedAt IS NULL`,
+      `SELECT COUNT(DISTINCT r.albumId) AS releaseGroupCount
+       FROM copies c JOIN releases r ON r.id = c.releaseId WHERE c.deletedAt IS NULL`,
     );
     const perFormat = await db.getAllAsync<{ format: string; n: number }>(
       `SELECT r.format AS format, COUNT(*) AS n
-       FROM copies c JOIN releases r ON r.mbid = c.releaseMbid
+       FROM copies c JOIN releases r ON r.id = c.releaseId
        WHERE c.deletedAt IS NULL GROUP BY r.format`,
     );
 

@@ -23,7 +23,7 @@ function toCopy(raw: unknown): Copy | null {
   if (
     dto === null ||
     dto.id === undefined ||
-    dto.releaseMbid === undefined ||
+    dto.releaseId === undefined ||
     dto.currency === undefined ||
     dto.createdAt === undefined ||
     dto.fieldClocks === undefined
@@ -32,7 +32,7 @@ function toCopy(raw: unknown): Copy | null {
   }
   return {
     id: dto.id,
-    releaseMbid: dto.releaseMbid,
+    releaseId: dto.releaseId,
     condition: dto.condition ?? null,
     sleeveCondition: dto.sleeveCondition ?? null,
     pricePaidCents: dto.pricePaidCents ?? null,
@@ -53,7 +53,7 @@ function toWish(raw: unknown): WishlistItem | null {
   if (
     dto === null ||
     dto.id === undefined ||
-    dto.releaseGroupMbid === undefined ||
+    dto.albumId === undefined ||
     dto.title === undefined ||
     dto.artistName === undefined ||
     dto.createdAt === undefined ||
@@ -63,7 +63,7 @@ function toWish(raw: unknown): WishlistItem | null {
   }
   return {
     id: dto.id,
-    releaseGroupMbid: dto.releaseGroupMbid,
+    albumId: dto.albumId,
     title: dto.title,
     artistName: dto.artistName,
     year: dto.year ?? null,

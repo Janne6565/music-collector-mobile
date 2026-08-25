@@ -11,7 +11,7 @@ import { WISH_MERGEABLE_FIELDS } from "@/domain/types";
 import type { ClockSource } from "@/local/copyWrites";
 
 export interface WishDraft {
-  readonly releaseGroupMbid: string;
+  readonly albumId: string;
   readonly title: string;
   readonly artistName: string;
   readonly year: number | null;

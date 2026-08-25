@@ -30,7 +30,7 @@ export interface LocalStore {
   /** Tombstones included — sync has to be able to push a delete. */
   getCopyIncludingDeleted(id: string): Promise<Copy | undefined>;
   /** Copies of the same album, for the detail screen's "other copies you own". */
-  listCopiesInReleaseGroup(releaseGroupMbid: string): Promise<Copy[]>;
+  listCopiesInReleaseGroup(albumId: string): Promise<Copy[]>;
   /**
    * A local write. Records the copy as pending, so nothing has to remember to do that at
    * the call site — a write that forgot would simply never reach the server.
@@ -45,8 +45,8 @@ export interface LocalStore {
   // edit. An unstamped delete would lose every merge and the copy would come back.
 
   cacheReleases(releases: readonly Release[]): Promise<void>;
-  getRelease(mbid: string): Promise<Release | undefined>;
-  getReleases(mbids: readonly string[]): Promise<Map<string, Release>>;
+  getRelease(releaseId: string): Promise<Release | undefined>;
+  getReleases(releaseIds: readonly string[]): Promise<Map<string, Release>>;
 
   /** Live photos for one copy, in strip order. */
   listPhotos(copyId: string): Promise<Photo[]>;
@@ -75,7 +75,7 @@ export interface LocalStore {
   putWishlistItem(item: WishlistItem): Promise<void>;
   adoptWishlistItem(item: WishlistItem): Promise<void>;
   /** True when the wishlist already holds a live wish for this album. */
-  wishlistHas(releaseGroupMbid: string): Promise<boolean>;
+  wishlistHas(albumId: string): Promise<boolean>;
 
   stats(): Promise<CollectionStats>;
 
