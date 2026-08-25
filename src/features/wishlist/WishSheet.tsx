@@ -1,4 +1,5 @@
-import { FormatThumb } from "@/components/FormatThumb";
+import { lookupAlbumCovers } from "@/api/releases";
+import { ReleaseArt } from "@/components/ReleaseArt";
 import { useStore } from "@/local/StoreProvider";
 import { colors, fonts } from "@/theme/colors";
 import type { Release, WishFormat, WishlistItem } from "@janne6565/music-collector-shared";
@@ -7,9 +8,10 @@ import {
   applyWishPatch,
   asWishFormat,
   createWishlistItem,
+  isManualReleaseId,
   manualReleaseId,
 } from "@janne6565/music-collector-shared";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Crypto from "expo-crypto";
 import { Heart } from "lucide-react-native";
 import { useState } from "react";
@@ -73,6 +75,23 @@ export function WishSheet({ onClose, release = null, entry = null }: WishSheetPr
             subtitle: `${release.artistName}${release.year === null ? "" : ` · ${release.year}`}${release.label === null ? "" : ` · ${release.label}`}`,
           }
         : null;
+
+  /**
+   * The album's artwork, for a sheet reopened on an entry.
+   *
+   * A wish knows its album and nothing about any pressing, so unlike the release door it
+   * has no cover to hand. Skipped for a hand-typed album, which no catalogue can answer for.
+   */
+  const albumCover = useQuery({
+    queryKey: ["albumCovers", entry === null ? [] : [entry.albumId]],
+    enabled: entry !== null && !isManualReleaseId(entry.albumId),
+    staleTime: 60 * 60 * 1000,
+    queryFn: () => lookupAlbumCovers([entry?.albumId ?? ""]),
+  });
+
+  /** The picked pressing's cover, the album's as a fallback, null while neither is known. */
+  const coverArtUrl =
+    release?.coverArtUrl ?? (entry === null ? null : (albumCover.data?.get(entry.albumId) ?? null));
 
   const save = useMutation({
     mutationFn: async () => {
@@ -151,7 +170,9 @@ export function WishSheet({ onClose, release = null, entry = null }: WishSheetPr
             {heading !== null ? (
               <View style={styles.subject}>
                 <View style={styles.subjectThumb}>
-                  <FormatThumb format={format ?? "OTHER"} />
+                  {/* The format is the one the chips below are choosing, not the pressing's:
+                      the tile should follow what is being asked for as it is asked for. */}
+                  <ReleaseArt release={{ coverArtUrl }} format={format ?? "OTHER"} />
                 </View>
                 <View style={styles.subjectText}>
                   <Text style={styles.subjectTitle} numberOfLines={1}>
