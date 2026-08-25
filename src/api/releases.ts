@@ -1,5 +1,5 @@
 import { API_BASE } from "@/api/config";
-import type { CoverTheme, Format, Release } from "@/domain/types";
+import type { Album, Artist, CoverTheme, Format, Release } from "@/domain/types";
 import { FORMATS } from "@/domain/types";
 
 /**
@@ -105,4 +105,104 @@ export async function lookupByBarcode(barcode: string): Promise<Release[]> {
 
 export async function lookupRelease(mbid: string): Promise<Release | null> {
   return toRelease(await getJson<ReleasePayload>(`/api/v1/metadata/releases/${mbid}`), Date.now());
+}
+
+interface ArtistPayload {
+  mbid?: string;
+  name?: string;
+  disambiguation?: string;
+  type?: string;
+  country?: string;
+  beganIn?: string;
+  endedIn?: string;
+  score?: number;
+}
+
+interface AlbumPayload {
+  albumId?: string;
+  title?: string;
+  artistName?: string;
+  year?: number;
+  primaryType?: string;
+  coverArtUrl?: string;
+}
+
+function toArtist(payload: ArtistPayload): Artist | null {
+  // Without these two there is nothing to show and nothing to open a discography with.
+  if (payload.mbid === undefined || payload.name === undefined) return null;
+  return {
+    mbid: payload.mbid,
+    name: payload.name,
+    disambiguation: payload.disambiguation ?? "",
+    type: payload.type ?? null,
+    country: payload.country ?? null,
+    beganIn: payload.beganIn ?? null,
+    endedIn: payload.endedIn ?? null,
+    score: payload.score ?? null,
+  };
+}
+
+function toAlbum(payload: AlbumPayload): Album | null {
+  if (payload.albumId === undefined || payload.title === undefined) return null;
+  return {
+    albumId: payload.albumId,
+    title: payload.title,
+    artistName: payload.artistName ?? "",
+    year: payload.year ?? null,
+    primaryType: payload.primaryType ?? null,
+    coverArtUrl: payload.coverArtUrl ?? null,
+  };
+}
+
+export async function findArtists(query: string, limit = 5): Promise<Artist[]> {
+  const payloads = await getJson<ArtistPayload[]>(
+    `/api/v1/metadata/artists?q=${encodeURIComponent(query)}&limit=${limit}`,
+  );
+  return payloads.map(toArtist).filter((artist): artist is Artist => artist !== null);
+}
+
+/**
+ * One artist's portrait, or null when they have none.
+ *
+ * Null is a real answer here rather than a failure — plenty of artists have no picture in
+ * Discogs at all — so the caller draws the initial and does not retry.
+ */
+export async function findArtistImage(mbid: string): Promise<string | null> {
+  const payload = await getJson<{ imageUrl?: string | null }>(
+    `/api/v1/metadata/artists/${mbid}/image`,
+  );
+  return payload.imageUrl ?? null;
+}
+
+export interface Discography {
+  readonly albums: Album[];
+  /**
+   * How many the query matched upstream, not how many arrived. A chip reading "Albums 51"
+   * is telling the truth on a page of 25.
+   */
+  readonly total: number;
+}
+
+export async function lookupDiscography(
+  artistMbid: string,
+  primaryType: string | null,
+  limit = 25,
+): Promise<Discography> {
+  const type = primaryType === null ? "" : `type=${encodeURIComponent(primaryType)}&`;
+  const payload = await getJson<{ albums?: AlbumPayload[]; total?: number }>(
+    `/api/v1/metadata/artists/${artistMbid}/albums?${type}limit=${limit}`,
+  );
+  return {
+    albums: (payload.albums ?? []).map(toAlbum).filter((album): album is Album => album !== null),
+    total: payload.total ?? 0,
+  };
+}
+
+/** Every pressing of one album. Bitches Brew has 47, so this is paged, not exhaustive. */
+export async function lookupPressings(albumId: string, limit = 25): Promise<Release[]> {
+  const payloads = await getJson<ReleasePayload[]>(
+    `/api/v1/metadata/albums/${encodeURIComponent(albumId)}/releases?limit=${limit}`,
+  );
+  const now = Date.now();
+  return payloads.map((p) => toRelease(p, now)).filter((r): r is Release => r !== null);
 }

@@ -1,13 +1,31 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { lookupByBarcode, searchReleases } from "@/api/releases";
-import type { Release } from "@/domain/types";
-import { createCopy } from "@/local/copyWrites";
+import type { Format, Release } from "@/domain/types";
+import { useAddCopy } from "@/features/add/useAddCopy";
+import { useArtistSearchLogic } from "@/features/add/useArtistSearchLogic";
 import { clearRecentSearches, readRecentSearches, rememberSearch } from "@/local/settings";
 import { createWishlistItem } from "@/local/wishWrites";
 import { useStore } from "@/local/StoreProvider";
 import * as Crypto from "expo-crypto";
+
+/**
+ * The format filter above the results (screens 2a and 10a).
+ *
+ * A filter over what came back rather than a narrower query: MusicBrainz is asked once
+ * and returns one row per release *and* format, so the four chips are already in hand and
+ * switching between them costs nothing. Never shown for a barcode — a barcode identifies
+ * one pressing, and a chip that could only ever hide it is not a choice.
+ */
+export type AddFormatFilter = Format | "ALL";
+
+export const FORMAT_FILTERS: readonly AddFormatFilter[] = [
+  "ALL",
+  "VINYL",
+  "CD",
+  "CASSETTE",
+  "DIGITAL",
+];
 
 const BARCODE = /^\d{8,14}$/;
 
@@ -26,10 +44,10 @@ const MIN_TERM_LENGTH = 2;
 export function useAddLogic() {
   const { store, clock } = useStore();
   const queryClient = useQueryClient();
-  const router = useRouter();
   const [term, setTerm] = useState("");
   const [submitted, setSubmitted] = useState("");
   const [scanning, setScanning] = useState(false);
+  const [format, setFormat] = useState<AddFormatFilter>("ALL");
 
   const resultsQuery = useQuery({
     queryKey: ["releaseSearch", submitted],
@@ -40,36 +58,7 @@ export function useAddLogic() {
     },
   });
 
-  const addCopy = useMutation({
-    mutationFn: async (release: Release) => {
-      // Cache the release with the copy: the library and detail screens read metadata from
-      // the local store and must keep working with no network at all.
-      await store.cacheReleases([release]);
-      const copy = createCopy(
-        release,
-        {
-          condition: null,
-          sleeveCondition: null,
-          pricePaidCents: null,
-          currency: "EUR",
-          purchasedOn: null,
-          purchasedAt: null,
-          notes: null,
-          rating: null,
-        },
-        clock,
-        Date.now(),
-        Crypto.randomUUID(),
-      );
-      await store.putCopy(copy);
-      return copy;
-    },
-    onSuccess: async (copy) => {
-      await queryClient.invalidateQueries({ queryKey: ["copies"] });
-      await queryClient.invalidateQueries({ queryKey: ["stats"] });
-      router.replace(`/copies/${copy.id}`);
-    },
-  });
+  const { add, addingMbid } = useAddCopy();
 
   /**
    * Wishing for something you do not own yet. Keyed on the release *group*: you want the
@@ -139,6 +128,20 @@ export function useAddLogic() {
   /** Typed something new and the request has not gone out yet. */
   const waiting = queryReady && query !== submitted;
 
+  const barcode = BARCODE.test(submitted.trim());
+
+  /**
+   * The artists half of the same search (screen 10a). Skipped for a barcode: a number
+   * identifies a pressing, and no artist is named 602537.
+   */
+  const artists = useArtistSearchLogic(submitted.trim(), !barcode);
+
+  const all = resultsQuery.data ?? [];
+  const results = useMemo(
+    () => (format === "ALL" ? all : all.filter((release) => release.format === format)),
+    [all, format],
+  );
+
   /**
    * The search runs itself after the field stands still.
    *
@@ -183,7 +186,14 @@ export function useAddLogic() {
     startScanning: useCallback(() => setScanning(true), []),
     stopScanning: useCallback(() => setScanning(false), []),
     handleScan,
-    results: resultsQuery.data ?? [],
+    results,
+    /** How many came back before the chips narrowed them, for the empty-filter wording. */
+    unfilteredCount: all.length,
+    format,
+    setFormat,
+    /** A barcode names one pressing, so the format chips have nothing to offer there. */
+    showFormatFilter: !barcode && all.length > 0,
+    artists,
     /**
      * True from the keystroke, not from the request: the skeletons stand in for the wait
      * as a whole, and a debounce the reader cannot see is still a wait.
@@ -193,7 +203,7 @@ export function useAddLogic() {
     hasSearched: submitted.trim() !== "" || waiting,
     submittedTerm: submitted.trim(),
     /** True when the thing with no results was a scanned or pasted barcode (screen 8c). */
-    searchedBarcode: BARCODE.test(submitted.trim()),
+    searchedBarcode: barcode,
     recentSearches: recent.data ?? [],
     repeatSearch: (value: string) => {
       setTerm(value);
@@ -212,9 +222,9 @@ export function useAddLogic() {
     addRelease: (release: Release) => {
       // The search that found something you kept is one worth offering again.
       if (submitted.trim() !== "") remember(submitted);
-      addCopy.mutate(release);
+      add(release);
     },
-    addingMbid: addCopy.isPending ? addCopy.variables?.id : undefined,
+    addingMbid,
     wishFor: (release: Release) => addWish.mutate(release),
     wishingMbid: addWish.isPending ? addWish.variables?.id : undefined,
   };

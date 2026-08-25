@@ -24,12 +24,13 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { releaseDisambiguation } from "@/api/releases";
+import { ArtistResults } from "@/features/add/ArtistResults";
 import { FormatThumb } from "@/components/FormatThumb";
 import { Skeleton } from "@/components/Skeleton";
 import { ReleaseArt } from "@/components/ReleaseArt";
-import type { Release, WishlistItem } from "@/domain/types";
+import type { Artist, Format, Release, WishlistItem } from "@/domain/types";
 import { FORMAT_LABELS } from "@/domain/types";
-import { useAddLogic } from "@/features/add/useAddLogic";
+import { FORMAT_FILTERS, useAddLogic } from "@/features/add/useAddLogic";
 import { colors, fonts } from "@/theme/colors";
 
 type Logic = ReturnType<typeof useAddLogic>;
@@ -111,6 +112,8 @@ export function AddScreen() {
         </Pressable>
       </View>
 
+      {logic.showFormatFilter && <FormatChips logic={logic} />}
+
       <Body logic={logic} onScan={() => void scan()} />
     </SafeAreaView>
   );
@@ -118,11 +121,14 @@ export function AddScreen() {
 
 function Body({ logic, onScan }: { readonly logic: Logic; readonly onScan: () => void }) {
   const { t } = useTranslation();
+  const router = useRouter();
 
   if (logic.searching) return <SearchingRows />;
   if (logic.failed) return <Text style={styles.hint}>{t("add.failed")}</Text>;
   if (!logic.hasSearched) return <BeforeTyping logic={logic} onScan={onScan} />;
-  if (logic.results.length === 0) {
+  // Only when the search itself found nothing. A format chip that hides every row is a
+  // different situation with a different way out, and it is handled in the list below.
+  if (logic.unfilteredCount === 0) {
     return logic.searchedBarcode ? (
       <BarcodeNotFound logic={logic} onScan={onScan} />
     ) : (
@@ -130,12 +136,63 @@ function Body({ logic, onScan }: { readonly logic: Logic; readonly onScan: () =>
     );
   }
 
+  /**
+   * Opening an artist carries what the row already knew (screen 10c).
+   *
+   * Params rather than a lookup on arrival: every fact the artist header shows came back
+   * with the search, and MusicBrainz is capped at one request a second — repeating it
+   * would buy a blank second and the same answer.
+   */
+  const openArtist = (artist: Artist) =>
+    router.push({
+      pathname: "/artists/[mbid]",
+      params: {
+        mbid: artist.mbid,
+        name: artist.name,
+        disambiguation: artist.disambiguation,
+        type: artist.type ?? "",
+        country: artist.country ?? "",
+        beganIn: artist.beganIn ?? "",
+        endedIn: artist.endedIn ?? "",
+        fromQuery: logic.submittedTerm,
+      },
+    });
+
   return (
     <FlatList
       data={logic.results}
       keyExtractor={(release) => release.id}
       contentContainerStyle={styles.list}
       keyboardShouldPersistTaps="handled"
+      ListHeaderComponent={
+        <>
+          {/* Screen 10a: artists first, in their own section. A band name searched in the
+              release index returns records *called* that name, so the artists are the
+              answer to the question that was actually asked. */}
+          <ArtistResults logic={logic.artists} onOpen={openArtist} />
+          <View style={styles.releasesHeader}>
+            <Text style={styles.section}>
+              {t("add.releaseCount", { count: logic.unfilteredCount })}
+            </Text>
+            {/* The deck puts the way into manual entry here, beside the releases it is an
+                alternative to. The form is still undesigned, so it reads as plainly
+                unavailable rather than being left out — the same call as on screens 5a
+                and 8c, where hiding it would only make it harder to find later. */}
+            <Text
+              accessibilityState={{ disabled: true }}
+              accessibilityLabel={`${t("add.enterManually")} — ${t("add.manualSoon")}`}
+              style={styles.sectionAction}
+            >
+              {t("add.manualCard.title")} · {t("add.soon")}
+            </Text>
+          </View>
+        </>
+      }
+      ListEmptyComponent={
+        <Text style={styles.hint}>
+          {t("add.noneOfFormat", { format: FORMAT_LABELS[logic.format as Format] })}
+        </Text>
+      }
       renderItem={({ item }) => (
         <ResultRow
           release={item}
@@ -146,6 +203,43 @@ function Body({ logic, onScan }: { readonly logic: Logic; readonly onScan: () =>
         />
       )}
     />
+  );
+}
+
+/**
+ * The format filter above the results (screens 2a and 10a).
+ *
+ * It narrows what came back rather than re-running the search: one row per release *and*
+ * format is what the archive returns, so all four are already in hand and switching costs
+ * nothing.
+ */
+function FormatChips({ logic }: { readonly logic: Logic }) {
+  const { t } = useTranslation();
+
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.formatChips}
+      keyboardShouldPersistTaps="handled"
+    >
+      {FORMAT_FILTERS.map((filter) => {
+        const active = logic.format === filter;
+        return (
+          <Pressable
+            key={filter}
+            accessibilityRole="button"
+            accessibilityState={{ selected: active }}
+            onPress={() => logic.setFormat(filter)}
+            style={[styles.formatChip, active && styles.formatChipActive]}
+          >
+            <Text style={[styles.formatChipText, active && styles.formatChipTextActive]}>
+              {filter === "ALL" ? t("addDialog.allFormats") : FORMAT_LABELS[filter as Format]}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </ScrollView>
   );
 }
 
@@ -514,6 +608,23 @@ const styles = StyleSheet.create({
   thumbSkeleton: { borderRadius: 5 },
   rowAddSkeleton: { width: 30, height: 30, borderRadius: 999 },
   searchingCaption: { marginTop: 6, marginBottom: 10 },
+  releasesHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingTop: 20,
+    paddingBottom: 8,
+  },
+  formatChips: { gap: 7, paddingHorizontal: 18, paddingTop: 14 },
+  formatChip: {
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: "rgba(255,255,255,0.1)",
+  },
+  formatChipActive: { backgroundColor: "#fff" },
+  formatChipText: { fontSize: 11.5, fontWeight: "500", color: "rgba(255,255,255,0.7)" },
+  formatChipTextActive: { fontWeight: "600", color: colors.night },
   rowBody: { flex: 1 },
   rowTitle: { fontSize: 13.5, fontWeight: "600", color: "#fff" },
   rowSubtitle: { fontSize: 11.5, color: "rgba(255,255,255,0.55)" },

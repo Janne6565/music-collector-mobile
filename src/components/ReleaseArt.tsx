@@ -1,7 +1,20 @@
 import { useRef, useState } from "react";
 import { Animated, StyleSheet, View, type ViewStyle } from "react-native";
 import { FormatThumb } from "@/components/FormatThumb";
-import type { Release } from "@/domain/types";
+import type { Format } from "@/domain/types";
+
+/**
+ * Everything the art actually needs: a URL to try, and a format to fall back to.
+ *
+ * Structural rather than `Release`, because an album (a release group) has a cover too and
+ * has no format of its own — its placeholder is the generic sleeve. Widening the prop is
+ * cheaper than casting an album into a shape it is not. Mirrors `CoverSubject` in
+ * music-collector-frontend/src/components/ReleaseArt.tsx.
+ */
+export interface CoverSubject {
+  readonly coverArtUrl: string | null;
+  readonly format?: Format;
+}
 
 /**
  * The layout properties both a View and an Image accept. Typing the prop as `ViewStyle`
@@ -38,7 +51,7 @@ export function ReleaseArt({
   variant = "sleeve",
   fallbackUri = null,
 }: {
-  readonly release: Release | undefined;
+  readonly release: CoverSubject | undefined;
   readonly style?: ArtStyle;
   readonly variant?: "sleeve" | "bleed";
   /**

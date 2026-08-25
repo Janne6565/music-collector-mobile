@@ -37,6 +37,44 @@ export interface CoverTheme {
   readonly dark: boolean;
 }
 
+/**
+ * A person or group, as the search offers them (screens 10a/10b).
+ *
+ * `disambiguation` is load-bearing, not decoration: MusicBrainz holds several distinct
+ * artists called "Daughter", and that one line ("UK indie folk band fronted by Elena
+ * Tonra") is frequently the only thing separating them in a list.
+ */
+export interface Artist {
+  readonly mbid: string;
+  readonly name: string;
+  /** Empty rather than null when the archive has none, so no caller has to guard it. */
+  readonly disambiguation: string;
+  /** "Group" or "Person" as MusicBrainz classifies it, when it knows. */
+  readonly type: string | null;
+  readonly country: string | null;
+  readonly beganIn: string | null;
+  readonly endedIn: string | null;
+  /** MusicBrainz's own match confidence, 0-100. An exact name scores 100. */
+  readonly score: number | null;
+}
+
+/**
+ * A release group — the album, above the pressings of it.
+ *
+ * A discography lists these rather than releases because listing it by pressing is
+ * unreadable: Miles Davis has 51 albums and over 1400 releases, and Bitches Brew alone
+ * accounts for 47 of them.
+ */
+export interface Album {
+  readonly albumId: string;
+  readonly title: string;
+  readonly artistName: string;
+  readonly year: number | null;
+  /** Album, EP, Single, Broadcast, Compilation — how the artist screen sections itself. */
+  readonly primaryType: string | null;
+  readonly coverArtUrl: string | null;
+}
+
 export interface Release {
   /**
    * Source-qualified: "musicbrainz:<uuid>" or "discogs:<int>".
