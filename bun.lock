@@ -5,6 +5,7 @@
     "": {
       "name": "music-collector-mobile",
       "dependencies": {
+        "@janne6565/music-collector-shared": "^0.1.0",
         "@reduxjs/toolkit": "^2.5.0",
         "@tanstack/react-query": "^5.62.0",
         "expo": "~57.0.16",
@@ -252,6 +253,8 @@
     "@expo/xcpretty": ["@expo/xcpretty@4.4.4", "", { "dependencies": { "@babel/code-frame": "^7.20.0", "chalk": "^4.1.0", "js-yaml": "^4.1.0" }, "bin": { "excpretty": "build/cli.js" } }, "sha512-4aQzz9vgxcNXFfo/iyNgDDYfsU5XGKKxWxZopw0cVotHiW+U8IJbIxMaxsINs6bHhtkG3StKNPcOrn3eBuxKPw=="],
 
     "@isaacs/ttlcache": ["@isaacs/ttlcache@1.4.1", "", {}, "sha512-RQgQ4uQ+pLbqXfOmieB91ejmLwvSgv9nLx6sT6sD83s7umBypgg+OIBOBbEUiJXrfpnp9j0mRhYYdzp9uqq3lA=="],
+
+    "@janne6565/music-collector-shared": ["@janne6565/music-collector-shared@0.1.0", "https://npm.pkg.github.com/download/@janne6565/music-collector-shared/0.1.0/184d725987dcc86f52cf897c95071b2e2d65e434", { "peerDependencies": { "react": ">=18" } }, "sha512-mTcUdDADVBm5pLDQC5nvcBZjTGOBpdaDjWJ0sDky0obRfQBTD9Pes7C7lbvBdZzojlje2iusyRIN4eENyoLIVw=="],
 
     "@jest/schemas": ["@jest/schemas@29.6.3", "", { "dependencies": { "@sinclair/typebox": "^0.27.8" } }, "sha512-mo5j5X+jIZmJQveBKeS/clAueipV7KgiX1vMgCxam1RNYiqE1w62n0/tJJnHtjW8ZHcQco5gY85jA3mi0L+nSA=="],
 
