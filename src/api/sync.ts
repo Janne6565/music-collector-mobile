@@ -124,8 +124,19 @@ export async function pushChanges(
   copies: readonly Copy[],
   wishes: readonly WishlistItem[],
   photos: readonly Photo[],
+  /**
+   * Why each copy in this batch exists, keyed by copy id.
+   *
+   * Beside the records rather than on them: it is the reason for this push, not a property
+   * of the copy that has to survive or merge, and it matters exactly once — when the server
+   * first sees the row. A copy this map does not mention says nothing to anybody's feed.
+   */
+  origins: Record<string, string> = {},
 ): Promise<SyncPage> {
   return toPage(
-    await request<SyncPayload>("/api/v1/sync", { method: "POST", body: { copies, wishes, photos } }),
+    await request<SyncPayload>("/api/v1/sync", {
+      method: "POST",
+      body: { copies, wishes, photos, origins },
+    }),
   );
 }

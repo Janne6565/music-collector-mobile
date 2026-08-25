@@ -1,4 +1,5 @@
-import { Star } from "lucide-react-native";
+import { Eye, EyeOff, Star } from "lucide-react-native";
+import { fonts } from "@/theme/colors";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import type { Condition, Copy, CopyPatch, DetailChrome, Format } from "@janne6565/music-collector-shared";
@@ -185,6 +186,28 @@ export function CopyEditor({
         />
       </Labelled>
 
+      {/*
+        Hiding is written straight through rather than waiting for Save. It is not an edit
+        to the record's facts, it is a decision about who may see it, and a privacy switch
+        that only takes effect once you remember to press Save is the wrong kind of switch.
+      */}
+      <Pressable
+        accessibilityRole="switch"
+        accessibilityState={{ checked: copy.hidden }}
+        onPress={() => onSave({ hidden: !copy.hidden })}
+        disabled={saving}
+        style={styles.hideRow}
+      >
+        {copy.hidden ? (
+          <EyeOff size={15} color={chrome.muted} strokeWidth={1.75} />
+        ) : (
+          <Eye size={15} color={chrome.muted} strokeWidth={1.75} />
+        )}
+        <Text style={[styles.hideLabel, { color: chrome.muted }]}>
+          {copy.hidden ? t("copyEditor.hidden") : t("copyEditor.hide")}
+        </Text>
+      </Pressable>
+
       <View style={styles.actions}>
         <Pressable
           accessibilityRole="button"
@@ -305,6 +328,8 @@ const styles = StyleSheet.create({
   input: { fontSize: 15, fontWeight: "600", padding: 0 },
   multiline: { fontWeight: "400", minHeight: 66, textAlignVertical: "top" },
   stars: { flexDirection: "row", gap: 6, paddingTop: 2 },
+  hideRow: { flexDirection: "row", alignItems: "center", gap: 7, paddingVertical: 12 },
+  hideLabel: { fontFamily: fonts.sans, fontSize: 13 },
   actions: { flexDirection: "row", gap: 10, marginTop: 4 },
   primary: { flex: 1, height: 46, borderRadius: 999, alignItems: "center", justifyContent: "center" },
   primaryText: { fontSize: 14, fontWeight: "600" },

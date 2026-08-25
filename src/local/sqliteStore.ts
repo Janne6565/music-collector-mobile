@@ -98,6 +98,9 @@ export class SqliteLocalStore implements LocalStore {
         notes           TEXT,
         notesConflict   TEXT,
         rating          INTEGER,
+        -- Kept off every shelf but the owner's, whatever the sharing settings say. 0/1
+        -- rather than a boolean, which SQLite does not have.
+        hidden          INTEGER NOT NULL DEFAULT 0,
         createdAt       INTEGER NOT NULL,
         deletedAt       INTEGER,
         fieldClocks     TEXT NOT NULL
@@ -174,6 +177,20 @@ export class SqliteLocalStore implements LocalStore {
         ALTER TABLE copies ADD COLUMN manualFormat TEXT;
       `);
     }
+    // Hiding one copy from other people (15f). Defaulted rather than nullable: a record
+    // nobody has hidden is shown, and "never asked" is not a third state worth having.
+    if (!columns.some((column) => column.name === "hidden")) {
+      await db.execAsync("ALTER TABLE copies ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0");
+    }
+    // Why a not-yet-pushed copy exists, so the server can keep imports out of the feed.
+    // Local-only and never merged: it is the reason for one push, not a fact about the
+    // record, and only this device was ever asked the question.
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS copyOrigins (
+        id     TEXT PRIMARY KEY NOT NULL,
+        origin TEXT NOT NULL
+      );
+    `);
     // Where a hand-sorted entry sits (16a). Nullable: null is "never placed by hand",
     // which is not the same as position 0 and must not be written as one.
     const wishColumns = await db.getAllAsync<{ name: string }>("PRAGMA table_info(wishlist)");
@@ -301,14 +318,50 @@ export class SqliteLocalStore implements LocalStore {
     await this.write(copy);
   }
 
+  /**
+   * Records why some copies were created, for the next push to pass on.
+   *
+   * Local-only: the server needs the answer exactly once, when it first sees the row, and
+   * a question only this device was asked has nothing to merge with anybody else's answer.
+   */
+  async rememberOrigins(ids: readonly string[], origin: CopyOrigin): Promise<void> {
+    for (const id of ids) {
+      await this.handle().runAsync(
+        "INSERT OR REPLACE INTO copyOrigins (id, origin) VALUES (?, ?)",
+        [id, origin],
+      );
+    }
+  }
+
+  async readOrigins(): Promise<Record<string, CopyOrigin>> {
+    const rows = await this.handle().getAllAsync<{ id: string; origin: string }>(
+      "SELECT id, origin FROM copyOrigins",
+    );
+    return Object.fromEntries(rows.map((row) => [row.id, row.origin as CopyOrigin]));
+  }
+
+  /**
+   * Forgets the answers the server has now been given.
+   *
+   * Cleared after the push, never before: a push that failed has to be able to say the
+   * same thing again, or a record added underground would go quiet for good.
+   */
+  async forgetOrigins(ids: readonly string[]): Promise<void> {
+    if (ids.length === 0) return;
+    await this.handle().runAsync(
+      `DELETE FROM copyOrigins WHERE id IN (${ids.map(() => "?").join(",")})`,
+      [...ids],
+    );
+  }
+
   private async write(copy: Copy): Promise<void> {
     await this.handle().runAsync(
       `INSERT OR REPLACE INTO copies
         (id, releaseId, manualTitle, manualArtist, manualYear, manualLabel,
          manualCatalogNumber, manualFormat, condition, sleeveCondition, pricePaidCents,
-         currency, purchasedOn, purchasedAt, notes, notesConflict, rating, createdAt,
-         deletedAt, fieldClocks)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         currency, purchasedOn, purchasedAt, notes, notesConflict, rating, hidden,
+         createdAt, deletedAt, fieldClocks)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         copy.id,
         copy.releaseId,
@@ -327,6 +380,7 @@ export class SqliteLocalStore implements LocalStore {
         copy.notes,
         copy.notesConflict,
         copy.rating,
+        copy.hidden ? 1 : 0,
         copy.createdAt,
         copy.deletedAt,
         JSON.stringify(copy.fieldClocks),
@@ -657,8 +711,10 @@ export class SqliteLocalStore implements LocalStore {
   }
 }
 
-interface CopyRow extends Omit<Copy, "fieldClocks"> {
+interface CopyRow extends Omit<Copy, "fieldClocks" | "hidden"> {
   fieldClocks: string;
+  /** SQLite has no boolean; 0 or 1. */
+  hidden: number;
 }
 
 interface ReleaseRow extends Omit<Release, "coverTheme"> {
@@ -673,7 +729,11 @@ type WishRow = Omit<WishlistItem, "desiredFormat" | "fieldClocks"> & {
 };
 
 function toCopy(row: CopyRow): Copy {
-  return { ...row, fieldClocks: JSON.parse(row.fieldClocks) as Copy["fieldClocks"] };
+  return {
+    ...row,
+    hidden: row.hidden === 1,
+    fieldClocks: JSON.parse(row.fieldClocks) as Copy["fieldClocks"],
+  };
 }
 
 function toPhoto(row: PhotoRow): Photo {
@@ -695,3 +755,11 @@ function toRelease(row: ReleaseRow): Release {
     coverTheme: row.coverTheme === null ? null : (JSON.parse(row.coverTheme) as Release["coverTheme"]),
   };
 }
+
+/**
+ * Why a copy exists — the only thing that decides whether it reaches anybody's feed.
+ *
+ * The server cannot work it out for itself: an import of two hundred records and two
+ * hundred typed in over a fortnight arrive in exactly the same shape.
+ */
+export type CopyOrigin = "MANUAL" | "CSV_IMPORT" | "FIRST_SYNC";

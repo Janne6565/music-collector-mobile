@@ -16,7 +16,24 @@ export function createSyncTransport(store: NativeLocalStore): SyncTransport {
   return {
     pull: (cursor) => pullChanges(cursor),
 
-    push: (copies, wishes, photos) => pushChanges(copies, wishes, photos),
+    async push(copies, wishes, photos) {
+      // Only the ids actually going up, so a stale answer about a copy that is not in this
+      // batch cannot ride along with it.
+      const remembered = await store.readOrigins();
+      const origins = Object.fromEntries(
+        copies
+          .map((copy) => copy.id)
+          .filter((id) => remembered[id] !== undefined)
+          .map((id) => [id, remembered[id]]),
+      );
+
+      const page = await pushChanges(copies, wishes, photos, origins);
+
+      // After the server has answered, never before: a push that failed has to be able to
+      // say the same thing again.
+      await store.forgetOrigins(Object.keys(origins));
+      return page;
+    },
 
     uploadPhoto: (photo) =>
       uploadPhotoBytes(photo.id, photo.copyId, store.photoUri(photo.id), photo.contentType),

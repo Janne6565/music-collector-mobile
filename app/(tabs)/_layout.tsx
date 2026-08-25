@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { CircleUser, Heart, LibraryBig } from "lucide-react-native";
+import { CircleUser, Heart, LibraryBig, Users } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { colors } from "@/theme/colors";
 
@@ -32,6 +32,13 @@ export default function TabsLayout() {
         options={{
           title: t("nav.wishlist"),
           tabBarIcon: ({ color }) => <Heart size={20} color={color} strokeWidth={1.75} />,
+        }}
+      />
+      <Tabs.Screen
+        name="friends"
+        options={{
+          title: t("nav.friends"),
+          tabBarIcon: ({ color }) => <Users size={20} color={color} strokeWidth={1.75} />,
         }}
       />
       <Tabs.Screen

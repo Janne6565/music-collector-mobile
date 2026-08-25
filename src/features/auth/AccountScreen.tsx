@@ -1,3 +1,4 @@
+import { useRouter } from "expo-router";
 import { ChevronRight, LogOut } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import {
@@ -62,6 +63,7 @@ export function AccountScreen() {
 
 function SignedIn({ logic }: { readonly logic: ReturnType<typeof useAccountLogic> }) {
   const { t, i18n } = useTranslation();
+  const router = useRouter();
   const { store } = useStore();
   const stats = useQuery({ queryKey: ["stats"], queryFn: () => store.stats() });
 
@@ -87,6 +89,24 @@ function SignedIn({ logic }: { readonly logic: ReturnType<typeof useAccountLogic
       <Text style={styles.section}>{t("account.section.profile")}</Text>
       <View style={styles.card}>
         <NameRow logic={logic} />
+      </View>
+
+      {/* Sharing lives with the account rather than in the Friends tab: it is a decision
+          about this account, and somebody looking for "who can see my collection" comes
+          here first. */}
+      <Text style={styles.section}>{t("sharing.title")}</Text>
+      <View style={styles.card}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push("/sharing")}
+          style={styles.row}
+        >
+          <View style={styles.rowText}>
+            <Text style={styles.rowTitle}>{t("sharing.title")}</Text>
+            <Text style={styles.rowBody}>{t("sharing.rowBody")}</Text>
+          </View>
+          <ChevronRight size={16} color={colors.inkSubtle} strokeWidth={1.75} />
+        </Pressable>
       </View>
 
       <Text style={styles.section}>{t("account.section.signIn")}</Text>

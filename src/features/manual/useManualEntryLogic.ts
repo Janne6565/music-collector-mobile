@@ -118,6 +118,8 @@ export function useManualEntryLogic() {
         Crypto.randomUUID(),
       );
       await store.putCopy(copy);
+      // One record, added by a person: the only origin that reaches anybody's feed.
+      await store.rememberOrigins([copy.id], "MANUAL");
       return copy;
     },
     onSuccess: async (copy) => {

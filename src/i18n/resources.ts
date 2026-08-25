@@ -5,6 +5,7 @@ const enCommon = {
   nav: {
     library: "Library",
     wishlist: "Wishlist",
+    friends: "Friends",
     you: "You",
   },
   format: {
@@ -84,6 +85,103 @@ const enCommon = {
     totalSpent: "total spent",
     averagePerCopy: "average per copy",
     exportNote: "Music Collector 1.0 · your collection lives on this device",
+  },
+  copyEditor: {
+    hide: "Hide from others",
+    hidden: "Hidden from others",
+  },
+  friends: {
+    title: "Friends",
+    activity: "Activity",
+    searchPlaceholder: "Find a collector by handle",
+    results: "Results",
+    people: "People \u00b7 {{count}}",
+    yourFriends: "Your friends \u00b7 {{count}}",
+    noneYet: "Nobody yet. Search for a handle above.",
+    wants: "wants to be friends",
+    copies_one: "{{count}} copy",
+    copies_other: "{{count}} copies",
+    mutual_one: "{{count}} friend in common",
+    mutual_other: "{{count}} friends in common",
+    accept: "Accept",
+    decline: "Decline",
+    seeAll_one: "See it",
+    seeAll_other: "See all {{count}}",
+    state: { add: "Add", requested: "Requested", friends: "Friends", you: "You" },
+    line: {
+      added: "<person>{{name}}</person> added <title>{{title}}</title> to their collection",
+      addedMany: "<person>{{name}}</person> added {{count}} copies to their collection",
+      wishAdded: "<person>{{name}}</person> is looking for <title>{{title}}</title>",
+      wishFulfilled:
+        "<person>{{name}}</person> found <title>{{title}}</title> \u2014 off the wishlist, onto the shelf",
+      accepted: "<person>{{name}}</person> accepted your request",
+    },
+    feedEmpty: {
+      title: "Nothing yet",
+      body: "When the people you know add a record by hand, it turns up here.",
+    },
+    signedOut: {
+      title: "Friends needs an account",
+      body: "Your collection works without one. Finding other collectors does not \u2014 there has to be something for them to find.",
+    },
+    claim: {
+      title: "Pick a handle",
+      label: "Handle",
+      body: "This is how other collectors find you. Your name stays as it is \u2014 the handle is just for finding.",
+      rules: "Letters, numbers and dots. You can change it twice a year.",
+      action: "Claim @{{handle}}",
+      reason: {
+        malformed: "Letters, numbers and single dots only, three characters at least.",
+        taken: "Somebody already goes by that.",
+        reserved: "That one is spoken for by the app itself.",
+        ok: "Available.",
+      },
+    },
+  },
+  sharing: {
+    title: "Sharing",
+    rowBody: "Who can see your collection, your wishlist and what you paid",
+    handleLabel: "Handle",
+    money: "Money",
+    perCopyNote:
+      "Single copies can be hidden one by one from the copy screen, whatever these settings say.",
+    findable: {
+      title: "Findable by handle",
+      body: "Appears in search when someone types your handle. Off means only a link you send yourself will reach your profile.",
+    },
+    collection: { legend: "Who can see your collection" },
+    wishlist: {
+      legend: "Your wishlist",
+      note: "Set separately from the collection \u2014 most people share this one wider.",
+    },
+    prices: {
+      title: "Show prices and totals",
+      on: "On. What you paid travels with the copies anybody can already see.",
+      off: "Off. What you paid stays yours even on a public shelf.",
+    },
+    choice: {
+      only_me: { title: "Only me", body: "Friends see your name and nothing else." },
+      friends: { title: "Friends", body: "The ones you accepted, and nobody else." },
+      public: { title: "Anyone with the link", body: "A page anyone can open, no account needed." },
+    },
+  },
+  friendProfile: {
+    ask: "Ask to be friends",
+    collectingSince: "collecting since {{year}}",
+    emptyShelf: "Nothing on this shelf yet.",
+    emptyWishlist: "Nothing on this wishlist yet.",
+    tab: {
+      collection: "Collection \u00b7 {{count}}",
+      wishlist: "Wishlist \u00b7 {{count}}",
+    },
+    locked: {
+      title: "This shelf is for friends",
+      body: "{{name}} keeps {{count}} copies here. Once they accept, the collection and wishlist open up.",
+    },
+    notFound: {
+      title: "No such collector",
+      body: "Nobody goes by @{{handle}}.",
+    },
   },
   add: {
     title: "Add item",
@@ -302,6 +400,7 @@ const deCommon: CommonSchema = {
   nav: {
     library: "Sammlung",
     wishlist: "Wunschliste",
+    friends: "Freunde",
     you: "Du",
   },
   format: {
@@ -382,6 +481,106 @@ const deCommon: CommonSchema = {
     totalSpent: "insgesamt ausgegeben",
     averagePerCopy: "im Schnitt pro Exemplar",
     exportNote: "Music Collector 1.0 · deine Sammlung liegt auf diesem Gerät",
+  },
+  copyEditor: {
+    hide: "Vor anderen verbergen",
+    hidden: "Vor anderen verborgen",
+  },
+  friends: {
+    title: "Freunde",
+    activity: "Aktivit\u00e4t",
+    searchPlaceholder: "Sammler:in \u00fcber Handle finden",
+    results: "Treffer",
+    people: "Leute \u00b7 {{count}}",
+    yourFriends: "Deine Freunde \u00b7 {{count}}",
+    noneYet: "Noch niemand. Such oben nach einem Handle.",
+    wants: "m\u00f6chte befreundet sein",
+    copies_one: "{{count}} Exemplar",
+    copies_other: "{{count}} Exemplare",
+    mutual_one: "{{count}} gemeinsame:r Freund:in",
+    mutual_other: "{{count}} gemeinsame Freunde",
+    accept: "Annehmen",
+    decline: "Ablehnen",
+    seeAll_one: "Ansehen",
+    seeAll_other: "Alle {{count}} ansehen",
+    state: { add: "Hinzuf\u00fcgen", requested: "Angefragt", friends: "Befreundet", you: "Du" },
+    line: {
+      added: "<person>{{name}}</person> hat <title>{{title}}</title> zur Sammlung gelegt",
+      addedMany: "<person>{{name}}</person> hat {{count}} Exemplare zur Sammlung gelegt",
+      wishAdded: "<person>{{name}}</person> sucht <title>{{title}}</title>",
+      wishFulfilled:
+        "<person>{{name}}</person> hat <title>{{title}}</title> gefunden \u2014 von der Wunschliste ins Regal",
+      accepted: "<person>{{name}}</person> hat deine Anfrage angenommen",
+    },
+    feedEmpty: {
+      title: "Noch nichts",
+      body: "Sobald Leute, die du kennst, eine Platte von Hand eintragen, steht sie hier.",
+    },
+    signedOut: {
+      title: "F\u00fcr Freunde brauchst du ein Konto",
+      body: "Deine Sammlung funktioniert ohne. Andere Sammler:innen zu finden nicht \u2014 es muss ja etwas zu finden geben.",
+    },
+    claim: {
+      title: "W\u00e4hl einen Handle",
+      label: "Handle",
+      body: "So finden dich andere Sammler:innen. Dein Name bleibt, wie er ist \u2014 der Handle ist nur zum Finden da.",
+      rules: "Buchstaben, Zahlen und Punkte. Zweimal im Jahr \u00e4nderbar.",
+      action: "@{{handle}} nehmen",
+      reason: {
+        malformed: "Nur Buchstaben, Zahlen und einzelne Punkte, mindestens drei Zeichen.",
+        taken: "Den hat schon jemand.",
+        reserved: "Den braucht die App selbst.",
+        ok: "Frei.",
+      },
+    },
+  },
+  sharing: {
+    title: "Freigabe",
+    rowBody: "Wer deine Sammlung, deine Wunschliste und deine Preise sehen darf",
+    handleLabel: "Handle",
+    money: "Geld",
+    perCopyNote:
+      "Einzelne Exemplare lassen sich unabh\u00e4ngig davon im Exemplar-Fenster verbergen.",
+    findable: {
+      title: "\u00dcber Handle auffindbar",
+      body: "Taucht in der Suche auf, wenn jemand deinen Handle tippt. Aus hei\u00dft: nur ein Link, den du selbst verschickst, f\u00fchrt zu deinem Profil.",
+    },
+    collection: { legend: "Wer deine Sammlung sehen darf" },
+    wishlist: {
+      legend: "Deine Wunschliste",
+      note: "Getrennt von der Sammlung \u2014 die meisten geben diese weiter frei.",
+    },
+    prices: {
+      title: "Preise und Summen zeigen",
+      on: "An. Was du bezahlt hast, reist mit den Exemplaren mit, die ohnehin sichtbar sind.",
+      off: "Aus. Was du bezahlt hast, bleibt deine Sache \u2014 auch auf einem \u00f6ffentlichen Regal.",
+    },
+    choice: {
+      only_me: { title: "Nur ich", body: "Freunde sehen deinen Namen und sonst nichts." },
+      friends: { title: "Freunde", body: "Die, die du angenommen hast, und sonst niemand." },
+      public: {
+        title: "Alle mit dem Link",
+        body: "Eine Seite, die jede:r \u00f6ffnen kann, ganz ohne Konto.",
+      },
+    },
+  },
+  friendProfile: {
+    ask: "Freundschaft anfragen",
+    collectingSince: "sammelt seit {{year}}",
+    emptyShelf: "Auf diesem Regal steht noch nichts.",
+    emptyWishlist: "Auf dieser Wunschliste steht noch nichts.",
+    tab: {
+      collection: "Sammlung \u00b7 {{count}}",
+      wishlist: "Wunschliste \u00b7 {{count}}",
+    },
+    locked: {
+      title: "Dieses Regal ist f\u00fcr Freunde",
+      body: "{{name}} verwahrt hier {{count}} Exemplare. Sobald die Anfrage angenommen ist, \u00f6ffnen sich Sammlung und Wunschliste.",
+    },
+    notFound: {
+      title: "Keine solche Sammlung",
+      body: "Niemand nennt sich @{{handle}}.",
+    },
   },
   add: {
     title: "Hinzufügen",
