@@ -12,6 +12,10 @@
     "against either input again is a no-op (idempotent).",
     "",
     "Clocks are encoded as wall:counter:node, fixed width, so lexicographic order",
+    "",
+    "releaseId is source-qualified (\"musicbrainz:<uuid>\", \"discogs:<int>\") and merges",
+    "as ONE field. As a source column beside an id column the two would merge under",
+    "separate clocks, and one device's source could pair with another's id.",
     "is clock order."
   ],
   "cases": [
@@ -19,7 +23,7 @@
       "name": "remote absent \u2014 local wins wholesale",
       "local": {
         "id": "c1",
-        "releaseMbid": "r1",
+        "releaseId": "musicbrainz:r1",
         "condition": "VG_PLUS",
         "sleeveCondition": null,
         "pricePaidCents": 400,
@@ -32,7 +36,7 @@
         "createdAt": 1000,
         "deletedAt": null,
         "fieldClocks": {
-          "releaseMbid": "000000000001000:0000:a",
+          "releaseId": "000000000001000:0000:a",
           "condition": "000000000001000:0000:a",
           "sleeveCondition": "000000000001000:0000:a",
           "pricePaidCents": "000000000001000:0000:a",
@@ -47,7 +51,7 @@
       "remote": null,
       "expected": {
         "id": "c1",
-        "releaseMbid": "r1",
+        "releaseId": "musicbrainz:r1",
         "condition": "VG_PLUS",
         "sleeveCondition": null,
         "pricePaidCents": 400,
@@ -60,7 +64,7 @@
         "createdAt": 1000,
         "deletedAt": null,
         "fieldClocks": {
-          "releaseMbid": "000000000001000:0000:a",
+          "releaseId": "000000000001000:0000:a",
           "condition": "000000000001000:0000:a",
           "sleeveCondition": "000000000001000:0000:a",
           "pricePaidCents": "000000000001000:0000:a",
@@ -77,7 +81,7 @@
       "name": "different fields edited on each device \u2014 both edits survive",
       "local": {
         "id": "c1",
-        "releaseMbid": "r1",
+        "releaseId": "musicbrainz:r1",
         "condition": "NM",
         "sleeveCondition": null,
         "pricePaidCents": 400,
@@ -90,7 +94,7 @@
         "createdAt": 1000,
         "deletedAt": null,
         "fieldClocks": {
-          "releaseMbid": "000000000001000:0000:a",
+          "releaseId": "000000000001000:0000:a",
           "condition": "000000000009000:0000:a",
           "sleeveCondition": "000000000009000:0000:a",
           "pricePaidCents": "000000000001000:0000:a",
@@ -104,7 +108,7 @@
       },
       "remote": {
         "id": "c1",
-        "releaseMbid": "r1",
+        "releaseId": "musicbrainz:r1",
         "condition": "VG_PLUS",
         "sleeveCondition": null,
         "pricePaidCents": 2800,
@@ -117,7 +121,7 @@
         "createdAt": 1000,
         "deletedAt": null,
         "fieldClocks": {
-          "releaseMbid": "000000000001000:0000:a",
+          "releaseId": "000000000001000:0000:a",
           "condition": "000000000001000:0000:a",
           "sleeveCondition": "000000000001000:0000:a",
           "pricePaidCents": "000000000008000:0000:b",
@@ -131,7 +135,7 @@
       },
       "expected": {
         "id": "c1",
-        "releaseMbid": "r1",
+        "releaseId": "musicbrainz:r1",
         "condition": "NM",
         "sleeveCondition": null,
         "pricePaidCents": 2800,
@@ -144,7 +148,7 @@
         "createdAt": 1000,
         "deletedAt": null,
         "fieldClocks": {
-          "releaseMbid": "000000000001000:0000:a",
+          "releaseId": "000000000001000:0000:a",
           "condition": "000000000009000:0000:a",
           "sleeveCondition": "000000000009000:0000:a",
           "pricePaidCents": "000000000008000:0000:b",
@@ -161,7 +165,7 @@
       "name": "same field, same millisecond and counter \u2014 the node id breaks the tie",
       "local": {
         "id": "c1",
-        "releaseMbid": "r1",
+        "releaseId": "musicbrainz:r1",
         "condition": "NM",
         "sleeveCondition": null,
         "pricePaidCents": null,
@@ -174,7 +178,7 @@
         "createdAt": 1000,
         "deletedAt": null,
         "fieldClocks": {
-          "releaseMbid": "000000000001000:0000:a",
+          "releaseId": "000000000001000:0000:a",
           "condition": "000000000005000:0003:a",
           "sleeveCondition": "000000000005000:0003:a",
           "pricePaidCents": "000000000001000:0000:a",
@@ -188,7 +192,7 @@
       },
       "remote": {
         "id": "c1",
-        "releaseMbid": "r1",
+        "releaseId": "musicbrainz:r1",
         "condition": "VG",
         "sleeveCondition": null,
         "pricePaidCents": null,
@@ -201,7 +205,7 @@
         "createdAt": 1000,
         "deletedAt": null,
         "fieldClocks": {
-          "releaseMbid": "000000000001000:0000:a",
+          "releaseId": "000000000001000:0000:a",
           "condition": "000000000005000:0003:b",
           "sleeveCondition": "000000000005000:0003:b",
           "pricePaidCents": "000000000001000:0000:a",
@@ -215,7 +219,7 @@
       },
       "expected": {
         "id": "c1",
-        "releaseMbid": "r1",
+        "releaseId": "musicbrainz:r1",
         "condition": "VG",
         "sleeveCondition": null,
         "pricePaidCents": null,
@@ -228,7 +232,7 @@
         "createdAt": 1000,
         "deletedAt": null,
         "fieldClocks": {
-          "releaseMbid": "000000000001000:0000:a",
+          "releaseId": "000000000001000:0000:a",
           "condition": "000000000005000:0003:b",
           "sleeveCondition": "000000000005000:0003:b",
           "pricePaidCents": "000000000001000:0000:a",
@@ -245,7 +249,7 @@
       "name": "delete on one device, later edit on the other \u2014 the edit wins and the copy lives",
       "local": {
         "id": "c1",
-        "releaseMbid": "r1",
+        "releaseId": "musicbrainz:r1",
         "condition": "NM",
         "sleeveCondition": null,
         "pricePaidCents": null,
@@ -258,7 +262,7 @@
         "createdAt": 1000,
         "deletedAt": 5000,
         "fieldClocks": {
-          "releaseMbid": "000000000001000:0000:a",
+          "releaseId": "000000000001000:0000:a",
           "condition": "000000000001000:0000:a",
           "sleeveCondition": "000000000001000:0000:a",
           "pricePaidCents": "000000000001000:0000:a",
@@ -272,7 +276,7 @@
       },
       "remote": {
         "id": "c1",
-        "releaseMbid": "r1",
+        "releaseId": "musicbrainz:r1",
         "condition": "NM",
         "sleeveCondition": null,
         "pricePaidCents": null,
@@ -285,7 +289,7 @@
         "createdAt": 1000,
         "deletedAt": null,
         "fieldClocks": {
-          "releaseMbid": "000000000001000:0000:a",
+          "releaseId": "000000000001000:0000:a",
           "condition": "000000000001000:0000:a",
           "sleeveCondition": "000000000001000:0000:a",
           "pricePaidCents": "000000000001000:0000:a",
@@ -299,7 +303,7 @@
       },
       "expected": {
         "id": "c1",
-        "releaseMbid": "r1",
+        "releaseId": "musicbrainz:r1",
         "condition": "NM",
         "sleeveCondition": null,
         "pricePaidCents": null,
@@ -312,7 +316,7 @@
         "createdAt": 1000,
         "deletedAt": null,
         "fieldClocks": {
-          "releaseMbid": "000000000001000:0000:a",
+          "releaseId": "000000000001000:0000:a",
           "condition": "000000000001000:0000:a",
           "sleeveCondition": "000000000001000:0000:a",
           "pricePaidCents": "000000000001000:0000:a",
@@ -329,7 +333,7 @@
       "name": "created on two devices at different times \u2014 the earlier creation is the true one",
       "local": {
         "id": "c1",
-        "releaseMbid": "r1",
+        "releaseId": "musicbrainz:r1",
         "condition": null,
         "sleeveCondition": null,
         "pricePaidCents": null,
@@ -342,7 +346,7 @@
         "createdAt": 7000,
         "deletedAt": null,
         "fieldClocks": {
-          "releaseMbid": "000000000001000:0000:a",
+          "releaseId": "000000000001000:0000:a",
           "condition": "000000000001000:0000:a",
           "sleeveCondition": "000000000001000:0000:a",
           "pricePaidCents": "000000000001000:0000:a",
@@ -356,7 +360,7 @@
       },
       "remote": {
         "id": "c1",
-        "releaseMbid": "r1",
+        "releaseId": "musicbrainz:r1",
         "condition": null,
         "sleeveCondition": null,
         "pricePaidCents": null,
@@ -369,7 +373,7 @@
         "createdAt": 3000,
         "deletedAt": null,
         "fieldClocks": {
-          "releaseMbid": "000000000001000:0000:a",
+          "releaseId": "000000000001000:0000:a",
           "condition": "000000000001000:0000:a",
           "sleeveCondition": "000000000001000:0000:a",
           "pricePaidCents": "000000000001000:0000:a",
@@ -383,7 +387,7 @@
       },
       "expected": {
         "id": "c1",
-        "releaseMbid": "r1",
+        "releaseId": "musicbrainz:r1",
         "condition": null,
         "sleeveCondition": null,
         "pricePaidCents": null,
@@ -396,7 +400,7 @@
         "createdAt": 3000,
         "deletedAt": null,
         "fieldClocks": {
-          "releaseMbid": "000000000001000:0000:a",
+          "releaseId": "000000000001000:0000:a",
           "condition": "000000000001000:0000:a",
           "sleeveCondition": "000000000001000:0000:a",
           "pricePaidCents": "000000000001000:0000:a",
@@ -413,7 +417,7 @@
       "name": "notes edited on both devices \u2014 the later wins, the other is kept for the person to reconcile",
       "local": {
         "id": "c1",
-        "releaseMbid": "r1",
+        "releaseId": "musicbrainz:r1",
         "condition": null,
         "sleeveCondition": null,
         "pricePaidCents": null,
@@ -426,7 +430,7 @@
         "createdAt": 1000,
         "deletedAt": null,
         "fieldClocks": {
-          "releaseMbid": "000000000001000:0000:a",
+          "releaseId": "000000000001000:0000:a",
           "condition": "000000000001000:0000:a",
           "sleeveCondition": "000000000001000:0000:a",
           "pricePaidCents": "000000000001000:0000:a",
@@ -440,7 +444,7 @@
       },
       "remote": {
         "id": "c1",
-        "releaseMbid": "r1",
+        "releaseId": "musicbrainz:r1",
         "condition": null,
         "sleeveCondition": null,
         "pricePaidCents": null,
@@ -453,7 +457,7 @@
         "createdAt": 1000,
         "deletedAt": null,
         "fieldClocks": {
-          "releaseMbid": "000000000001000:0000:a",
+          "releaseId": "000000000001000:0000:a",
           "condition": "000000000001000:0000:a",
           "sleeveCondition": "000000000001000:0000:a",
           "pricePaidCents": "000000000001000:0000:a",
@@ -467,7 +471,7 @@
       },
       "expected": {
         "id": "c1",
-        "releaseMbid": "r1",
+        "releaseId": "musicbrainz:r1",
         "condition": null,
         "sleeveCondition": null,
         "pricePaidCents": null,
@@ -480,7 +484,7 @@
         "createdAt": 1000,
         "deletedAt": null,
         "fieldClocks": {
-          "releaseMbid": "000000000001000:0000:a",
+          "releaseId": "000000000001000:0000:a",
           "condition": "000000000001000:0000:a",
           "sleeveCondition": "000000000001000:0000:a",
           "pricePaidCents": "000000000001000:0000:a",
@@ -497,7 +501,7 @@
       "name": "notes changed on one device only \u2014 plain last-write-wins, no marker",
       "local": {
         "id": "c1",
-        "releaseMbid": "r1",
+        "releaseId": "musicbrainz:r1",
         "condition": null,
         "sleeveCondition": null,
         "pricePaidCents": null,
@@ -510,7 +514,7 @@
         "createdAt": 1000,
         "deletedAt": null,
         "fieldClocks": {
-          "releaseMbid": "000000000001000:0000:a",
+          "releaseId": "000000000001000:0000:a",
           "condition": "000000000001000:0000:a",
           "sleeveCondition": "000000000001000:0000:a",
           "pricePaidCents": "000000000001000:0000:a",
@@ -524,7 +528,7 @@
       },
       "remote": {
         "id": "c1",
-        "releaseMbid": "r1",
+        "releaseId": "musicbrainz:r1",
         "condition": null,
         "sleeveCondition": null,
         "pricePaidCents": null,
@@ -537,7 +541,7 @@
         "createdAt": 1000,
         "deletedAt": null,
         "fieldClocks": {
-          "releaseMbid": "000000000001000:0000:a",
+          "releaseId": "000000000001000:0000:a",
           "condition": "000000000001000:0000:a",
           "sleeveCondition": "000000000001000:0000:a",
           "pricePaidCents": "000000000001000:0000:a",
@@ -551,7 +555,7 @@
       },
       "expected": {
         "id": "c1",
-        "releaseMbid": "r1",
+        "releaseId": "musicbrainz:r1",
         "condition": null,
         "sleeveCondition": null,
         "pricePaidCents": null,
@@ -564,7 +568,7 @@
         "createdAt": 1000,
         "deletedAt": null,
         "fieldClocks": {
-          "releaseMbid": "000000000001000:0000:a",
+          "releaseId": "000000000001000:0000:a",
           "condition": "000000000001000:0000:a",
           "sleeveCondition": "000000000001000:0000:a",
           "pricePaidCents": "000000000001000:0000:a",
@@ -581,7 +585,7 @@
       "name": "identical notes on both devices \u2014 no conflict, no marker",
       "local": {
         "id": "c1",
-        "releaseMbid": "r1",
+        "releaseId": "musicbrainz:r1",
         "condition": null,
         "sleeveCondition": null,
         "pricePaidCents": null,
@@ -594,7 +598,7 @@
         "createdAt": 1000,
         "deletedAt": null,
         "fieldClocks": {
-          "releaseMbid": "000000000001000:0000:a",
+          "releaseId": "000000000001000:0000:a",
           "condition": "000000000001000:0000:a",
           "sleeveCondition": "000000000001000:0000:a",
           "pricePaidCents": "000000000001000:0000:a",
@@ -608,7 +612,7 @@
       },
       "remote": {
         "id": "c1",
-        "releaseMbid": "r1",
+        "releaseId": "musicbrainz:r1",
         "condition": null,
         "sleeveCondition": null,
         "pricePaidCents": null,
@@ -621,7 +625,7 @@
         "createdAt": 1000,
         "deletedAt": null,
         "fieldClocks": {
-          "releaseMbid": "000000000001000:0000:a",
+          "releaseId": "000000000001000:0000:a",
           "condition": "000000000001000:0000:a",
           "sleeveCondition": "000000000001000:0000:a",
           "pricePaidCents": "000000000001000:0000:a",
@@ -635,7 +639,7 @@
       },
       "expected": {
         "id": "c1",
-        "releaseMbid": "r1",
+        "releaseId": "musicbrainz:r1",
         "condition": null,
         "sleeveCondition": null,
         "pricePaidCents": null,
@@ -648,7 +652,7 @@
         "createdAt": 1000,
         "deletedAt": null,
         "fieldClocks": {
-          "releaseMbid": "000000000001000:0000:a",
+          "releaseId": "000000000001000:0000:a",
           "condition": "000000000001000:0000:a",
           "sleeveCondition": "000000000001000:0000:a",
           "pricePaidCents": "000000000001000:0000:a",
@@ -665,7 +669,7 @@
       "name": "media regraded on one device, sleeve on the other \u2014 both grades survive",
       "local": {
         "id": "c9",
-        "releaseMbid": "r9",
+        "releaseId": "musicbrainz:r9",
         "condition": "VG",
         "sleeveCondition": "VG_PLUS",
         "pricePaidCents": 3400,
@@ -678,7 +682,7 @@
         "createdAt": 1000,
         "deletedAt": null,
         "fieldClocks": {
-          "releaseMbid": "000000000001000:0000:a",
+          "releaseId": "000000000001000:0000:a",
           "condition": "000000000002000:0000:a",
           "sleeveCondition": "000000000001000:0000:a",
           "pricePaidCents": "000000000001000:0000:a",
@@ -692,7 +696,7 @@
       },
       "remote": {
         "id": "c9",
-        "releaseMbid": "r9",
+        "releaseId": "musicbrainz:r9",
         "condition": "NM",
         "sleeveCondition": "G",
         "pricePaidCents": 3400,
@@ -705,7 +709,7 @@
         "createdAt": 1000,
         "deletedAt": null,
         "fieldClocks": {
-          "releaseMbid": "000000000001000:0000:b",
+          "releaseId": "000000000001000:0000:b",
           "condition": "000000000001000:0000:b",
           "sleeveCondition": "000000000002000:0000:b",
           "pricePaidCents": "000000000001000:0000:b",
@@ -719,7 +723,7 @@
       },
       "expected": {
         "id": "c9",
-        "releaseMbid": "r9",
+        "releaseId": "musicbrainz:r9",
         "condition": "VG",
         "sleeveCondition": "G",
         "pricePaidCents": 3400,
@@ -732,7 +736,7 @@
         "createdAt": 1000,
         "deletedAt": null,
         "fieldClocks": {
-          "releaseMbid": "000000000001000:0000:b",
+          "releaseId": "000000000001000:0000:b",
           "condition": "000000000002000:0000:a",
           "sleeveCondition": "000000000002000:0000:b",
           "pricePaidCents": "000000000001000:0000:b",

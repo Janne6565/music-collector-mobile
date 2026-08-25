@@ -47,7 +47,7 @@ export function createCopy(
 
   return {
     id,
-    releaseMbid: release.mbid,
+    releaseId: release.id,
     condition: draft.condition,
     sleeveCondition: draft.sleeveCondition,
     pricePaidCents: draft.pricePaidCents,

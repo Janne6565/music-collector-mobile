@@ -133,15 +133,15 @@ function Body({ logic, onScan }: { readonly logic: Logic; readonly onScan: () =>
   return (
     <FlatList
       data={logic.results}
-      keyExtractor={(release) => release.mbid}
+      keyExtractor={(release) => release.id}
       contentContainerStyle={styles.list}
       keyboardShouldPersistTaps="handled"
       renderItem={({ item }) => (
         <ResultRow
           release={item}
-          adding={logic.addingMbid === item.mbid}
+          adding={logic.addingMbid === item.id}
           onAdd={() => logic.addRelease(item)}
-          wishing={logic.wishingMbid === item.mbid}
+          wishing={logic.wishingMbid === item.id}
           onWish={() => logic.wishFor(item)}
         />
       )}

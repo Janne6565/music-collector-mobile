@@ -155,7 +155,7 @@ export function useAccountLogic() {
    */
   const exportCsv = useCallback(async () => {
     const copies = await store.listCopies();
-    const releases = await store.getReleases(copies.map((copy) => copy.releaseMbid));
+    const releases = await store.getReleases(copies.map((copy) => copy.releaseId));
     const file = `${FileSystem.cacheDirectory}music-collector-${new Date().toISOString().slice(0, 10)}.csv`;
     await FileSystem.writeAsStringAsync(file, toCsv(copies, releases));
     // The share sheet is the only way to get a file off a phone: there is no download

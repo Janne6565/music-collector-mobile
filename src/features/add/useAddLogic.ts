@@ -77,11 +77,11 @@ export function useAddLogic() {
    */
   const addWish = useMutation({
     mutationFn: async (release: Release) => {
-      if (await store.wishlistHas(release.releaseGroupMbid)) return;
+      if (await store.wishlistHas(release.albumId)) return;
       await store.putWishlistItem(
         createWishlistItem(
           {
-            releaseGroupMbid: release.releaseGroupMbid,
+            albumId: release.albumId,
             title: release.title,
             artistName: release.artistName,
             year: release.year,
@@ -214,8 +214,8 @@ export function useAddLogic() {
       if (submitted.trim() !== "") remember(submitted);
       addCopy.mutate(release);
     },
-    addingMbid: addCopy.isPending ? addCopy.variables?.mbid : undefined,
+    addingMbid: addCopy.isPending ? addCopy.variables?.id : undefined,
     wishFor: (release: Release) => addWish.mutate(release),
-    wishingMbid: addWish.isPending ? addWish.variables?.mbid : undefined,
+    wishingMbid: addWish.isPending ? addWish.variables?.id : undefined,
   };
 }

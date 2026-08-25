@@ -22,11 +22,11 @@ export function useDetailLogic(copyId: string) {
       const copy = await store.getCopy(copyId);
       if (copy === undefined) return null;
 
-      let release = await store.getRelease(copy.releaseMbid);
+      let release = await store.getRelease(copy.releaseId);
       // The cover theme is only computed server-side on the detail lookup, so a release
       // cached from a search has none yet. Fetch it once, then it is local forever.
       if (release !== undefined && release.coverTheme === null) {
-        const enriched = await lookupRelease(copy.releaseMbid).catch(() => null);
+        const enriched = await lookupRelease(copy.releaseId).catch(() => null);
         if (enriched !== null) {
           await store.cacheReleases([enriched]);
           release = enriched;
@@ -34,15 +34,15 @@ export function useDetailLogic(copyId: string) {
       }
 
       const siblings =
-        release === undefined ? [] : await store.listCopiesInReleaseGroup(release.releaseGroupMbid);
-      const releases = await store.getReleases(siblings.map((sibling) => sibling.releaseMbid));
+        release === undefined ? [] : await store.listCopiesInReleaseGroup(release.albumId);
+      const releases = await store.getReleases(siblings.map((sibling) => sibling.releaseId));
 
       return {
         copy,
         release,
         otherCopies: siblings
           .filter((sibling) => sibling.id !== copy.id)
-          .map((sibling) => ({ copy: sibling, release: releases.get(sibling.releaseMbid) })),
+          .map((sibling) => ({ copy: sibling, release: releases.get(sibling.releaseId) })),
       };
     },
   });

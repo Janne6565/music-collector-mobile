@@ -10,14 +10,14 @@ import { CONDITIONS, FORMATS } from "@/domain/types";
  * are never the only options — a person can always take the collection with them, in a
  * format every other tool on earth can read.
  *
- * `releaseMbid` leads the row on purpose: it is what makes the export re-importable. The
+ * `releaseId` leads the row on purpose: it is what makes the export re-importable. The
  * human-readable columns beside it are for the person, not for the parser.
  *
  * Mirrored verbatim in music-collector-frontend; keep the two in step.
  */
 
 export const CSV_COLUMNS = [
-  "releaseMbid",
+  "releaseId",
   "title",
   "artist",
   "year",
@@ -36,7 +36,7 @@ export const CSV_COLUMNS = [
 ] as const;
 
 export interface CsvRow {
-  readonly releaseMbid: string;
+  readonly releaseId: string;
   readonly mediaCondition: Condition | null;
   readonly sleeveCondition: Condition | null;
   readonly pricePaidCents: number | null;
@@ -55,10 +55,10 @@ function quote(value: string): string {
 export function toCsv(copies: readonly Copy[], releases: ReadonlyMap<string, Release>): string {
   const lines = [CSV_COLUMNS.join(",")];
   for (const copy of copies) {
-    const release = releases.get(copy.releaseMbid);
+    const release = releases.get(copy.releaseId);
     lines.push(
       [
-        copy.releaseMbid,
+        copy.releaseId,
         release?.title ?? "",
         release?.artistName ?? "",
         release?.year === null || release?.year === undefined ? "" : String(release.year),
@@ -149,7 +149,7 @@ export function asFormat(value: string): Format {
  * Reads an exported file back.
  *
  * Columns are located by name, not by position, so a file someone reordered or added a
- * column to still imports. A row with no `releaseMbid` is skipped rather than guessed at —
+ * column to still imports. A row with no `releaseId` is skipped rather than guessed at —
  * a copy attached to the wrong pressing is worse than a copy that was not imported.
  */
 export function fromCsv(text: string): { rows: CsvRow[]; skipped: number } {
@@ -165,14 +165,14 @@ export function fromCsv(text: string): { rows: CsvRow[]; skipped: number } {
   const rows: CsvRow[] = [];
   let skipped = 0;
   for (const row of parsed.slice(1)) {
-    const releaseMbid = at(row, "releaseMbid");
-    if (releaseMbid === "") {
+    const releaseId = at(row, "releaseId");
+    if (releaseId === "") {
       skipped += 1;
       continue;
     }
     const rating = Number.parseInt(at(row, "rating"), 10);
     rows.push({
-      releaseMbid,
+      releaseId,
       mediaCondition: asCondition(at(row, "mediaCondition")),
       sleeveCondition: asCondition(at(row, "sleeveCondition")),
       pricePaidCents: parseMoneyToCents(at(row, "pricePaid")),

@@ -38,8 +38,16 @@ export interface CoverTheme {
 }
 
 export interface Release {
-  readonly mbid: string;
-  readonly releaseGroupMbid: string;
+  /**
+   * Source-qualified: "musicbrainz:<uuid>" or "discogs:<int>".
+   *
+   * The app reads two catalogues and they share no identifiers, so an id has to say where
+   * it came from. Source and id are one value rather than two fields on purpose — see the
+   * note on Copy.releaseId.
+   */
+  readonly id: string;
+  /** The album this is a pressing of, source-qualified the same way. */
+  readonly albumId: string;
   readonly title: string;
   readonly artistName: string;
   readonly year: number | null;
@@ -59,7 +67,7 @@ export interface Release {
  * editing different fields of the same copy both keep their edit.
  */
 export const COPY_MERGEABLE_FIELDS = [
-  "releaseMbid",
+  "releaseId",
   "condition",
   "sleeveCondition",
   "pricePaidCents",
@@ -78,7 +86,16 @@ export type FieldClocks<Field extends string> = Readonly<Record<Field, string>>;
 export interface Copy {
   /** Client-generated, so a record created offline never collides on sync. */
   readonly id: string;
-  readonly releaseMbid: string;
+  /**
+   * Which release this is a copy of, source-qualified ("musicbrainz:<uuid>",
+   * "discogs:<int>").
+   *
+   * One field rather than a source beside an id: this is a mergeable value, so as two
+   * fields each would merge under its own clock and one device's source could pair with
+   * another device's id — a copy pointing at nothing. One field makes that
+   * unrepresentable.
+   */
+  readonly releaseId: string;
   /**
    * The media grade. Named `condition` rather than `mediaCondition` because it is the
    * field that already syncs — renaming it would have meant a coordinated rename of the
@@ -121,7 +138,7 @@ export interface Copy {
  * second, subtly different merge.
  */
 export const WISH_MERGEABLE_FIELDS = [
-  "releaseGroupMbid",
+  "albumId",
   "title",
   "artistName",
   "year",
@@ -134,7 +151,7 @@ export type WishMergeableField = (typeof WISH_MERGEABLE_FIELDS)[number];
 export interface WishlistItem {
   /** Client-generated, so an item added offline keeps its identity when it syncs. */
   readonly id: string;
-  readonly releaseGroupMbid: string;
+  readonly albumId: string;
   readonly title: string;
   readonly artistName: string;
   readonly year: number | null;

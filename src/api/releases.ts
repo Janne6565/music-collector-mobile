@@ -12,7 +12,7 @@ import { FORMATS } from "@/domain/types";
 
 interface ReleasePayload {
   mbid?: string;
-  releaseGroupMbid?: string;
+  albumId?: string;
   title?: string;
   artistName?: string;
   year?: number;
@@ -50,15 +50,15 @@ function toCoverTheme(payload: ReleasePayload["coverTheme"]): CoverTheme | null 
 export function toRelease(payload: ReleasePayload, now: number): Release | null {
   if (
     payload.mbid === undefined ||
-    payload.releaseGroupMbid === undefined ||
+    payload.albumId === undefined ||
     payload.title === undefined ||
     payload.artistName === undefined
   ) {
     return null;
   }
   return {
-    mbid: payload.mbid,
-    releaseGroupMbid: payload.releaseGroupMbid,
+    id: payload.mbid,
+    albumId: payload.albumId,
     title: payload.title,
     artistName: payload.artistName,
     year: payload.year ?? null,
