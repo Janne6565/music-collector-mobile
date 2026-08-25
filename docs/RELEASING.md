@@ -88,17 +88,10 @@ Delete the downloaded JSON afterwards. It is a live release credential.
 **a. Create the app record.** App Store Connect → *My Apps* → **+** → New App, bundle ID
 `de.jannekeipert.musiccollector`. Also cannot be created by EAS.
 
-**b. Add `ascAppId`.** Copy the numeric Apple ID (App Information → General →
-"Apple ID") into `submit.production.ios` in `eas.json`:
-
-```jsonc
-"ios": { "ascAppId": "6xxxxxxxxx" }
-```
-
-The key is absent until then — `eas.json` rejects an empty string, so it cannot be
-stubbed — and a `--non-interactive` submit fails with *"Set ascAppId in the submit
-profile"* until it is added. It is not a secret; the same number appears in every App
-Store URL.
+**b. Add `ascAppId`.** Done — `submit.production.ios` carries `6805122251`, the numeric
+Apple ID from App Information → General. Not a secret; the same number appears in every
+App Store URL. Without it a `--non-interactive` submit fails with *"Set ascAppId in the
+submit profile"*, which is why it could not be stubbed as an empty string beforehand.
 
 **c. Let EAS manage the API key** — preferred over an Apple ID + app-specific password,
 because it is scoped to automation and doesn't carry your personal 2FA:

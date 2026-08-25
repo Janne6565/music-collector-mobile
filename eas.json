@@ -49,14 +49,14 @@
   // Full setup walkthrough: docs/RELEASING.md.
   "submit": {
     "production": {
-      // iOS submission needs `ascAppId` here — App Store Connect's numeric app
-      // ID (App Information → General → "Apple ID"). It only exists once the
-      // app record is created by hand, and eas.json rejects an empty string, so
-      // the key is omitted entirely rather than stubbed. A --non-interactive
-      // submit fails with "Set ascAppId in the submit profile" until it is
-      // added, which is why store submission stays gated behind the
-      // EAS_AUTO_SUBMIT repo variable. Not a secret: the same number appears in
-      // every App Store URL. See docs/RELEASING.md.
+      // App Store Connect's numeric app ID (App Information → General →
+      // "Apple ID"), which only exists once the app record has been created by
+      // hand. Not a secret: the same number appears in every App Store URL.
+      // A --non-interactive submit fails with "Set ascAppId in the submit
+      // profile" without it. See docs/RELEASING.md.
+      "ios": {
+        "ascAppId": "6805122251"
+      },
       "android": {
         // First submission must be "internal" (Play internal testing track);
         // the app has to exist in the Play Console before EAS can submit to it.
