@@ -6,6 +6,7 @@ import { Avatar } from "@/features/friends/Avatar";
 import { colors, fonts } from "@/theme/colors";
 import type { Format } from "@janne6565/music-collector-shared";
 import { FORMAT_LABELS } from "@janne6565/music-collector-shared";
+import i18n from "i18next";
 import { Trans, useTranslation } from "react-i18next";
 import { StyleSheet, Text, View } from "react-native";
 
@@ -152,12 +153,12 @@ function groupByDay(
   return [...days.entries()];
 }
 
+/**
+ * Translated rather than derived from `Intl.RelativeTimeFormat`, which Hermes does not
+ * implement — see `@/domain/relativeTime`. Two words are not worth a polyfill.
+ */
 function relativeDay(offset: number, language: string): string {
-  const literal = new Intl.RelativeTimeFormat(language, { numeric: "auto" })
-    .formatToParts(offset, "day")
-    .map((part) => part.value)
-    .join("");
-  return literal.charAt(0).toUpperCase() + literal.slice(1);
+  return i18n.t(offset === 0 ? "time.today" : "time.yesterday", { lng: language });
 }
 
 const styles = StyleSheet.create({

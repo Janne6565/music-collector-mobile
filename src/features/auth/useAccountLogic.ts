@@ -1,5 +1,6 @@
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
+import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   type AccountUser,
@@ -29,6 +30,7 @@ const SYNC_INTERVAL_MS = 60_000;
 
 export function useAccountLogic() {
   const { store, clock } = useStore();
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<AccountUser | null>(null);
   const [restoring, setRestoring] = useState(true);
   const [firstSyncPending, setFirstSyncPending] = useState(false);
@@ -106,6 +108,12 @@ export function useAccountLogic() {
       syncing.current = true;
       try {
         await engine.sync();
+        // Every screen reads the local store through a query, and a sync writes to that
+        // store behind their backs. Without this the shelf keeps the empty result it
+        // fetched before the first sync landed: the tabs stay mounted, so nothing remounts
+        // and React Native has no window focus to refetch on. Signing in on a new device
+        // looked like the sync had pulled nothing at all.
+        await queryClient.invalidateQueries();
         const at = Date.now();
         await writeLastSyncedAt(store, at);
         setLastSyncedAt(at);
@@ -120,7 +128,7 @@ export function useAccountLogic() {
     void run();
     const timer = setInterval(() => void run(), SYNC_INTERVAL_MS);
     return () => clearInterval(timer);
-  }, [user, firstSyncPending, store, clock]);
+  }, [user, firstSyncPending, store, clock, queryClient]);
 
   const submit = useCallback(async () => {
     setBusy(true);
@@ -179,12 +187,15 @@ export function useAccountLogic() {
       setBusy(true);
       try {
         await createSyncEngine(store, clock).firstSync(strategy);
+        // The same reason as the interval sync: whichever way the first one resolved, the
+        // store underneath every screen has just changed.
+        await queryClient.invalidateQueries();
         setFirstSyncPending(false);
       } finally {
         setBusy(false);
       }
     },
-    [store, clock],
+    [store, clock, queryClient],
   );
 
   const leave = useCallback(async () => {

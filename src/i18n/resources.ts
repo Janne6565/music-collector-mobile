@@ -474,6 +474,21 @@ const enCommon = {
   scaffold: {
     comingInPhaseTwo: "This screen arrives with the local-first core.",
   },
+  time: {
+    now: "just now",
+    minute_one: "1 minute ago",
+    minute_other: "{{count}} minutes ago",
+    hour_one: "1 hour ago",
+    hour_other: "{{count}} hours ago",
+    day_one: "yesterday",
+    day_other: "{{count}} days ago",
+    month_one: "last month",
+    month_other: "{{count}} months ago",
+    year_one: "last year",
+    year_other: "{{count}} years ago",
+    today: "Today",
+    yesterday: "Yesterday",
+  },
 } as const;
 
 /** Maps every leaf to `string` while preserving the nested shape. */
@@ -965,6 +980,21 @@ const deCommon: CommonSchema = {
   },
   scaffold: {
     comingInPhaseTwo: "Dieser Screen kommt mit dem Local-First-Kern.",
+  },
+  time: {
+    now: "gerade eben",
+    minute_one: "vor 1 Minute",
+    minute_other: "vor {{count}} Minuten",
+    hour_one: "vor 1 Stunde",
+    hour_other: "vor {{count}} Stunden",
+    day_one: "gestern",
+    day_other: "vor {{count}} Tagen",
+    month_one: "letzten Monat",
+    month_other: "vor {{count}} Monaten",
+    year_one: "letztes Jahr",
+    year_other: "vor {{count}} Jahren",
+    today: "Heute",
+    yesterday: "Gestern",
   },
 };
 
