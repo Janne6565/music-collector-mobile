@@ -1,4 +1,4 @@
-import { FormatThumb } from "@/components/FormatThumb";
+import { ReleaseArt } from "@/components/ReleaseArt";
 import { formatRelativeTime } from "@/domain/relativeTime";
 import { WishSheet } from "@/features/wishlist/WishSheet";
 import { useWishlistLogic } from "@/features/wishlist/useWishlistLogic";
@@ -187,7 +187,13 @@ export function WishlistScreen() {
                 style={styles.rowPressable}
               >
                 <View style={styles.thumb}>
-                  <FormatThumb format={item.desiredFormat ?? "OTHER"} />
+                  {/* The wanted format is the silhouette, not the artwork: an entry for the
+                      vinyl of a record you already have on CD should look like the thing
+                      you are hunting. */}
+                  <ReleaseArt
+                    release={{ coverArtUrl: logic.coverOf(item.albumId) }}
+                    format={item.desiredFormat ?? "OTHER"}
+                  />
                 </View>
                 <View style={styles.body}>
                   <Text style={styles.rowTitle} numberOfLines={1}>

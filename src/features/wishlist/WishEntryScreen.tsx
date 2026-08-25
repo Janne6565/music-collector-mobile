@@ -1,4 +1,4 @@
-import { FormatThumb } from "@/components/FormatThumb";
+import { ReleaseArt } from "@/components/ReleaseArt";
 import { WishSheet } from "@/features/wishlist/WishSheet";
 import { useWishEntryLogic } from "@/features/wishlist/useWishlistLogic";
 import { colors, fonts } from "@/theme/colors";
@@ -51,7 +51,10 @@ export function WishEntryScreen({ wishId }: { readonly wishId: string }) {
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.hero}>
-          <FormatThumb format={entry.desiredFormat ?? "OTHER"} />
+          <ReleaseArt
+            release={{ coverArtUrl: logic.coverOf(entry.albumId) }}
+            format={entry.desiredFormat ?? "OTHER"}
+          />
         </View>
         <Text style={styles.title}>{entry.title}</Text>
         <Text style={styles.subtitle}>

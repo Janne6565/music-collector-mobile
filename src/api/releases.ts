@@ -10,7 +10,7 @@ import { FORMATS } from "@janne6565/music-collector-shared";
  */
 
 interface ReleasePayload {
-  mbid?: string;
+  id?: string;
   albumId?: string;
   title?: string;
   artistName?: string;
@@ -51,7 +51,7 @@ function toCoverTheme(payload: ReleasePayload["coverTheme"]): CoverTheme | null 
 
 export function toRelease(payload: ReleasePayload, now: number): Release | null {
   if (
-    payload.mbid === undefined ||
+    payload.id === undefined ||
     payload.albumId === undefined ||
     payload.title === undefined ||
     payload.artistName === undefined
@@ -59,7 +59,7 @@ export function toRelease(payload: ReleasePayload, now: number): Release | null 
     return null;
   }
   return {
-    id: payload.mbid,
+    id: payload.id,
     albumId: payload.albumId,
     title: payload.title,
     artistName: payload.artistName,
@@ -210,4 +210,40 @@ export async function lookupPressings(albumId: string, limit = 25): Promise<Rele
   );
   const now = Date.now();
   return payloads.map((p) => toRelease(p, now)).filter((r): r is Release => r !== null);
+}
+
+interface AlbumCoverPayload {
+  albumId?: string;
+  coverArtUrl?: string;
+}
+
+/** The server caps one request at a hundred ids, so a long wishlist asks in pages. */
+const COVER_BATCH = 100;
+
+/**
+ * The artwork for a set of albums, keyed by the id it was asked for.
+ *
+ * A wishlist entry names an album rather than a pressing, so it carries no cover of its
+ * own and the server resolves one from the pressings it has mirrored. Ids it cannot answer
+ * for — hand-entered `local:` albums among them — are simply absent from the map, which is
+ * the same thing as a null cover to every caller: `ReleaseArt` draws the format silhouette.
+ *
+ * Mirrors `lookupAlbumCovers` in music-collector-frontend/src/api/releases.ts.
+ */
+export async function lookupAlbumCovers(
+  albumIds: readonly string[],
+): Promise<ReadonlyMap<string, string | null>> {
+  const covers = new Map<string, string | null>();
+  for (let start = 0; start < albumIds.length; start += COVER_BATCH) {
+    const query = albumIds
+      .slice(start, start + COVER_BATCH)
+      .map((albumId) => `albumId=${encodeURIComponent(albumId)}`)
+      .join("&");
+    for (const payload of await getJson<AlbumCoverPayload[]>(
+      `/api/v1/metadata/albums/covers?${query}`,
+    )) {
+      if (payload.albumId !== undefined) covers.set(payload.albumId, payload.coverArtUrl ?? null);
+    }
+  }
+  return covers;
 }
