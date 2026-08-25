@@ -49,7 +49,12 @@ export function useAddCopy() {
       // Replace rather than push: the screen that added the copy is a step on the way to
       // it, and going back from a record you just filed should return to the search, not
       // to the list you picked it from.
-      router.replace(`/copies/${copy.id}`);
+      //
+      // `fresh` opens the copy with its editor already unfolded — the mobile shape of the
+      // web's details step (screen 8d). A copy that has just been filed is the one moment
+      // its condition, price and where you found it are all still in your head, and a
+      // read-only page with an Edit button spends that moment asking you to press again.
+      router.replace(`/copies/${copy.id}?fresh=1`);
     },
   });
 

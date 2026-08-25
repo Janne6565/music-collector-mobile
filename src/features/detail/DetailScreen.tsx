@@ -14,12 +14,26 @@ import { PhotoStrip } from "@/features/photos/PhotoStrip";
 import { usePhotoStripLogic } from "@/features/photos/usePhotoStripLogic";
 import { fonts } from "@/theme/colors";
 
-export function DetailScreen({ copyId }: { readonly copyId: string }) {
+/**
+ * A copy's page (screens 1j, 3a and 3b).
+ *
+ * `startEditing` is how adding a record lands here: the copy exists but says nothing
+ * about itself yet, so the page opens on its editor rather than on a page of blanks with
+ * an Edit button. Saving or cancelling leaves it in the ordinary read state — the flag
+ * only decides where the page starts, never where it stays.
+ */
+export function DetailScreen({
+  copyId,
+  startEditing = false,
+}: {
+  readonly copyId: string;
+  readonly startEditing?: boolean;
+}) {
   const { t } = useTranslation();
   const router = useRouter();
   const logic = useDetailLogic(copyId);
   const photos = usePhotoStripLogic(copyId);
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(startEditing);
 
   if (logic.loading) {
     return (
