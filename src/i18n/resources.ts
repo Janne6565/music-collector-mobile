@@ -161,6 +161,7 @@ const enCommon = {
     },
     section: {
       languageCurrency: "Language and currency",
+      notifications: "Notifications",
       storageSync: "Storage and sync",
     },
     saved: "Saved",
@@ -624,6 +625,31 @@ const enCommon = {
     start: "Start collecting",
     createInstead: "Create an account instead",
   },
+  notifications: {
+    title: "Notifications",
+    rowBody: "What may reach you outside the app.",
+    scopeMobile:
+      "These follow your account. The web reads the same switches — unlike Settings, which stays on this phone.",
+    column: { category: "Category" },
+    channel: { mail: "Mail", push: "Push" },
+    noConfirmedAddress: "No confirmed address",
+    lockFootnote: "The lock on security notices covers mail only.",
+    savesAsYouGo: "Changes save as you make them.",
+    allQuiet: {
+      title: "Everything is off",
+      body: "Nothing will reach you outside the app. Friend requests still arrive — they wait on the Friends tab with a dot, as they always did.",
+    },
+    noPush: {
+      bodyMobile: "Push is not set up yet, so the column has nothing to switch. Your choices are kept and will apply the moment it is.",
+    },
+    devices: { heading: "Where push would arrive", none: "No devices yet" },
+    category: {
+      FRIEND_REQUEST: { title: "A friend request", short: "Waits for your answer" },
+      FRIEND_ACTIVITY: { title: "What friends added", short: "Weekly, Sunday morning" },
+      SECURITY: { title: "Security notices", short: "Sign-ins and changes" },
+      PRODUCT_NEWS: { title: "News about the app", short: "Two or three times a year" },
+    },
+  },
   common: {
     save: "Save",
     cancel: "Cancel",
@@ -821,6 +847,7 @@ const deCommon: CommonSchema = {
     },
     section: {
       languageCurrency: "Sprache und Währung",
+      notifications: "Benachrichtigungen",
       storageSync: "Speicher und Synchronisierung",
     },
     saved: "Gespeichert",
@@ -1292,6 +1319,31 @@ const deCommon: CommonSchema = {
       "Die lokale Speicherung ist in diesem Modus technisch erforderlich und daher einwilligungsfrei — § 25 Abs. 2 TDDDG. Details in der Datenschutzerklärung.",
     start: "Los geht's",
     createInstead: "Doch ein Konto anlegen",
+  },
+  notifications: {
+    title: "Benachrichtigungen",
+    rowBody: "Was dich außerhalb der App erreichen darf.",
+    scopeMobile:
+      "Diese folgen deinem Konto. Das Web liest dieselben Schalter — anders als Einstellungen, die auf diesem Telefon bleiben.",
+    column: { category: "Kategorie" },
+    channel: { mail: "Mail", push: "Push" },
+    noConfirmedAddress: "Keine bestätigte Adresse",
+    lockFootnote: "Das Schloss bei Sicherheitshinweisen gilt nur für Mail.",
+    savesAsYouGo: "Änderungen werden sofort gespeichert.",
+    allQuiet: {
+      title: "Alles ist aus",
+      body: "Außerhalb der App erreicht dich nichts. Freundschaftsanfragen kommen weiterhin an — sie warten wie immer mit einem Punkt im Tab „Freunde“.",
+    },
+    noPush: {
+      bodyMobile: "Push ist noch nicht eingerichtet, die Spalte hat also nichts zu schalten. Deine Auswahl bleibt gespeichert und gilt, sobald es soweit ist.",
+    },
+    devices: { heading: "Wo Push ankommen würde", none: "Noch keine Geräte" },
+    category: {
+      FRIEND_REQUEST: { title: "Eine Freundschaftsanfrage", short: "Wartet auf deine Antwort" },
+      FRIEND_ACTIVITY: { title: "Was Freunde eingestellt haben", short: "Wöchentlich, Sonntagmorgen" },
+      SECURITY: { title: "Sicherheitshinweise", short: "Anmeldungen und Änderungen" },
+      PRODUCT_NEWS: { title: "Neues über die App", short: "Zwei- bis dreimal im Jahr" },
+    },
   },
   common: {
     close: "Schließen",
