@@ -86,7 +86,7 @@ export function WishSheet({ onClose, release = null, entry = null }: WishSheetPr
     queryKey: ["albumCovers", entry === null ? [] : [entry.albumId]],
     enabled: entry !== null && !isManualReleaseId(entry.albumId),
     staleTime: 60 * 60 * 1000,
-    queryFn: () => lookupAlbumCovers([entry?.albumId ?? ""]),
+    queryFn: () => lookupAlbumCovers([entry?.albumId ?? ""], store),
   });
 
   /** The picked pressing's cover, the album's as a fallback, null while neither is known. */

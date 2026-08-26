@@ -73,7 +73,7 @@ export function useWishlistLogic() {
     enabled: albumIds.length > 0,
     // The mirror's answer for an album does not move while a list is open.
     staleTime: 60 * 60 * 1000,
-    queryFn: () => lookupAlbumCovers(albumIds),
+    queryFn: () => lookupAlbumCovers(albumIds, store),
   });
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["wishlist"] });

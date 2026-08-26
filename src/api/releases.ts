@@ -1,6 +1,17 @@
 import { API_BASE } from "@/api/config";
-import type { Album, Artist, CoverTheme, Format, Release } from "@janne6565/music-collector-shared";
-import { FORMATS } from "@janne6565/music-collector-shared";
+import type {
+  Album,
+  Artist,
+  CoverTheme,
+  Format,
+  LocalStore,
+  Release,
+} from "@janne6565/music-collector-shared";
+import {
+  FORMATS,
+  readArchivedAlbumCovers,
+  withArchivedCovers,
+} from "@janne6565/music-collector-shared";
 /**
  * Thin client over the metadata proxy.
  *
@@ -232,6 +243,7 @@ const COVER_BATCH = 100;
  */
 export async function lookupAlbumCovers(
   albumIds: readonly string[],
+  store?: LocalStore,
 ): Promise<ReadonlyMap<string, string | null>> {
   const covers = new Map<string, string | null>();
   for (let start = 0; start < albumIds.length; start += COVER_BATCH) {
@@ -245,7 +257,11 @@ export async function lookupAlbumCovers(
       if (payload.albumId !== undefined) covers.set(payload.albumId, payload.coverArtUrl ?? null);
     }
   }
-  return covers;
+  // An imported archive brought the answers the deployment it came from could give. This
+  // mirror may never have heard of those albums — that is a fact about which server is
+  // being asked, not about the record — so the archive fills what comes back null.
+  if (store === undefined) return covers;
+  return withArchivedCovers(covers, await readArchivedAlbumCovers(store));
 }
 
 /** The same hundred-id cap as the covers endpoint, so a large collection asks in pages. */

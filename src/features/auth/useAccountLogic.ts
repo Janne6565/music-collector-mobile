@@ -15,6 +15,7 @@ import {
 } from "@/api/auth";
 import { signInWithProvider } from "@/features/auth/externalSignIn";
 import { toCsv, wishlistToCsv } from "@/domain/csv";
+import { lookupAlbumCovers } from "@/api/releases";
 import { readPhotoBytes } from "@/local/photoBytes";
 import { encodeBase64 } from "@/local/sqliteStore";
 import { useStore } from "@/local/StoreProvider";
@@ -252,6 +253,10 @@ export function useAccountLogic() {
       { collection: toCsv(copies, releases), wishlist: wishlistToCsv(wishlist) },
       (photoId) => readPhotoBytes(store, photoId),
       exportedAt,
+      // The one request an export makes: a wish's cover lives in this deployment's release
+      // mirror rather than in the collection, and an archive that did not ask would lose
+      // the wishlist's pictures the moment it was imported against a different mirror.
+      (albumIds) => lookupAlbumCovers(albumIds),
     );
     const file = `${FileSystem.cacheDirectory}${mcFileName(exportedAt)}`;
     await FileSystem.writeAsStringAsync(file, encodeBase64(archive.bytes.slice().buffer as ArrayBuffer), {
