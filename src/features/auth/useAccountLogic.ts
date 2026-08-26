@@ -8,7 +8,9 @@ import {
   authProviders,
   createAccount,
   deleteAccount,
+  fetchAccount,
   requestPasswordReset,
+  resendEmailConfirmation,
   signIn,
   signOut,
   updateDisplayName,
@@ -20,7 +22,7 @@ import { readPhotoBytes } from "@/local/photoBytes";
 import { encodeBase64 } from "@/local/sqliteStore";
 import { useStore } from "@/local/StoreProvider";
 import { readSyncEnabled, writeSyncEnabled } from "@/local/settings";
-import { firstSyncResolved, renamed, signedIn, signedOut } from "@/store/authSlice";
+import { accountChanged, firstSyncResolved, signedIn, signedOut } from "@/store/authSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { createSyncEngine } from "@/sync/transport";
 import type { FirstSyncStrategy } from "@janne6565/music-collector-shared";
@@ -314,6 +316,43 @@ export function useAccountLogic() {
     }
   }, [store, dispatch]);
 
+  /**
+   * A fresh confirmation link.
+   *
+   * Deliberately says nothing about whether there was anything to send: the server answers
+   * the same either way, and an address that is already confirmed is the state the person
+   * wanted rather than an error to report at them.
+   */
+  const [sendingConfirmation, setSendingConfirmation] = useState(false);
+  const [confirmationSent, setConfirmationSent] = useState(false);
+  const resendConfirmation = useCallback(async () => {
+    setSendingConfirmation(true);
+    try {
+      await resendEmailConfirmation();
+      setConfirmationSent(true);
+    } catch {
+      // Nothing to say. A failed send leaves the row exactly as it was, and the button
+      // stays pressable rather than claiming a link is on its way that is not.
+    } finally {
+      setSendingConfirmation(false);
+    }
+  }, []);
+
+  /**
+   * Re-reads the account, for the case the link was followed somewhere else.
+   *
+   * The confirmation link is an https URL, so on a phone it opens the browser rather than
+   * this app. Coming back to a screen still nagging about an address that was confirmed a
+   * moment ago is the app being wrong about the person, so the screen asks again on focus.
+   */
+  const refreshAccount = useCallback(async () => {
+    try {
+      dispatch(accountChanged(await fetchAccount()));
+    } catch {
+      // Offline, or the session is gone. Neither is this screen's problem to report.
+    }
+  }, [dispatch]);
+
   const accountName = user?.displayName ?? "";
   const saveName = useCallback(async () => {
     const next = nameDraft;
@@ -321,7 +360,7 @@ export function useAccountLogic() {
     setRenaming(true);
     setRenameFailed(false);
     try {
-      dispatch(renamed(await updateDisplayName(next.trim())));
+      dispatch(accountChanged(await updateDisplayName(next.trim())));
       // Back to following the account, which now says what was just typed.
       setNameDraft(null);
     } catch {
@@ -380,6 +419,12 @@ export function useAccountLogic() {
     signInWith,
     resetSent,
     forgotPassword,
+    /** Undefined on a server that predates the field; treated as confirmed. */
+    emailConfirmed: user?.emailVerified !== false,
+    resendConfirmation,
+    sendingConfirmation,
+    confirmationSent,
+    refreshAccount,
     // Completeness only, except the terms box: that is a required acknowledgement rather
     // than a format rule, so it does gate the button.
     canSubmit:

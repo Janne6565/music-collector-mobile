@@ -5,6 +5,13 @@ export interface AccountUser {
   readonly email: string;
   readonly displayName: string | null;
   readonly createdAt: string;
+  /**
+   * Whether the address has been confirmed. Optional because this client is hand-written
+   * against the server rather than generated from it: a build talking to a server that
+   * predates the field would otherwise read `false` and nag about a confirmation that
+   * server cannot send. Absent means "not asked", and every reader treats it as confirmed.
+   */
+  readonly emailVerified?: boolean;
 }
 
 export interface AuthProvider {
@@ -67,6 +74,30 @@ export interface ConsentRecord {
   readonly document: "TERMS" | "PRIVACY" | "AGE";
   readonly version: string;
   readonly acceptedAt: string;
+}
+
+/** The account as the server currently reads it. */
+export async function fetchAccount(): Promise<AccountUser> {
+  return request<AccountUser>("/api/v1/auth/me");
+}
+
+/**
+ * Redeems a confirmation link.
+ *
+ * Open on the server, because the link is followed in whichever browser opened the mail —
+ * so this works whether or not the phone happens to be signed in.
+ */
+export async function confirmEmailAddress(token: string): Promise<AccountUser> {
+  return request<AccountUser>("/api/v1/auth/confirm-email", {
+    method: "POST",
+    body: { token },
+    noRetry: true,
+  });
+}
+
+/** A fresh confirmation link. Answers the same whether or not there was anything to send. */
+export async function resendEmailConfirmation(): Promise<void> {
+  await request("/api/v1/auth/confirm-email/resend", { method: "POST" });
 }
 
 /** What the Legal & privacy screen prints under a document: "accepted 4 Mar 2026". */

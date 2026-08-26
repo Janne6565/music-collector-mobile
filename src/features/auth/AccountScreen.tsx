@@ -1,5 +1,6 @@
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { ChevronRight, LogOut } from "lucide-react-native";
+import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
@@ -29,6 +30,21 @@ import { colors, fonts } from "@/theme/colors";
  */
 export function AccountScreen() {
   const logic = useAccountLogic();
+
+  /*
+   * The confirmation link is an https URL, so on a phone it opens the browser rather than
+   * this app. Somebody who confirms there and comes back would otherwise find the screen
+   * still nagging about it, so the account is re-read on focus -- but only while that
+   * would change something. The dependency is the boolean, not the account: depending on
+   * the account object would re-run the effect on the very dispatch this makes, forever.
+   */
+  const { refreshAccount } = logic;
+  const needsConfirmation = logic.user !== null && !logic.emailConfirmed;
+  useFocusEffect(
+    useCallback(() => {
+      if (needsConfirmation) void refreshAccount();
+    }, [needsConfirmation, refreshAccount]),
+  );
 
   if (logic.restoring) {
     return (
@@ -109,6 +125,35 @@ function SignedIn({ logic }: { readonly logic: ReturnType<typeof useAccountLogic
       <Text style={styles.section}>{t("account.section.signIn")}</Text>
       <View style={styles.card}>
         <Row title={t("auth.email")} value={logic.user?.email ?? ""} />
+        {/* Only while there is something to do about it. A permanent "confirmed" row would
+            be a badge for the ordinary state, which is not news. */}
+        {!logic.emailConfirmed && (
+          <Row
+            title={t("account.confirmEmail.title")}
+            body={t("account.confirmEmail.body")}
+            trailing={
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => void logic.resendConfirmation()}
+                disabled={logic.sendingConfirmation || logic.confirmationSent}
+                style={[
+                  styles.rowAction,
+                  (logic.sendingConfirmation || logic.confirmationSent) && styles.dim,
+                ]}
+              >
+                {logic.sendingConfirmation ? (
+                  <ActivityIndicator size="small" color={colors.ink} />
+                ) : (
+                  <Text style={styles.rowActionText}>
+                    {logic.confirmationSent
+                      ? t("account.confirmEmail.sent")
+                      : t("account.confirmEmail.send")}
+                  </Text>
+                )}
+              </Pressable>
+            }
+          />
+        )}
         <Row title={t("auth.password")} body={t("account.passwordBody")} last />
       </View>
 
@@ -418,4 +463,16 @@ const styles = StyleSheet.create({
   delete: { marginTop: 10, alignItems: "center", padding: 6 },
   deleteText: { fontSize: 12.5, fontWeight: "500", color: colors.accentStrong },
   dim: { opacity: 0.5 },
+  rowAction: {
+    height: 32,
+    minWidth: 84,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.line,
+    backgroundColor: colors.canvas,
+  },
+  rowActionText: { fontSize: 12.5, fontWeight: "600", color: colors.ink },
 });

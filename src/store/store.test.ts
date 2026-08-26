@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import type { AccountUser } from "@/api/auth";
-import reducer, { renamed, signedIn, signedOut } from "@/store/authSlice";
+import reducer, { accountChanged, signedIn, signedOut } from "@/store/authSlice";
 import { store } from "@/store";
 
 const user: AccountUser = {
@@ -44,8 +44,22 @@ describe("the auth slice", () => {
 
   it("keeps the session when only the name changed", () => {
     const next = { ...user, displayName: "Someone Else" };
-    const state = reducer(reducer(undefined, signedIn({ user, firstSyncPending: false })), renamed(next));
+    const state = reducer(
+      reducer(undefined, signedIn({ user, firstSyncPending: false })),
+      accountChanged(next),
+    );
     expect(state.status).toBe("signedIn");
     expect(state.user?.displayName).toBe("Someone Else");
+  });
+
+  it("keeps the session when the address was confirmed elsewhere", () => {
+    // The link is followed in a browser, not in the app; what comes back is the same
+    // account with one fact changed, and the token this phone holds is untouched.
+    const state = reducer(
+      reducer(undefined, signedIn({ user, firstSyncPending: false })),
+      accountChanged({ ...user, emailVerified: true }),
+    );
+    expect(state.status).toBe("signedIn");
+    expect(state.user?.emailVerified).toBe(true);
   });
 });

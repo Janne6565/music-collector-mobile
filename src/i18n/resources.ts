@@ -388,6 +388,16 @@ const enCommon = {
     passwordHint: "Ten characters minimum. A passphrase beats a password.",
     continueWith: "Continue with {{provider}}",
     forgotSent: "If that address has an account, a reset link is on its way.",
+    confirmTitle: "Confirm your e-mail address",
+    confirmDoneTitle: "That's confirmed",
+    confirm: {
+      pending: "One moment — checking the link.",
+      done: "Your address is confirmed. A password reset and any security notice can now reach you.",
+      invalid: "That link is expired or already used. Ask for a new one on the You tab.",
+      noToken: "That link is missing its token. Ask for a new one on the You tab.",
+    },
+    confirmContinue: "Back to the collection",
+    confirmResendHint: "Go to your account",
     createTitle: "Create an account",
     optional: "An account is optional. It only syncs your collection across devices — everything works without one.",
     email: "E-mail",
@@ -429,6 +439,12 @@ const enCommon = {
   account: {
     title: "Account",
     passwordBody: "Change it from the reset link on the sign-in screen.",
+    confirmEmail: {
+      title: "Confirm your address",
+      body: "Until you do, a password reset cannot reach you.",
+      send: "Send a link",
+      sent: "Link sent",
+    },
     stat: { copies: "copies", releases: "releases" },
     section: { profile: "Profile", signIn: "Sign-in", storage: "Storage and sync" },
     deviceSettings: {
@@ -988,6 +1004,16 @@ const deCommon: CommonSchema = {
     passwordHint: "Mindestens zehn Zeichen. Eine Passphrase schlägt ein Passwort.",
     continueWith: "Weiter mit {{provider}}",
     forgotSent: "Falls es zu dieser Adresse ein Konto gibt, ist ein Link unterwegs.",
+    confirmTitle: "E-Mail-Adresse bestätigen",
+    confirmDoneTitle: "Bestätigt",
+    confirm: {
+      pending: "Einen Moment — der Link wird geprüft.",
+      done: "Deine Adresse ist bestätigt. Ein Passwort-Reset und Sicherheitshinweise erreichen dich jetzt.",
+      invalid: "Dieser Link ist abgelaufen oder wurde schon benutzt. Fordere im Tab „Du“ einen neuen an.",
+      noToken: "Diesem Link fehlt das Token. Fordere im Tab „Du“ einen neuen an.",
+    },
+    confirmContinue: "Zurück zur Sammlung",
+    confirmResendHint: "Zum Konto",
     createTitle: "Konto erstellen",
     optional: "Ein Konto ist optional. Es synchronisiert nur deine Sammlung zwischen Geräten — alles funktioniert auch ohne.",
     email: "E-Mail",
@@ -1030,6 +1056,12 @@ const deCommon: CommonSchema = {
   account: {
     title: "Konto",
     passwordBody: "Änderbar über den Zurücksetzen-Link auf der Anmeldeseite.",
+    confirmEmail: {
+      title: "Adresse bestätigen",
+      body: "Solange sie unbestätigt ist, erreicht dich kein Passwort-Reset.",
+      send: "Link senden",
+      sent: "Link gesendet",
+    },
     stat: { copies: "Exemplare", releases: "Veröffentlichungen" },
     section: { profile: "Profil", signIn: "Anmeldung", storage: "Speicher und Sync" },
     deviceSettings: {

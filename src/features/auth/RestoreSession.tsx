@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { refreshSession } from "@/api/client";
-import type { AccountUser } from "@/api/auth";
+import { fetchAccount } from "@/api/auth";
 import { useStore } from "@/local/StoreProvider";
 import { useAppDispatch } from "@/store/hooks";
 import { signedIn, signedOut } from "@/store/authSlice";
@@ -29,9 +29,7 @@ export function RestoreSession() {
         return;
       }
       try {
-        const me = await import("@/api/client").then((m) =>
-          m.request<AccountUser>("/api/v1/auth/me"),
-        );
+        const me = await fetchAccount();
         const hasLocalCollection = (await store.listCopies()).length > 0;
         const hasSyncedBefore = (await store.readSyncCursor()) > 0;
         dispatch(
