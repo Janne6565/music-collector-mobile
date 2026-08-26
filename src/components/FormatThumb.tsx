@@ -10,7 +10,13 @@ import type { Format } from "@janne6565/music-collector-shared";
  * carries information rather than just filling space: the silhouette tells you the format
  * at a glance in a dense grid, before any text is legible.
  *
- * React Native has no conic or repeating gradients, so the web version's textures are
+ * The tile itself is transparent. There is exactly one panel with paper on it — the sleeve
+ * — and it is the same box in all four formats, so what sits around it is the page. This
+ * port used to paint a second, full-bleed sheet of paper behind everything, which put a
+ * warm grey border down the right and along the top and bottom of every cover in the
+ * shelf and left the record looking like it was cut out of a card.
+ *
+ * React Native has no conic or repeating gradients, so the deck's textures are
  * approximated with layered views and a linear gradient sheen.
  */
 export function FormatThumb({
@@ -25,23 +31,21 @@ export function FormatThumb({
    * The real cover, drawn into the sleeve.
    *
    * Artwork belongs on the sleeve, not over the whole tile: a record sticks out past its
-   * cover, a CD sits in front of one. Which panel is the sleeve depends on the format —
-   * vinyl has a front panel over the record, the others use the full tile — and that is
-   * exactly the geometry this component already owns.
+   * cover, a CD sits in front of one. It is the same panel in every format — the furniture
+   * that says which format this is goes over or beside it, never under it.
    */
   readonly cover?: ReactNode;
   /** Breathes the sleeve while the cover it will hold is still on its way. */
   readonly waiting?: boolean;
 }) {
   const pulse = usePulse(waiting === true);
-  const vinyl = format === "VINYL";
 
   return (
     <View style={[styles.root, style]}>
-      {/* For vinyl this is only the ground behind the record; the front panel below is
-          the sleeve that holds the cover. Every other format wears it as the sleeve. */}
-      <Sleeve style={styles.sleeve} fill={SLEEVE} pulse={pulse} cover={vinyl ? undefined : cover} />
-      {vinyl && <Vinyl cover={cover} pulse={pulse} />}
+      {/* Vinyl draws its record first so the sleeve overlaps it; the rest wear their
+          furniture on top of the sleeve. */}
+      {format === "VINYL" && <Record />}
+      <Sleeve pulse={pulse} cover={cover} elevated={format === "VINYL"} />
       {format === "CD" && <Disc />}
       {format === "CASSETTE" && <Cassette />}
       {(format === "DIGITAL" || format === "OTHER") && <Waveform />}
@@ -50,58 +54,69 @@ export function FormatThumb({
 }
 
 /**
- * A sleeve panel: its paper, and whatever cover is printed on it.
+ * The sleeve panel — the same box in all four formats, and the one the cover fills.
  *
  * The paper is a sibling of the cover rather than the panel's own background, so it can
- * breathe while the cover is still arriving without taking the cover with it.
+ * breathe while the cover is still arriving without taking the cover with it. The edge is
+ * a sibling too, and drawn last: a border on the clipping view paints under its children,
+ * and the cover would swallow it.
  */
 function Sleeve({
-  style,
-  fill,
   pulse,
   cover,
+  elevated,
 }: {
-  readonly style: ViewStyle;
-  readonly fill: string;
   readonly pulse: Animated.Value;
   readonly cover?: ReactNode;
+  /** Vinyl only: the sleeve stands off the record it is covering. */
+  readonly elevated: boolean;
 }) {
   return (
-    <View style={style}>
-      <Animated.View
-        style={[StyleSheet.absoluteFill, { backgroundColor: fill, opacity: pulse }]}
-      />
-      {cover}
+    <View style={[styles.sleeve, elevated && styles.sleeveShadow]}>
+      {/* The clip is a child of the shadow-caster rather than the same view: iOS draws no
+          shadow on a view that clips its own contents. */}
+      <View style={styles.sleeveClip}>
+        <Animated.View
+          style={[StyleSheet.absoluteFill, { backgroundColor: SLEEVE, opacity: pulse }]}
+        />
+        {cover}
+        <View pointerEvents="none" style={styles.sleeveEdge} />
+      </View>
     </View>
   );
 }
 
-function Vinyl({ cover, pulse }: { readonly cover?: ReactNode; readonly pulse: Animated.Value }) {
+/** The record, peeking out to the right of the sleeve. */
+function Record() {
   return (
-    <>
-      <View style={styles.record}>
-        <View style={styles.recordGroove} />
-        <View style={styles.recordLabel} />
-      </View>
-      <Sleeve style={styles.sleeveFront} fill="#eae6de" pulse={pulse} cover={cover} />
-    </>
+    <View style={styles.record}>
+      <View style={styles.recordGroove} />
+      <View style={styles.recordLabel} />
+    </View>
   );
 }
 
 function Disc() {
   return (
-    <>
+    /*
+     * The disc and its case sit in front of the cover, unlike the vinyl, which peeks out
+     * beside it. Drawn opaque they hide most of the artwork, so the whole assembly is eased
+     * back a little: enough that a CD still reads as a CD, little enough that the cover
+     * behind it is still the thing you see first.
+     */
+    <View pointerEvents="none" style={styles.discAssembly}>
       <View style={styles.disc}>
         <View style={styles.discHole} />
       </View>
       <LinearGradient
         colors={["rgba(255,255,255,0.5)", "rgba(255,255,255,0.06)"]}
+        locations={[0.3, 0.3]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.case}
       />
       <View style={styles.caseSpine} />
-    </>
+    </View>
   );
 }
 
@@ -110,10 +125,12 @@ function Cassette() {
     <>
       <LinearGradient
         colors={["rgba(255,255,255,0.42)", "rgba(255,255,255,0.06)"]}
+        locations={[0.34, 0.34]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.case}
       />
+      <View style={styles.tapeLine} />
       <View style={styles.tapeWindow}>
         <View style={styles.spool} />
         <View style={styles.spool} />
@@ -122,19 +139,28 @@ function Cassette() {
   );
 }
 
+/** Bar heights, from the deck, as a percentage of the tile. */
 const BARS = [10, 18, 28, 20, 34, 24, 14, 22, 12] as const;
 
 function Waveform() {
   return (
-    <View style={styles.waveform}>
+    <>
       {BARS.map((height, index) => (
         <View
           // Bars are positional; the index is their only identity.
           key={`${height}-${index}`}
-          style={[styles.bar, { height: `${height * 2}%`, opacity: 0.38 + height / 100 }]}
+          style={[
+            styles.bar,
+            {
+              left: `${13 + index * 7.25}%`,
+              top: `${50 - height / 2}%`,
+              height: `${height}%`,
+              opacity: 0.38 + height / 100,
+            },
+          ]}
         />
       ))}
-    </View>
+    </>
   );
 }
 
@@ -142,17 +168,20 @@ const SLEEVE = "#e7e2d9";
 
 const styles = StyleSheet.create({
   root: { width: "100%", aspectRatio: 1, position: "relative" },
-  sleeve: { ...StyleSheet.absoluteFill, borderRadius: 3, overflow: "hidden" },
-  sleeveFront: {
-    position: "absolute",
-    left: 0,
-    top: "6%",
-    width: "88%",
-    height: "88%",
+  sleeve: { position: "absolute", left: 0, top: "6%", width: "88%", height: "88%" },
+  sleeveShadow: {
+    shadowColor: "#191713",
+    shadowOpacity: 0.14,
+    shadowRadius: 7,
+    shadowOffset: { width: 3, height: 0 },
+    elevation: 3,
+  },
+  sleeveClip: { ...StyleSheet.absoluteFill, borderRadius: 3, overflow: "hidden" },
+  sleeveEdge: {
+    ...StyleSheet.absoluteFill,
     borderRadius: 3,
-    overflow: "hidden",
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(25,23,19,0.14)",
+    borderColor: "rgba(25,23,19,0.1)",
   },
   record: {
     position: "absolute",
@@ -165,8 +194,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  recordGroove: { width: "60%", height: "60%", borderRadius: 999, borderWidth: 1, borderColor: "#1c1a16" },
-  recordLabel: { position: "absolute", width: "18%", height: "18%", borderRadius: 999, backgroundColor: "#a2573a" },
+  // The deck's single groove sits near the rim, not halfway in.
+  recordGroove: { width: "94%", height: "94%", borderRadius: 999, borderWidth: 1, borderColor: "#1c1a16" },
+  recordLabel: {
+    position: "absolute",
+    width: "16%",
+    height: "16%",
+    borderRadius: 999,
+    backgroundColor: "#a2573a",
+    borderWidth: 1,
+    borderColor: "#15130f",
+  },
+  discAssembly: { ...StyleSheet.absoluteFill, opacity: 0.8 },
   disc: {
     position: "absolute",
     left: "13%",
@@ -199,6 +238,14 @@ const styles = StyleSheet.create({
     height: "68%",
     backgroundColor: "rgba(25,23,19,0.18)",
   },
+  tapeLine: {
+    position: "absolute",
+    left: "11%",
+    top: "47%",
+    width: "66%",
+    height: "3%",
+    backgroundColor: "rgba(25,23,19,0.22)",
+  },
   tapeWindow: {
     position: "absolute",
     left: "11%",
@@ -219,12 +266,5 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "rgba(25,23,19,0.35)",
   },
-  waveform: {
-    ...StyleSheet.absoluteFill,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "3%",
-  },
-  bar: { width: "4%", borderRadius: 2, backgroundColor: "#191713" },
+  bar: { position: "absolute", width: "4%", borderRadius: 2, backgroundColor: "#191713" },
 });
