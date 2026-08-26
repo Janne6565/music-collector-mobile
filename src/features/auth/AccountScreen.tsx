@@ -161,6 +161,15 @@ function SignedIn({ logic }: { readonly logic: ReturnType<typeof useAccountLogic
           title={t("account.export.wishlist.title")}
           body={t("account.export.wishlist.body")}
           onPress={() => void logic.exportWishlistCsv()}
+        />
+        {/* The archive is a third row rather than a second button on the first: it is not
+            another way to export the collection, it is a different promise — the whole
+            shelf, photographs and identities included, in a file that reads back in as the
+            same records rather than as copies of them. */}
+        <ExportRow
+          title={t("account.export.archive.title")}
+          body={t("account.export.archive.body")}
+          onPress={() => void logic.exportArchive()}
           last
         />
       </View>

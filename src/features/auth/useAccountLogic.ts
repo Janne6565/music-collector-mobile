@@ -15,12 +15,15 @@ import {
 } from "@/api/auth";
 import { signInWithProvider } from "@/features/auth/externalSignIn";
 import { toCsv, wishlistToCsv } from "@/domain/csv";
+import { readPhotoBytes } from "@/local/photoBytes";
+import { encodeBase64 } from "@/local/sqliteStore";
 import { useStore } from "@/local/StoreProvider";
 import { readLastSyncedAt, readSyncEnabled, writeLastSyncedAt, writeSyncEnabled } from "@/local/settings";
 import { firstSyncResolved, renamed, signedIn, signedOut } from "@/store/authSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { createSyncEngine } from "@/sync/transport";
 import type { FirstSyncStrategy } from "@janne6565/music-collector-shared";
+import { MC_MIME_TYPE, exportMcArchive, mcFileName } from "@janne6565/music-collector-shared";
 
 export type AuthMode = "SIGN_IN" | "REGISTER";
 export type AuthError = "badCredentials" | "emailTaken" | "generic";
@@ -229,6 +232,38 @@ export function useAccountLogic() {
   }, [store, shareCsv]);
 
   /**
+   * The whole shelf in one file, photographs included.
+   *
+   * The two CSVs above are for reading; this one is for keeping. A spreadsheet has no
+   * column that can hold a photograph, and none that can hold the clocks that make a copy
+   * recognisable as *the same copy* when it comes back. The archive carries both, and the
+   * two CSVs with them, so the file is still readable by anything years from now.
+   *
+   * Written as base64 because that is the only way to put bytes into a file from
+   * JavaScript here — expo-file-system takes a string either way.
+   */
+  const exportArchive = useCallback(async () => {
+    const exportedAt = new Date();
+    const copies = await store.listCopies();
+    const wishlist = await store.listWishlist();
+    const releases = await store.getReleases(copies.map((copy) => copy.releaseId));
+    const archive = await exportMcArchive(
+      store,
+      { collection: toCsv(copies, releases), wishlist: wishlistToCsv(wishlist) },
+      (photoId) => readPhotoBytes(store, photoId),
+      exportedAt,
+    );
+    const file = `${FileSystem.cacheDirectory}${mcFileName(exportedAt)}`;
+    await FileSystem.writeAsStringAsync(file, encodeBase64(archive.bytes.slice().buffer as ArrayBuffer), {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+    if (await Sharing.isAvailableAsync()) {
+      await Sharing.shareAsync(file, { mimeType: MC_MIME_TYPE, UTI: "public.zip-archive" });
+    }
+    return archive;
+  }, [store]);
+
+  /**
    * The whole record as JSON: the server's copy when there is an account, the device's own
    * store when there is not. A "download my data" that quietly returned an empty file to
    * somebody with no account would be the wrong kind of correct.
@@ -310,6 +345,7 @@ export function useAccountLogic() {
     lastSyncedAt,
     exportCsv,
     exportWishlistCsv,
+    exportArchive,
     exportJson,
     deleteAccount: removeAccount,
     firstSyncPending,

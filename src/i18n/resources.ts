@@ -366,6 +366,10 @@ const enCommon = {
     export: {
       library: { title: "Export library as CSV", body: "One row per copy" },
       wishlist: { title: "Export wishlist as CSV", body: "One row per entry" },
+      archive: {
+        title: "Export everything as .mc",
+        body: "Every copy, wish and photo, in one file",
+      },
     },
     delete: {
       title: "Delete account",
@@ -874,6 +878,10 @@ const deCommon: CommonSchema = {
     export: {
       library: { title: "Sammlung als CSV exportieren", body: "Eine Zeile pro Exemplar" },
       wishlist: { title: "Wunschliste als CSV exportieren", body: "Eine Zeile pro Eintrag" },
+      archive: {
+        title: "Alles als .mc exportieren",
+        body: "Jedes Exemplar, jeder Wunsch, jedes Foto in einer Datei",
+      },
     },
     delete: {
       title: "Konto löschen",

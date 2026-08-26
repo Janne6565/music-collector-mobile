@@ -20,7 +20,7 @@ function photoPath(id: string): string {
 const BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 /** React Native has no btoa/atob for binary, so the two conversions are explicit. */
-function encodeBase64(buffer: ArrayBuffer): string {
+export function encodeBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
   let out = "";
   for (let i = 0; i < bytes.length; i += 3) {
@@ -566,6 +566,14 @@ export class SqliteLocalStore implements LocalStore {
     return covers;
   }
 
+  /** Every live photo, whoever owns it — the whole-shelf read the `.mc` export needs. */
+  async listAllPhotos(): Promise<Photo[]> {
+    const rows = await this.handle().getAllAsync<PhotoRow>(
+      "SELECT * FROM photos WHERE deletedAt IS NULL ORDER BY sortIndex ASC",
+    );
+    return rows.map(toPhoto);
+  }
+
   async getPhotoIncludingDeleted(id: string): Promise<Photo | undefined> {
     const row = await this.handle().getFirstAsync<PhotoRow>("SELECT * FROM photos WHERE id = ?", [id]);
     return row === null ? undefined : toPhoto(row);
@@ -632,6 +640,23 @@ export class SqliteLocalStore implements LocalStore {
       encoding: FileSystem.EncodingType.Base64,
     });
     return new Blob([decodeBase64(base64).buffer as ArrayBuffer]);
+  }
+
+  /**
+   * The bytes themselves, which `getPhotoBytes`'s `Blob` cannot give back.
+   *
+   * React Native's Blob is a handle into a native registry with no way to read it in
+   * JavaScript, so the archive reads the file this store already keeps on disk. That is
+   * the phone's half of the seam `exportMcArchive` asks for.
+   */
+  async photoBuffer(id: string): Promise<Uint8Array | undefined> {
+    const info = await FileSystem.getInfoAsync(photoPath(id));
+    if (!info.exists) return undefined;
+    return decodeBase64(
+      await FileSystem.readAsStringAsync(photoPath(id), {
+        encoding: FileSystem.EncodingType.Base64,
+      }),
+    );
   }
 
   /** The on-device file URI, which is what an Image component renders from. */
