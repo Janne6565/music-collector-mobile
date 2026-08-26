@@ -332,6 +332,9 @@ const enCommon = {
     error: {
       badCredentials: "That e-mail address and password do not match.",
       emailTaken: "That e-mail address is already registered.",
+      invalidEmail: "That does not look like an e-mail address.",
+      passwordTooShort: "Your password needs at least ten characters.",
+      consentRequired: "Both boxes have to be ticked to create an account.",
       generic: "Something went wrong. Try again in a moment.",
     },
   },
@@ -851,6 +854,9 @@ const deCommon: CommonSchema = {
     error: {
       badCredentials: "E-Mail-Adresse und Passwort passen nicht zusammen.",
       emailTaken: "Diese E-Mail-Adresse ist bereits registriert.",
+      invalidEmail: "Das sieht nicht nach einer E-Mail-Adresse aus.",
+      passwordTooShort: "Dein Passwort braucht mindestens zehn Zeichen.",
+      consentRequired: "Beide Häkchen sind nötig, um ein Konto zu erstellen.",
       generic: "Da ist etwas schiefgegangen. Versuche es gleich noch einmal.",
     },
   },

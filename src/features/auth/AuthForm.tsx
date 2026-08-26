@@ -98,7 +98,11 @@ export function AuthForm({ logic }: { readonly logic: ReturnType<typeof useAccou
         </Toggle>
       )}
 
-      {logic.failed !== null && <Text style={styles.error}>{errorText(logic.failed, t)}</Text>}
+      {logic.failed.map((error) => (
+        <Text key={error} style={styles.error} accessibilityRole="alert">
+          {errorText(error, t)}
+        </Text>
+      ))}
       {logic.resetSent && <Text style={styles.notice}>{t("auth.forgotSent")}</Text>}
 
       <Pressable
@@ -276,13 +280,16 @@ function Toggle({
   );
 }
 
-function errorText(error: NonNullable<ReturnType<typeof useAccountLogic>["failed"]>, t: (k: never) => string) {
+/**
+ * Every reason the submit was refused gets its own line.
+ *
+ * Reporting only the first problem makes someone discover the rest one round trip at a
+ * time, which is the same conversation a single "something went wrong" was having — just
+ * slower.
+ */
+function errorText(error: ReturnType<typeof useAccountLogic>["failed"][number], t: (k: never) => string) {
   const translate = t as unknown as (key: string) => string;
-  return error === "badCredentials"
-    ? translate("auth.error.badCredentials")
-    : error === "emailTaken"
-      ? translate("auth.error.emailTaken")
-      : translate("auth.error.generic");
+  return translate(`auth.error.${error}`);
 }
 
 const styles = StyleSheet.create({

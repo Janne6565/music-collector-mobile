@@ -32,8 +32,32 @@ export async function writeRefreshToken(token: string | null): Promise<void> {
 }
 
 export class HttpError extends Error {
-  constructor(readonly status: number, path: string) {
+  constructor(
+    readonly status: number,
+    path: string,
+    /**
+     * The fields a 400 named as invalid, from the RFC 7807 `errors` map.
+     *
+     * The server's own message is deliberately dropped: it is English, and a screen that
+     * printed it would break the app's language. Which inputs were refused is the part
+     * that travels; the wording is looked up where it is shown.
+     */
+    readonly invalidFields: readonly string[] = [],
+  ) {
     super(`${status} from ${path}`);
+  }
+}
+
+async function refusedFields(response: Response): Promise<readonly string[]> {
+  if (response.status !== 400) return [];
+  try {
+    const body = (await response.json()) as { errors?: unknown };
+    return typeof body.errors === "object" && body.errors !== null
+      ? Object.keys(body.errors as Record<string, unknown>)
+      : [];
+  } catch {
+    // A 400 that is not JSON says nothing useful; the caller falls back to its generic line.
+    return [];
   }
 }
 
@@ -72,7 +96,7 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   }
 
   if (!response.ok) {
-    throw new HttpError(response.status, path);
+    throw new HttpError(response.status, path, await refusedFields(response));
   }
   if (response.status === 204) return undefined as T;
   return (options.raw === true ? await response.arrayBuffer() : await response.json()) as T;

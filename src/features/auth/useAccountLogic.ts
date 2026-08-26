@@ -30,10 +30,46 @@ import { firstSyncResolved, renamed, signedIn, signedOut } from "@/store/authSli
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { createSyncEngine } from "@/sync/transport";
 import type { FirstSyncStrategy } from "@janne6565/music-collector-shared";
-import { MC_MIME_TYPE, exportMcArchive, mcFileName } from "@janne6565/music-collector-shared";
+import { MC_MIME_TYPE, exportMcArchive, mcFileName, passwordLongEnough } from "@janne6565/music-collector-shared";
 
 export type AuthMode = "SIGN_IN" | "REGISTER";
-export type AuthError = "badCredentials" | "emailTaken" | "generic";
+export type AuthError =
+  | "badCredentials"
+  | "emailTaken"
+  | "invalidEmail"
+  | "passwordTooShort"
+  | "consentRequired"
+  | "generic";
+
+/**
+ * Which input a field the server refused belongs to.
+ *
+ * The server answers a rejected body with the field names it would not take, and the
+ * sentence for each is looked up here so it arrives in the reader's language. A field this
+ * form does not have falls back to the generic line rather than being invented a message.
+ */
+const FIELD_ERRORS: Readonly<Record<string, AuthError>> = {
+  email: "invalidEmail",
+  password: "passwordTooShort",
+  acceptedTerms: "consentRequired",
+  confirmedAge: "consentRequired",
+};
+
+function errorsFrom(error: unknown): AuthError[] {
+  const { status, invalidFields } = error as { status?: number; invalidFields?: readonly string[] };
+  if (status === 409) return ["emailTaken"];
+  if (status === 401) return ["badCredentials"];
+  // One line per distinct complaint: both consent ticks map to the same sentence, and
+  // printing it twice would read as two different problems.
+  const named = [
+    ...new Set(
+      (invalidFields ?? [])
+        .map((field) => FIELD_ERRORS[field])
+        .filter((mapped): mapped is AuthError => mapped !== undefined),
+    ),
+  ];
+  return named.length > 0 ? named : ["generic"];
+}
 
 /** Reconcile with the server this often while the app is open and signed in. */
 const SYNC_INTERVAL_MS = 60_000;
@@ -66,7 +102,7 @@ export function useAccountLogic() {
   const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [providers, setProviders] = useState<AuthProvider[]>([]);
   const [resetSent, setResetSent] = useState(false);
-  const [failed, setFailed] = useState<AuthError | null>(null);
+  const [failed, setFailed] = useState<readonly AuthError[]>([]);
   const [busy, setBusy] = useState(false);
   /**
    * The name in the field, or null while it is still just showing the account's own.
@@ -139,8 +175,14 @@ export function useAccountLogic() {
   }, [user, firstSyncPending, store, clock, queryClient]);
 
   const submit = useCallback(async () => {
+    // The one rule worth checking before the round trip, because the server can only
+    // answer it with the same sentence the field already carries as a hint.
+    if (mode === "REGISTER" && !passwordLongEnough(password)) {
+      setFailed(["passwordTooShort"]);
+      return;
+    }
     setBusy(true);
-    setFailed(null);
+    setFailed([]);
     try {
       const account =
         mode === "REGISTER"
@@ -149,8 +191,7 @@ export function useAccountLogic() {
       dispatch(signedIn({ user: account, firstSyncPending: await decideFirstSync() }));
       setPassword("");
     } catch (error) {
-      const status = (error as { status?: number }).status;
-      setFailed(status === 409 ? "emailTaken" : status === 401 ? "badCredentials" : "generic");
+      setFailed(errorsFrom(error));
     } finally {
       setBusy(false);
     }
@@ -163,14 +204,14 @@ export function useAccountLogic() {
   const signInWith = useCallback(
     async (providerId: string) => {
       setBusy(true);
-      setFailed(null);
+      setFailed([]);
       try {
         const result = await signInWithProvider(providerId);
         // Closing the browser is a decision, not a failure; saying "something went wrong"
         // about it would be telling somebody their own choice was a mistake.
         if (result.outcome === "CANCELLED") return;
         if (result.outcome === "FAILED") {
-          setFailed("generic");
+          setFailed(["generic"]);
           return;
         }
         dispatch(signedIn({ user: result.user, firstSyncPending: await decideFirstSync() }));
@@ -369,7 +410,7 @@ export function useAccountLogic() {
     mode,
     setMode: useCallback((next: AuthMode) => {
       setMode(next);
-      setFailed(null);
+      setFailed([]);
     }, []),
     email,
     setEmail,
