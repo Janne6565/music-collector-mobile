@@ -37,17 +37,26 @@ export interface CoverWash {
   readonly chrome: DetailChrome;
   /** The chrome the outgoing copy is drawn in, or null when there is nothing to fade out. */
   readonly outgoing: DetailChrome | null;
-  /** Opacity of the layer covering the themed background while it washes in. */
+  /**
+   * Opacity of the *destination* background, which lies on top and fades in.
+   *
+   * This way round on purpose. It used to be the other way -- the destination underneath
+   * and a covering layer fading out -- and that layer's colour was React state while its
+   * opacity was an Animated value. State lands on the next render, `setValue` lands at
+   * once, so for a frame or more a fully opaque layer sat there in the *previous*
+   * transition's colour: a white flash on the first swipe and a stale one on every
+   * subsequent one. The colour that has to be right at the instant the animation starts is
+   * now the one this render already knows.
+   */
   readonly paper: Animated.Value;
   /**
-   * What that covering layer is coloured.
+   * The background currently painted underneath — what the destination is fading in over.
    *
-   * Paper when the screen is arriving from no theme at all, and the *previous* sleeve's
-   * tone when one cover is being swapped for another. Fading through paper on the way from
-   * one dark cover to another would be a white flash between two near-blacks -- worse than
-   * the snap it was meant to replace.
+   * It lags by one transition by construction, which is exactly right: at the moment a new
+   * theme lands this still holds the colour that is on the screen, so nothing has to be
+   * updated in time for anything.
    */
-  readonly washFrom: string;
+  readonly settled: string;
   /** Opacity of the outgoing copy of the screen's content. */
   readonly outgoingOpacity: Animated.Value;
   /** Opacity of accent-coloured marks, which land last. */
@@ -71,7 +80,7 @@ export function useCoverWash(theme: CoverTheme | null): CoverWash {
   const [outgoing, setOutgoing] = useState<DetailChrome | null>(null);
   const [barStyle, setBarStyle] = useState<"light" | "dark">(chrome.dark ? "light" : "dark");
   const previous = useRef<CoverTheme | null>(theme);
-  const [washFrom, setWashFrom] = useState<string>(chromeFor(null).background);
+  const [settled, setSettled] = useState<string>(chromeFor(null).background);
   const reduced = useRef(false);
 
   useEffect(() => {
@@ -114,40 +123,52 @@ export function useCoverWash(theme: CoverTheme | null): CoverWash {
      * with a white flash between them would be worse than the snap this replaces.
      */
     if (was !== null) {
-      setWashFrom(from.background);
-      paper.setValue(1);
-      const flipBar = setTimeout(() => setBarStyle(to.dark ? "light" : "dark"), WASH_LANES.textAt);
+      /*
+       * Shorter than the arrival wash on purpose. That one is slow because it happens *to*
+       * a reader who did not ask for it -- a palette landing seconds after the record
+       * opened. This one answers a swipe, and a leisurely fade behind a gesture reads as
+       * lag rather than as craft.
+       */
+      paper.setValue(0);
+      const flipBar = setTimeout(() => setBarStyle(to.dark ? "light" : "dark"), 120);
       Animated.timing(paper, {
-        toValue: 0,
-        duration: reduced.current ? REDUCED.washDuration : DURATION.wash,
+        toValue: 1,
+        duration: reduced.current ? REDUCED.washDuration : 260,
         easing: bezier(EASING.move),
         useNativeDriver: true,
-      }).start();
+      }).start(({ finished }) => {
+        // Only once it has actually arrived: the layer underneath becomes the colour that
+        // just won, ready to be the "from" of whatever comes next.
+        if (finished) setSettled(to.background);
+      });
       return () => clearTimeout(flipBar);
     }
 
-    setWashFrom(chromeFor(null).background);
+    setSettled(chromeFor(null).background);
 
     /*
      * Landed while the push was still settling. A wash inside a push reads as a glitch, so
      * it is applied outright — and the reader never saw the paper version anyway.
      */
     if (Date.now() - mountedAt.current < WASH_INSTANT_BEFORE) {
-      paper.setValue(0);
+      paper.setValue(1);
+      setSettled(to.background);
       setBarStyle(to.dark ? "light" : "dark");
       return;
     }
 
     if (reduced.current) {
       // The fade stays; only the staging goes.
-      paper.setValue(1);
+      paper.setValue(0);
       setBarStyle(to.dark ? "light" : "dark");
       Animated.timing(paper, {
-        toValue: 0,
+        toValue: 1,
         duration: REDUCED.washDuration,
         easing: bezier(EASING.move),
         useNativeDriver: true,
-      }).start();
+      }).start(({ finished }) => {
+        if (finished) setSettled(to.background);
+      });
       return;
     }
 
@@ -160,18 +181,20 @@ export function useCoverWash(theme: CoverTheme | null): CoverWash {
     const duration = long ? WASH_DARK.duration : DURATION.wash;
     const textAt = long ? WASH_DARK.textAt : WASH_LANES.textAt;
 
-    paper.setValue(1);
+    paper.setValue(0);
     outgoingOpacity.setValue(1);
     accent.setValue(0);
     setOutgoing(from);
 
     // Lane one: the background, the whole way, on its own.
     Animated.timing(paper, {
-      toValue: 0,
+      toValue: 1,
       duration,
       easing: bezier(EASING.move),
       useNativeDriver: true,
-    }).start();
+    }).start(({ finished }) => {
+      if (finished) setSettled(to.background);
+    });
 
     // Lane two: the text, as two stacked copies rather than one tween through grey. The
     // 100ms is centred on the crossing point, so it starts half of it earlier.
@@ -200,5 +223,5 @@ export function useCoverWash(theme: CoverTheme | null): CoverWash {
     return () => clearTimeout(flip);
   }, [theme, chrome.dark, paper, outgoingOpacity, accent]);
 
-  return { chrome, outgoing, paper, washFrom, outgoingOpacity, accent, barStyle };
+  return { chrome, outgoing, paper, settled, outgoingOpacity, accent, barStyle };
 }

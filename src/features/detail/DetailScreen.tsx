@@ -67,10 +67,17 @@ export function DetailScreen({
    */
   return (
     <View style={styles.root}>
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: wash.chrome.background }]} />
+      {/* What is on the screen now, underneath — and above it the destination, fading in.
+          This way round because the colour that has to be correct the instant the animation
+          starts is the destination's, which this render already knows; the one underneath
+          may lag a commit without anybody seeing it. See `useCoverWash`. */}
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: wash.settled }]} />
       <Animated.View
         pointerEvents="none"
-        style={[StyleSheet.absoluteFill, { backgroundColor: wash.washFrom, opacity: wash.paper }]}
+        style={[
+          StyleSheet.absoluteFill,
+          { backgroundColor: wash.chrome.background, opacity: wash.paper },
+        ]}
       />
       <DetailBody
         chrome={wash.chrome}
