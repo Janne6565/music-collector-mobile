@@ -17,7 +17,7 @@ export function createSyncTransport(store: NativeLocalStore): SyncTransport {
   return {
     pull: (cursor) => pullChanges(cursor),
 
-    async push(copies, wishes, photos) {
+    async push(copies, wishes, photos, releases) {
       // Only the ids actually going up, so a stale answer about a copy that is not in this
       // batch cannot ride along with it.
       const remembered = await store.readOrigins();
@@ -28,7 +28,7 @@ export function createSyncTransport(store: NativeLocalStore): SyncTransport {
           .map((id) => [id, remembered[id]]),
       );
 
-      const page = await pushChanges(copies, wishes, photos, origins);
+      const page = await pushChanges(copies, wishes, photos, releases, origins);
 
       // After the server has answered, never before: a push that failed has to be able to
       // say the same thing again.

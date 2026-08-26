@@ -1,5 +1,5 @@
 import { request } from "@/api/client";
-import type { Copy, Photo, SyncPage, WishlistItem } from "@janne6565/music-collector-shared";
+import type { Copy, Photo, Release, SyncPage, WishlistItem } from "@janne6565/music-collector-shared";
 
 
 interface SyncPayload {
@@ -130,6 +130,15 @@ export async function pushChanges(
   wishes: readonly WishlistItem[],
   photos: readonly Photo[],
   /**
+   * The catalogue behind these copies, as this device holds it.
+   *
+   * The mirror only learns of a release when somebody looks one up through the metadata
+   * proxy, so a collection that reached the server any other way names releases it cannot
+   * resolve -- and a Discogs id it is missing can never be fetched by id at all. The
+   * device that made the copy is the only party still holding the answer.
+   */
+  releases: readonly Release[],
+  /**
    * Why each copy in this batch exists, keyed by copy id.
    *
    * Beside the records rather than on them: it is the reason for this push, not a property
@@ -141,7 +150,7 @@ export async function pushChanges(
   return toPage(
     await request<SyncPayload>("/api/v1/sync", {
       method: "POST",
-      body: { copies, wishes, photos, origins },
+      body: { copies, wishes, photos, releases, origins },
     }),
   );
 }
