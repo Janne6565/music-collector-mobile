@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Crypto from "expo-crypto";
 import * as FileSystem from "expo-file-system/legacy";
 import * as ImagePicker from "expo-image-picker";
@@ -22,6 +22,9 @@ export function usePhotoStripLogic(copyId: string) {
 
   const photos = useQuery({
     queryKey: ["photos", copyId],
+    // Same reason as the detail read: swiping between copies must not empty the strip for
+    // a frame on its way to filling it again.
+    placeholderData: keepPreviousData,
     queryFn: () => store.listPhotos(copyId),
   });
 

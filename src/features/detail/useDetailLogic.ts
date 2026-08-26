@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { lookupRelease } from "@/api/releases";
 import type { Copy, CopyPatch, Release } from "@janne6565/music-collector-shared";
@@ -25,6 +25,13 @@ export function useDetailLogic(copyId: string) {
    */
   const detailQuery = useQuery<DetailData | null>({
     queryKey: ["copy", copyId],
+    /*
+     * Swiping to the next copy changes this key, and without this the whole body unmounted
+     * for a spinner and mounted again -- a flash between every record, on a read that takes
+     * a frame from SQLite. Keeping the previous copy on screen until the next one is there
+     * is what makes the swipe a movement rather than a blink.
+     */
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       const copy = await store.getCopy(copyId);
       if (copy === undefined) return null;

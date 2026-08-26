@@ -150,7 +150,10 @@ function DetailBody({
   return (
     // No background of its own: the layers behind it own the colour, which is what
     // lets the paper one fade away on the native driver while this stays put.
-    <View style={styles.root} {...swipe.handlers}>
+    <Animated.View
+      style={[styles.root, { transform: [{ translateX: swipe.dragX }] }]}
+      {...swipe.handlers}
+    >
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.cover}>
           <ReleaseArt
@@ -293,7 +296,7 @@ function DetailBody({
           </Pressable>
         </View>
       </ScrollView>
-    </View>
+    </Animated.View>
   );
 }
 
