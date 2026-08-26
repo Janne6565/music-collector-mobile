@@ -1,9 +1,17 @@
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
 import { Pencil, Star, Trash2, X } from "lucide-react-native";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Animated,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ReleaseArt } from "@/components/ReleaseArt";
 import { useCopySwipe } from "@/features/detail/useCopySwipe";
@@ -114,6 +122,16 @@ export function DetailScreen({
 }
 
 /** The paper the screen washes away from, and the only colour that is not the chrome's. */
+/**
+ * What the hero shrinks to: a thumbnail tucked into the top corner opposite the way out,
+ * so the record you are reading about is still named by its sleeve however far down you
+ * have gone. Its resting size is the width of the screen, read per render rather than
+ * frozen at import — a tablet that turns would otherwise keep yesterday's geometry.
+ */
+const COVER_MIN = 44;
+/** How far the collapsed cover sits from the edges it settles against. */
+const COVER_EDGE = 14;
+
 interface DetailBodyProps {
   readonly chrome: DetailChrome;
   readonly accent: Animated.Value;
@@ -150,6 +168,36 @@ function DetailBody({
   // root rather than the ScrollView so it can watch a gesture before the scroll claims it,
   // and it only claims clearly horizontal ones.
   const swipe = useCopySwipe(copy.id);
+  const COVER_MAX = useWindowDimensions().width;
+
+  /*
+   * The collapse, in one value. `Animated.event` writes the offset straight into it on the
+   * native side, so nothing about the header round-trips through JS while a thumb is on
+   * the glass.
+   */
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const travel = COVER_MAX - COVER_MIN;
+  const collapsed = scrollY.interpolate({
+    inputRange: [0, travel],
+    outputRange: [0, 1],
+    extrapolate: "clamp",
+  });
+  const shrink = COVER_MIN / COVER_MAX;
+  const scale = collapsed.interpolate({ inputRange: [0, 1], outputRange: [1, shrink] });
+  /*
+   * Scaling happens about the centre, so the corner has to be walked to where it should
+   * end up: after shrinking, the top-left sits COVER_MAX * (1 - shrink) / 2 inside the
+   * frame, and these carry it back out to the inset the collapsed cover is drawn at.
+   */
+  const inset = (COVER_MAX * (1 - shrink)) / 2;
+  const translateX = collapsed.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, COVER_MAX - COVER_MIN - COVER_EDGE - inset],
+  });
+  const translateY = collapsed.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, COVER_EDGE - inset],
+  });
 
   return (
     // No background of its own: the layers behind it own the colour, which is what
@@ -158,28 +206,13 @@ function DetailBody({
       style={[styles.root, { opacity: swipe.fade }]}
       {...swipe.handlers}
     >
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={styles.cover}>
-          <ReleaseArt
-            release={release}
-            format={copyFormat(copy, release)}
-            style={styles.coverImage}
-            variant="bleed"
-            previewUri={copyPreviewSrc(copy, photos.firstUri)}
-            allowCatalogArt={copy.catalogArt !== "HIDDEN"}
-          />
-          <SafeAreaView style={styles.backWrap} edges={["top"]}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t("detail.back")}
-              onPress={() => router.back()}
-              style={[styles.back, { backgroundColor: chrome.surface }]}
-            >
-              <X size={18} color={chrome.ink} strokeWidth={1.75} />
-            </Pressable>
-          </SafeAreaView>
-        </View>
-
+      <Animated.ScrollView
+        contentContainerStyle={[styles.scroll, { paddingTop: COVER_MAX }]}
+        scrollEventThrottle={16}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+          useNativeDriver: true,
+        })}
+      >
         <View style={styles.body}>
           <View style={styles.badges}>
             {/* The copy's format, not the release's: a tape of a record listed as vinyl
@@ -302,7 +335,53 @@ function DetailBody({
             <Text style={[styles.removeText, { color: chrome.muted }]}>{t("detail.remove")}</Text>
           </Pressable>
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
+
+      {/* Under the collapsed cover, not over it: it is the ground the words stop against,
+          and rendering order is z-order here. Fades in only as the header closes up. */}
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          styles.pinnedBar,
+          { height: COVER_MIN + 2 * COVER_EDGE, backgroundColor: chrome.background, opacity: collapsed },
+        ]}
+      />
+
+      {/*
+       * The cover is pinned rather than scrolled, and shrinks into the corner instead of
+       * leaving. Scale and translate rather than width and height: only transforms and
+       * opacity run on the native driver, and a header that resizes on the JS thread is
+       * exactly the stutter this screen already refuses elsewhere.
+       */}
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          styles.pinnedCover,
+          { width: COVER_MAX, height: COVER_MAX, transform: [{ translateX }, { translateY }, { scale }] },
+        ]}
+      >
+        <ReleaseArt
+          release={release}
+          format={copyFormat(copy, release)}
+          style={styles.coverImage}
+          variant="bleed"
+          previewUri={copyPreviewSrc(copy, photos.firstUri)}
+          allowCatalogArt={copy.catalogArt !== "HIDDEN"}
+        />
+      </Animated.View>
+
+      {/* Outside the scroll view entirely: it is the way out, and a way out that scrolls
+          away is one you have to go looking for. */}
+      <SafeAreaView style={styles.backWrap} edges={["top"]} pointerEvents="box-none">
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t("detail.back")}
+          onPress={() => router.back()}
+          style={[styles.back, { backgroundColor: chrome.surface }]}
+        >
+          <X size={18} color={chrome.ink} strokeWidth={1.75} />
+        </Pressable>
+      </SafeAreaView>
     </Animated.View>
   );
 }
@@ -404,11 +483,12 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   loading: { flex: 1, alignItems: "center", justifyContent: "center" },
   scroll: { paddingBottom: 40 },
-  cover: { width: "100%", aspectRatio: 1 },
+  pinnedCover: { position: "absolute", left: 0, top: 0 },
+  pinnedBar: { position: "absolute", left: 0, right: 0, top: 0 },
   // Width only: the hero is square because `cover` is, and a percentage height here is
   // what collapsed the art to nothing.
   coverImage: { width: "100%" },
-  backWrap: { position: "absolute", left: 18, top: 0 },
+  backWrap: { position: "absolute", left: 18, right: 18, top: 0, alignItems: "flex-start" },
   back: { width: 34, height: 34, borderRadius: 999, alignItems: "center", justifyContent: "center", marginTop: 8 },
   body: { paddingHorizontal: 20, paddingTop: 22 },
   badges: { flexDirection: "row", gap: 8 },
