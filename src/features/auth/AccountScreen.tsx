@@ -125,35 +125,11 @@ function SignedIn({ logic }: { readonly logic: ReturnType<typeof useAccountLogic
       <Text style={styles.section}>{t("account.section.signIn")}</Text>
       <View style={styles.card}>
         <Row title={t("auth.email")} value={logic.user?.email ?? ""} />
-        {/* Only while there is something to do about it. A permanent "confirmed" row would
-            be a badge for the ordinary state, which is not news. */}
-        {!logic.emailConfirmed && (
-          <Row
-            title={t("account.confirmEmail.title")}
-            body={t("account.confirmEmail.body")}
-            trailing={
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => void logic.resendConfirmation()}
-                disabled={logic.sendingConfirmation || logic.confirmationSent}
-                style={[
-                  styles.rowAction,
-                  (logic.sendingConfirmation || logic.confirmationSent) && styles.dim,
-                ]}
-              >
-                {logic.sendingConfirmation ? (
-                  <ActivityIndicator size="small" color={colors.ink} />
-                ) : (
-                  <Text style={styles.rowActionText}>
-                    {logic.confirmationSent
-                      ? t("account.confirmEmail.sent")
-                      : t("account.confirmEmail.send")}
-                  </Text>
-                )}
-              </Pressable>
-            }
-          />
-        )}
+        {/* 21c. Only while there is something to do about it: a permanent "confirmed" row
+            would be a badge for the ordinary state, which is not news. */}
+        {!logic.emailConfirmed && logic.pendingEmail === null && <ConfirmRow logic={logic} />}
+        {/* 21g. One row, two addresses, for as long as the change waits. */}
+        {logic.pendingEmail !== null && <PendingChangeRow logic={logic} />}
         <Row title={t("auth.password")} body={t("account.passwordBody")} last />
       </View>
 
@@ -322,6 +298,107 @@ function Tile({ value, label }: { readonly value: number | undefined; readonly l
   );
 }
 
+/**
+ * Screen 21c, all four states — resting, sending, sent, and pressed again.
+ *
+ * The fourth decides the feature's manners. Pressing twice sends no second mail and shows
+ * no error: the button becomes a countdown in place, because the first link is still the
+ * valid one. The pill holds its width so the row never reflows while somebody watches it.
+ */
+function ConfirmRow({ logic }: { readonly logic: ReturnType<typeof useAccountLogic> }) {
+  const { t } = useTranslation();
+  const router = useRouter();
+  const sent = logic.confirmationSentAt !== null;
+  const counting = logic.confirmationCooldown > 0;
+
+  return (
+    <View style={styles.stackRow}>
+      <View style={styles.stackTop}>
+        <View style={styles.rowText}>
+          <Text style={styles.rowTitle}>{t("auth.email")}</Text>
+          <Text style={styles.rowBody} numberOfLines={1}>
+            {logic.user?.email} ·{" "}
+            {sent ? t("account.confirmEmail.linkLive") : t("account.confirmEmail.notYet")}
+          </Text>
+        </View>
+        <View style={styles.rowActions}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => void logic.resendConfirmation()}
+            disabled={counting || logic.sendingConfirmation}
+            style={[styles.rowAction, (counting || logic.sendingConfirmation) && styles.dim]}
+          >
+            {logic.sendingConfirmation ? (
+              <ActivityIndicator size="small" color={colors.ink} />
+            ) : (
+              <Text style={styles.rowActionText}>
+                {counting
+                  ? `0:${String(logic.confirmationCooldown).padStart(2, "0")}`
+                  : sent
+                    ? t("account.confirmEmail.sendAgain")
+                    : t("account.confirmEmail.send")}
+              </Text>
+            )}
+          </Pressable>
+          <Pressable accessibilityRole="button" onPress={() => router.push("/account/email")}>
+            <Text style={styles.rowLink}>{t("account.confirmEmail.change")}</Text>
+          </Pressable>
+        </View>
+      </View>
+      {/* Only after the first send, where it is advice instead of an excuse. */}
+      {sent && (
+        <Text style={styles.rowNote}>
+          {counting ? t("account.confirmEmail.stillValid") : t("account.confirmEmail.spamHint")}
+        </Text>
+      )}
+    </View>
+  );
+}
+
+/** Screen 21g's waiting row: the address you still sign in with, and the one being awaited. */
+function PendingChangeRow({ logic }: { readonly logic: ReturnType<typeof useAccountLogic> }) {
+  const { t } = useTranslation();
+  const router = useRouter();
+
+  return (
+    <View style={styles.stackRow}>
+      <View style={styles.stackTop}>
+        <View style={styles.rowText}>
+          <Text style={styles.rowTitle}>{t("auth.email")}</Text>
+          <Text style={styles.rowBody} numberOfLines={1}>
+            {t("account.pendingChange.stillYours", { email: logic.user?.email ?? "" })}
+          </Text>
+        </View>
+        <Pressable accessibilityRole="button" onPress={() => router.push("/account/email")}>
+          <Text style={styles.rowLink}>{t("account.confirmEmail.change")}</Text>
+        </Pressable>
+      </View>
+      <View style={styles.pending}>
+        <Text style={styles.pendingTitle}>
+          {t("account.pendingChange.waitingFor", { email: logic.pendingEmail ?? "" })}
+        </Text>
+        <Text style={styles.rowNote}>{t("account.pendingChange.lapses")}</Text>
+        <View style={styles.pendingActions}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => void logic.resendConfirmation()}
+            disabled={logic.confirmationCooldown > 0}
+          >
+            <Text style={[styles.rowLink, logic.confirmationCooldown > 0 && styles.dim]}>
+              {logic.confirmationCooldown > 0
+                ? `0:${String(logic.confirmationCooldown).padStart(2, "0")}`
+                : t("account.pendingChange.resend")}
+            </Text>
+          </Pressable>
+          <Pressable accessibilityRole="button" onPress={() => void logic.cancelChange()}>
+            <Text style={styles.rowMuted}>{t("common.cancel")}</Text>
+          </Pressable>
+        </View>
+      </View>
+    </View>
+  );
+}
+
 function Row({
   title,
   value,
@@ -475,4 +552,19 @@ const styles = StyleSheet.create({
     backgroundColor: colors.canvas,
   },
   rowActionText: { fontSize: 12.5, fontWeight: "600", color: colors.ink },
+  stackRow: {
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.line,
+    gap: 8,
+  },
+  stackTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
+  rowActions: { flexDirection: "row", alignItems: "center", gap: 12 },
+  rowLink: { fontSize: 12.5, fontWeight: "600", color: colors.accent },
+  rowMuted: { fontSize: 12.5, fontWeight: "600", color: colors.inkMuted },
+  rowNote: { fontSize: 11.5, lineHeight: 17, color: colors.inkSubtle },
+  pending: { backgroundColor: colors.canvas, borderRadius: 10, padding: 12, gap: 5 },
+  pendingTitle: { fontSize: 12.5, fontWeight: "600", color: colors.ink },
+  pendingActions: { flexDirection: "row", alignItems: "center", gap: 16, paddingTop: 4 },
 });

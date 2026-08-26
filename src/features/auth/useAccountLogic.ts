@@ -1,6 +1,6 @@
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
 import {
   type AuthProvider,
@@ -8,6 +8,9 @@ import {
   authProviders,
   createAccount,
   deleteAccount,
+  cancelEmailChange,
+  changeEmailAddress,
+  emailConfirmation,
   fetchAccount,
   requestPasswordReset,
   resendEmailConfirmation,
@@ -317,26 +320,86 @@ export function useAccountLogic() {
   }, [store, dispatch]);
 
   /**
-   * A fresh confirmation link.
+   * The confirmation row's state (21c), read from the server rather than remembered.
    *
-   * Deliberately says nothing about whether there was anything to send: the server answers
-   * the same either way, and an address that is already confirmed is the state the person
-   * wanted rather than an error to report at them.
+   * "Link sent, good for 24 hours" and the resend countdown are facts about the server; a
+   * client that only learned them from its own last button press would forget them the
+   * moment the app was restarted.
+   */
+  const confirmation = useQuery({
+    queryKey: ["emailConfirmation"],
+    queryFn: emailConfirmation,
+    enabled: user !== null,
+  });
+
+  /**
+   * A fresh link.
+   *
+   * Says nothing about whether there was anything to send: the server answers the same
+   * either way, and an address that is already confirmed is the state the person wanted
+   * rather than an error to report at them. Inside the first minute nothing is sent and the
+   * answer carries the seconds left instead -- pressing twice is impatience, not a mistake.
    */
   const [sendingConfirmation, setSendingConfirmation] = useState(false);
-  const [confirmationSent, setConfirmationSent] = useState(false);
   const resendConfirmation = useCallback(async () => {
     setSendingConfirmation(true);
     try {
-      await resendEmailConfirmation();
-      setConfirmationSent(true);
+      queryClient.setQueryData(["emailConfirmation"], await resendEmailConfirmation());
     } catch {
-      // Nothing to say. A failed send leaves the row exactly as it was, and the button
-      // stays pressable rather than claiming a link is on its way that is not.
+      // Nothing to say. The row stays as it was and the button stays pressable rather than
+      // claiming a link is on its way that is not.
     } finally {
       setSendingConfirmation(false);
     }
-  }, []);
+  }, [queryClient]);
+
+  const cancelChange = useCallback(async () => {
+    try {
+      queryClient.setQueryData(["emailConfirmation"], await cancelEmailChange());
+    } catch {
+      // Same reasoning: a failed cancel leaves the row saying what is still true.
+    }
+  }, [queryClient]);
+
+  const [changingEmail, setChangingEmail] = useState(false);
+  const [changeFailed, setChangeFailed] = useState(false);
+  const changeEmail = useCallback(
+    async (nextEmail: string, password: string | null): Promise<boolean> => {
+      setChangingEmail(true);
+      setChangeFailed(false);
+      try {
+        queryClient.setQueryData(
+          ["emailConfirmation"],
+          await changeEmailAddress(nextEmail.trim(), password),
+        );
+        return true;
+      } catch {
+        setChangeFailed(true);
+        return false;
+      } finally {
+        setChangingEmail(false);
+      }
+    },
+    [queryClient],
+  );
+
+  /**
+   * The countdown on the resend button, ticked here rather than by the server.
+   *
+   * The server says how many seconds are left when asked; turning that into a number that
+   * moves is the screen's job, and re-asking once a second would be a request per tick to
+   * learn something arithmetic already knows.
+   */
+  const [now, setNow] = useState(() => Date.now());
+  const sentAt = confirmation.data?.sentAt ?? null;
+  const retryAfter = confirmation.data?.retryAfter ?? 0;
+  useEffect(() => {
+    if (sentAt === null || retryAfter === 0) return;
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [sentAt, retryAfter]);
+  const confirmationCooldown =
+    sentAt === null ? 0 : Math.max(0, Math.ceil((Date.parse(sentAt) + retryAfter * 1000 - now) / 1000));
 
   /**
    * Re-reads the account, for the case the link was followed somewhere else.
@@ -421,9 +484,18 @@ export function useAccountLogic() {
     forgotPassword,
     /** Undefined on a server that predates the field; treated as confirmed. */
     emailConfirmed: user?.emailVerified !== false,
+    /** Set once a link is outstanding, which is what turns the row into its "sent" state. */
+    confirmationSentAt: sentAt,
+    /** Seconds until the button comes back, or 0 while it is pressable. */
+    confirmationCooldown,
     resendConfirmation,
     sendingConfirmation,
-    confirmationSent,
+    /** The address a change is waiting on, or null when none is. */
+    pendingEmail: confirmation.data?.pendingEmail ?? null,
+    cancelChange,
+    changeEmail,
+    changingEmail,
+    changeFailed,
     refreshAccount,
     // Completeness only, except the terms box: that is a required acknowledgement rather
     // than a format rule, so it does gate the button.

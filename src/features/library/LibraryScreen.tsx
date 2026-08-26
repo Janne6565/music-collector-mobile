@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { ConfirmStrip } from "@/features/auth/ConfirmStrip";
 import { ReleaseArt } from "@/components/ReleaseArt";
 import type { Format } from "@janne6565/music-collector-shared";
 import { catalogArtShown, copyFormat, copyPreviewSrc } from "@janne6565/music-collector-shared";
@@ -23,6 +24,8 @@ export function LibraryScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
+      {/* 21b: above the header, once per device, and never again. */}
+      <ConfirmStrip />
       <View style={styles.header}>
         <Text style={styles.title}>{t("nav.library")}</Text>
         <View style={styles.headerRight}>

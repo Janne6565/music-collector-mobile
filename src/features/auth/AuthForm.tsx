@@ -104,6 +104,12 @@ export function AuthForm({ logic }: { readonly logic: ReturnType<typeof useAccou
         </Text>
       ))}
       {logic.resetSent && <Text style={styles.notice}>{t("auth.forgotSent")}</Text>}
+      {/* 21f: the one place the cost of an unconfirmed address is stated. It belongs on the
+          screen where it would actually bite -- the reset endpoint has to stay silent, so it
+          can never be the thing that explains. */}
+      {logic.mode === "SIGN_IN" && (
+        <Text style={styles.footnote}>{t("auth.resetNeedsConfirmed")}</Text>
+      )}
 
       <Pressable
         accessibilityRole="button"
@@ -315,6 +321,7 @@ const styles = StyleSheet.create({
   labelRow: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" },
   label: { fontSize: 10, letterSpacing: 1, textTransform: "uppercase", color: colors.inkSubtle, fontWeight: "500" },
   forgot: { fontSize: 11.5, fontWeight: "500", color: colors.accent },
+  footnote: { fontSize: 11.5, lineHeight: 17, color: colors.inkSubtle },
   inputBox: {
     flexDirection: "row",
     alignItems: "center",

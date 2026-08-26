@@ -12,6 +12,24 @@ export interface AccountUser {
    * server cannot send. Absent means "not asked", and every reader treats it as confirmed.
    */
   readonly emailVerified?: boolean;
+  /**
+   * Whether there is a password to ask for. An account made through a provider has none,
+   * and the change-address screen has to know rather than showing a field nothing could
+   * ever be typed into. Optional for the same reason as {@link AccountUser#emailVerified}.
+   */
+  readonly hasPassword?: boolean;
+}
+
+/** What the confirmation row draws (21c), and the waiting row of a pending change (21g). */
+export interface EmailConfirmation {
+  readonly confirmed: boolean;
+  /** When the outstanding link went out, or null if none is. */
+  readonly sentAt: string | null;
+  readonly expiresAt: string | null;
+  /** Seconds until another link may be asked for; zero while the button is pressable. */
+  readonly retryAfter: number;
+  /** The address a change is waiting on, or null when none is. */
+  readonly pendingEmail: string | null;
 }
 
 export interface AuthProvider {
@@ -95,9 +113,39 @@ export async function confirmEmailAddress(token: string): Promise<AccountUser> {
   });
 }
 
-/** A fresh confirmation link. Answers the same whether or not there was anything to send. */
-export async function resendEmailConfirmation(): Promise<void> {
-  await request("/api/v1/auth/confirm-email/resend", { method: "POST" });
+/** What the confirmation row draws. Read from the server, so it survives a restart. */
+export async function emailConfirmation(): Promise<EmailConfirmation> {
+  return request<EmailConfirmation>("/api/v1/auth/confirm-email");
+}
+
+/**
+ * A fresh link. Answers the same whether or not there was anything to send, and inside the
+ * first minute sends nothing at all — the answer carries the seconds left instead.
+ */
+export async function resendEmailConfirmation(): Promise<EmailConfirmation> {
+  return request<EmailConfirmation>("/api/v1/auth/confirm-email/resend", { method: "POST" });
+}
+
+/**
+ * Starts a move to a different address (21g).
+ *
+ * Nothing about the account changes here: the old address goes on signing you in until the
+ * new one answers its own link.
+ */
+export async function changeEmailAddress(
+  email: string,
+  password: string | null,
+): Promise<EmailConfirmation> {
+  return request<EmailConfirmation>("/api/v1/auth/email-change", {
+    method: "POST",
+    body: { email, password },
+    noRetry: true,
+  });
+}
+
+/** Calls off a change that has not landed yet. */
+export async function cancelEmailChange(): Promise<EmailConfirmation> {
+  return request<EmailConfirmation>("/api/v1/auth/email-change", { method: "DELETE" });
 }
 
 /** What the Legal & privacy screen prints under a document: "accepted 4 Mar 2026". */
