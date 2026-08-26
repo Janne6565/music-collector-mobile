@@ -138,7 +138,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  filters: { flexDirection: "row", gap: 7, paddingHorizontal: 18, paddingTop: 14 },
+  // The row owns the air under it as well as over it: the chips are a control strip, and
+  // letting the shelf start right below them read as the first row belonging to them.
+  filters: { flexDirection: "row", gap: 7, paddingHorizontal: 18, paddingTop: 14, paddingBottom: 12 },
   chip: {
     paddingHorizontal: 13,
     paddingVertical: 7,
