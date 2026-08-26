@@ -13,8 +13,10 @@ import { neighboursOf } from "@/features/library/copyOrder";
  * gesture once it is clearly horizontal — twice as much sideways as down, and past a
  * threshold — so an ordinary flick down the page never becomes a page turn.
  *
- * `replace` rather than `push`: swiping through forty records should not build a forty-deep
- * back stack that takes forty taps to leave.
+ * It changes the route's parameter rather than navigating. Now that the screen is a sheet,
+ * `replace` tore it down and presented a new one on every swipe -- the whole thing closing
+ * and reopening to show the record next to it. `setParams` leaves the sheet standing and
+ * swaps what is inside it, while keeping the URL honest about which copy that is.
  */
 export function useCopySwipe(copyId: string) {
   const router = useRouter();
@@ -37,7 +39,7 @@ export function useCopySwipe(copyId: string) {
           const target = gesture.dx < 0 ? current.current.next : current.current.previous;
           // At the ends nothing happens. A shelf that wraps has no last record.
           if (target === null) return;
-          router.replace(`/copies/${target}`);
+          router.setParams({ copyId: target });
         },
       }),
     [router],
