@@ -15,7 +15,7 @@ import {
 } from "@/api/auth";
 import { signInWithProvider } from "@/features/auth/externalSignIn";
 import { toCsv, wishlistToCsv } from "@/domain/csv";
-import { lookupAlbumCovers } from "@/api/releases";
+import { lookupAlbumCovers, lookupPressingCovers } from "@/api/releases";
 import { readPhotoBytes } from "@/local/photoBytes";
 import { encodeBase64 } from "@/local/sqliteStore";
 import { useStore } from "@/local/StoreProvider";
@@ -310,6 +310,9 @@ export function useAccountLogic() {
       // mirror rather than in the collection, and an archive that did not ask would lose
       // the wishlist's pictures the moment it was imported against a different mirror.
       (albumIds) => lookupAlbumCovers(albumIds),
+      // And the sleeves of the pressings those entries were made from: the covers endpoint
+      // is asked about albums, and an album cannot say which of its pressings was picked.
+      (releaseIds) => lookupPressingCovers(releaseIds),
     );
     const file = `${FileSystem.cacheDirectory}${mcFileName(exportedAt)}`;
     await FileSystem.writeAsStringAsync(file, encodeBase64(archive.bytes.slice().buffer as ArrayBuffer), {

@@ -128,6 +128,9 @@ export class SqliteLocalStore implements LocalStore {
       CREATE TABLE IF NOT EXISTS wishlist (
         id               TEXT PRIMARY KEY NOT NULL,
         albumId TEXT NOT NULL,
+        -- The pressing the entry was made from, when one was picked (19a). No index:
+        -- nothing looks an entry up by it, it is read off the row already in hand.
+        releaseId        TEXT,
         title            TEXT NOT NULL,
         artistName       TEXT NOT NULL,
         year             INTEGER,
@@ -200,6 +203,12 @@ export class SqliteLocalStore implements LocalStore {
     const wishColumns = await db.getAllAsync<{ name: string }>("PRAGMA table_info(wishlist)");
     if (!wishColumns.some((column) => column.name === "sortIndex")) {
       await db.execAsync("ALTER TABLE wishlist ADD COLUMN sortIndex INTEGER");
+    }
+    // The pressing an entry was made from (19a). Nullable, and the rows already here get
+    // null: an entry made before this existed genuinely picked no pressing, and reading
+    // falls back to the album exactly as it did before.
+    if (!wishColumns.some((column) => column.name === "releaseId")) {
+      await db.execAsync("ALTER TABLE wishlist ADD COLUMN releaseId TEXT");
     }
     await this.widenPhotoOwner(db);
     await this.qualifyIds(db, columns);
@@ -701,11 +710,12 @@ export class SqliteLocalStore implements LocalStore {
   private async writeWish(item: WishlistItem): Promise<void> {
     await this.handle().runAsync(
       `INSERT OR REPLACE INTO wishlist
-        (id, albumId, title, artistName, year, desiredFormat, note, sortIndex, createdAt, deletedAt, fieldClocks)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (id, albumId, releaseId, title, artistName, year, desiredFormat, note, sortIndex, createdAt, deletedAt, fieldClocks)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         item.id,
         item.albumId,
+        item.releaseId,
         item.title,
         item.artistName,
         item.year,
@@ -822,8 +832,10 @@ interface ReleaseRow extends Omit<Release, "coverTheme"> {
 
 type PhotoRow = Omit<Photo, "fieldClocks"> & { fieldClocks: string };
 
-type WishRow = Omit<WishlistItem, "desiredFormat" | "fieldClocks"> & {
+type WishRow = Omit<WishlistItem, "desiredFormat" | "releaseId" | "fieldClocks"> & {
   desiredFormat: string | null;
+  /** Undefined on a row written before the column existed, which reads as "none picked". */
+  releaseId: string | null | undefined;
   fieldClocks: string;
 };
 
@@ -842,6 +854,10 @@ function toPhoto(row: PhotoRow): Photo {
 function toWish(row: WishRow): WishlistItem {
   return {
     ...row,
+    // A row written before the column existed reads back undefined, and undefined is not
+    // null to the merge: a field missing from a pushed record reads as one nobody has ever
+    // set, which is a different claim from "no pressing was picked".
+    releaseId: row.releaseId ?? null,
     desiredFormat: row.desiredFormat as Format | null,
     fieldClocks: JSON.parse(row.fieldClocks) as WishlistItem["fieldClocks"],
   };

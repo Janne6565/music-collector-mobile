@@ -264,6 +264,23 @@ export async function lookupAlbumCovers(
   return withArchivedCovers(covers, await readArchivedAlbumCovers(store));
 }
 
+/**
+ * The artwork of the pressings entries were made from, keyed by release id.
+ *
+ * The covers endpoint answers about *albums*, and an album cannot say which of its
+ * pressings somebody picked — it resolves one itself, by a rule that has nothing to do
+ * with what was on screen. A wish that named a pressing asks about that pressing instead,
+ * and only falls back to the album's answer when the mirror has nothing to say.
+ *
+ * Mirrors `lookupPressingCovers` in music-collector-frontend/src/api/releases.ts.
+ */
+export async function lookupPressingCovers(
+  releaseIds: readonly string[],
+): Promise<ReadonlyMap<string, string | null>> {
+  const releases = await lookupReleases(releaseIds);
+  return new Map(releases.map((release) => [release.id, release.coverArtUrl]));
+}
+
 /** The same hundred-id cap as the covers endpoint, so a large collection asks in pages. */
 const RELEASE_BATCH = 100;
 

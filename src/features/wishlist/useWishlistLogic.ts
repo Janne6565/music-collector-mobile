@@ -1,4 +1,4 @@
-import { lookupAlbumCovers } from "@/api/releases";
+import { lookupAlbumCovers, lookupPressingCovers } from "@/api/releases";
 import { useWishPhotos } from "@/features/wishlist/useWishPhotos";
 import { useStore } from "@/local/StoreProvider";
 import { readWishlistSort, writeWishlistSort } from "@/local/settings";
@@ -58,15 +58,38 @@ export function useWishlistLogic() {
    * collection, and a phone offline simply draws the format silhouette instead.
    */
   /**
-   * The pictures people uploaded for records no catalogue has. Only those entries can
-   * carry one, so this is the whole of the hand-entered half of the list.
+   * The pictures people uploaded, which any entry may now have.
+   *
+   * It used to be the hand-entered half of the list only, on the grounds that everything
+   * else has a catalogue to ask. It still does — but its answer is one pressing's sleeve
+   * among several, and a wish is a note to yourself, so an uploaded picture outranks it.
    */
-  const ownPhotos = useWishPhotos(
-    useMemo(
-      () => items.filter((item) => isManualReleaseId(item.albumId)).map((item) => item.id),
-      [items],
-    ),
+  const ownPhotos = useWishPhotos(useMemo(() => items.map((item) => item.id), [items]));
+
+  /**
+   * The pressings entries were made from, sorted and de-duplicated for the same reason the
+   * albums are: the query key is the set, not the order the list happens to be in.
+   */
+  const releaseIds = useMemo(
+    () =>
+      [
+        ...new Set(
+          items
+            .map((item) => item.releaseId)
+            .filter((releaseId): releaseId is string => releaseId !== null),
+        ),
+      ]
+        .filter((releaseId) => !isManualReleaseId(releaseId))
+        .sort(),
+    [items],
   );
+
+  const pressingCovers = useQuery({
+    queryKey: ["pressingCovers", releaseIds],
+    enabled: releaseIds.length > 0,
+    staleTime: 60 * 60 * 1000,
+    queryFn: () => lookupPressingCovers(releaseIds),
+  });
 
   const covers = useQuery({
     queryKey: ["albumCovers", albumIds],
@@ -131,10 +154,17 @@ export function useWishlistLogic() {
     loading: wishlist.isLoading,
     sort,
     manual: hasManualOrder(items),
-    /** The album's artwork, resolved by the server. Null while on its way, and when none. */
-    coverOf: (item: WishlistItem): string | null => covers.data?.get(item.albumId) ?? null,
     /**
-     * The picture somebody uploaded for this entry, which only a hand-entered one can have.
+     * The catalogue's artwork: the sleeve of the pressing this entry was made from, and the
+     * album's only when there is no pressing or the mirror has never seen it.
+     */
+    coverOf: (item: WishlistItem): string | null => {
+      const pressing =
+        item.releaseId === null ? undefined : pressingCovers.data?.get(item.releaseId);
+      return pressing ?? covers.data?.get(item.albumId) ?? null;
+    },
+    /**
+     * The picture somebody uploaded for this entry.
      *
      * Kept apart from the catalogue's cover rather than folded into it: this one is a file
      * on the device, so it paints on the frame it is asked for, and the sweep that says

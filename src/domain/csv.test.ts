@@ -122,6 +122,7 @@ function wish(over: Partial<WishlistItem>): WishlistItem {
   return {
     id: "w1",
     albumId: "rg1",
+    releaseId: null,
     title: "Ege Bamyasi",
     artistName: "Can",
     year: 1972,

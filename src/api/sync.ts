@@ -69,6 +69,8 @@ function toWish(raw: unknown): WishlistItem | null {
   return {
     id: dto.id,
     albumId: dto.albumId,
+    // Absent means a server older than the field, which reads as no pressing picked.
+    releaseId: dto.releaseId ?? null,
     title: dto.title,
     artistName: dto.artistName,
     year: dto.year ?? null,

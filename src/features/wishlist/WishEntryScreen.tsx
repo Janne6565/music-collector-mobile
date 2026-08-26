@@ -1,11 +1,12 @@
 import { ReleaseArt } from "@/components/ReleaseArt";
 import { WishSheet } from "@/features/wishlist/WishSheet";
+import { useWishCoverLogic } from "@/features/wishlist/useWishCoverLogic";
 import { useWishEntryLogic } from "@/features/wishlist/useWishlistLogic";
 import { colors, fonts } from "@/theme/colors";
 import type { WishFormat } from "@janne6565/music-collector-shared";
 import { FORMAT_LABELS, asWishFormat } from "@janne6565/music-collector-shared";
 import { useRouter } from "expo-router";
-import { Check, ChevronLeft, Heart, HeartOff, Pencil } from "lucide-react-native";
+import { Camera, Check, ChevronLeft, Heart, HeartOff, ImagePlus, Pencil, X } from "lucide-react-native";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -25,6 +26,7 @@ export function WishEntryScreen({ wishId }: { readonly wishId: string }) {
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const logic = useWishEntryLogic(wishId);
+  const cover = useWishCoverLogic(wishId);
   const [editing, setEditing] = useState(false);
 
   const entry = logic.entry;
@@ -53,9 +55,50 @@ export function WishEntryScreen({ wishId }: { readonly wishId: string }) {
         <View style={styles.hero}>
           <ReleaseArt
             release={{ coverArtUrl: logic.coverOf(entry) }}
-            previewUri={logic.pictureOf(entry)}
+            previewUri={cover.uri ?? logic.pictureOf(entry)}
             format={entry.desiredFormat ?? "OTHER"}
           />
+        </View>
+
+        {/*
+         * The entry's own picture (19b), under the tile it changes.
+         *
+         * Any entry may have one. The catalogue's answer is the sleeve of one pressing —
+         * the one that was picked where there was one, whichever the mirror ranks first
+         * otherwise — and a wish is a note to yourself, so your own picture outranks it.
+         */}
+        <View style={styles.coverActions}>
+          <Pressable
+            accessibilityRole="button"
+            disabled={cover.working}
+            onPress={() => cover.choose("CAMERA")}
+            style={styles.coverAction}
+          >
+            <Camera size={14} color={colors.inkMuted} strokeWidth={1.75} />
+            <Text style={styles.coverActionText}>{t("wishlist.coverPhoto")}</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            disabled={cover.working}
+            onPress={() => cover.choose("LIBRARY")}
+            style={styles.coverAction}
+          >
+            <ImagePlus size={14} color={colors.inkMuted} strokeWidth={1.75} />
+            <Text style={styles.coverActionText}>
+              {t(cover.has ? "wishlist.coverImageReplace" : "wishlist.coverImageAction")}
+            </Text>
+          </Pressable>
+          {cover.has && (
+            <Pressable
+              accessibilityRole="button"
+              disabled={cover.working}
+              onPress={() => cover.drop()}
+              style={styles.coverAction}
+            >
+              <X size={14} color={colors.inkMuted} strokeWidth={1.75} />
+              <Text style={styles.coverActionText}>{t("wishlist.coverImageRemove")}</Text>
+            </Pressable>
+          )}
         </View>
         <Text style={styles.title}>{entry.title}</Text>
         <Text style={styles.subtitle}>
@@ -176,6 +219,15 @@ const styles = StyleSheet.create({
   gone: { padding: 18, fontSize: 13, color: colors.inkMuted },
   content: { padding: 18, paddingBottom: 60 },
   hero: { width: 128, alignSelf: "center" },
+  coverActions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 14,
+    marginTop: 10,
+  },
+  coverAction: { flexDirection: "row", alignItems: "center", gap: 5 },
+  coverActionText: { fontSize: 11.5, color: colors.inkMuted },
   title: { fontFamily: fonts.serif, fontSize: 26, color: colors.ink, textAlign: "center", marginTop: 18 },
   subtitle: { fontSize: 13, color: colors.inkMuted, textAlign: "center", marginTop: 4 },
   sinceRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, marginTop: 12 },

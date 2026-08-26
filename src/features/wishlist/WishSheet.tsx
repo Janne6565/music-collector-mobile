@@ -1,4 +1,4 @@
-import { lookupAlbumCovers } from "@/api/releases";
+import { lookupAlbumCovers, lookupPressingCovers } from "@/api/releases";
 import { ReleaseArt } from "@/components/ReleaseArt";
 import { useStore } from "@/local/StoreProvider";
 import { colors, fonts } from "@/theme/colors";
@@ -89,9 +89,26 @@ export function WishSheet({ onClose, release = null, entry = null }: WishSheetPr
     queryFn: () => lookupAlbumCovers([entry?.albumId ?? ""], store),
   });
 
+  /**
+   * The sleeve of the pressing the entry was made from, asked before the album's.
+   *
+   * The album's answer is resolved from whichever pressing the mirror ranks first, which
+   * is how an entry ended up wearing a different sleeve than the row it was made from.
+   */
+  const pinned = entry?.releaseId ?? null;
+  const pressingCover = useQuery({
+    queryKey: ["pressingCovers", pinned === null ? [] : [pinned]],
+    enabled: pinned !== null,
+    staleTime: 60 * 60 * 1000,
+    queryFn: () => lookupPressingCovers([pinned ?? ""]),
+  });
+
   /** The picked pressing's cover, the album's as a fallback, null while neither is known. */
+  const pinnedCover = pinned === null ? undefined : pressingCover.data?.get(pinned);
   const coverArtUrl =
-    release?.coverArtUrl ?? (entry === null ? null : (albumCover.data?.get(entry.albumId) ?? null));
+    release?.coverArtUrl ??
+    pinnedCover ??
+    (entry === null ? null : (albumCover.data?.get(entry.albumId) ?? null));
 
   const save = useMutation({
     mutationFn: async () => {
@@ -110,6 +127,10 @@ export function WishSheet({ onClose, release = null, entry = null }: WishSheetPr
         release !== null
           ? {
               albumId: release.albumId,
+              // The row that was hearted was one pressing among several, each with its own
+              // sleeve. Remembering which one keeps the entry wearing the cover that was
+              // on screen when it was made.
+              releaseId: release.id,
               title: release.title,
               artistName: release.artistName,
               year: release.year,
@@ -119,6 +140,8 @@ export function WishSheet({ onClose, release = null, entry = null }: WishSheetPr
               // entry makes no claim about anything in the archive, so it must never match
               // one — and an album id nothing can look up is exactly an uncatalogued album.
               albumId: manualReleaseId(Crypto.randomUUID()),
+              // Nothing was picked, because there was nothing to pick from.
+              releaseId: null,
               title: typed.title.trim(),
               artistName: typed.artistName.trim(),
               year: Number.isFinite(year) ? year : null,
