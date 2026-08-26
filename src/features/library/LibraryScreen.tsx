@@ -24,8 +24,6 @@ export function LibraryScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      {/* 21b: above the header, once per device, and never again. */}
-      <ConfirmStrip />
       <View style={styles.header}>
         <Text style={styles.title}>{t("nav.library")}</Text>
         <View style={styles.headerRight}>
@@ -42,6 +40,11 @@ export function LibraryScreen() {
           </Pressable>
         </View>
       </View>
+
+      {/* 21b: under the header, where the deck puts it — once per device, then never
+          again. Above it the strip would have read as chrome rather than as a line about
+          the shelf you are looking at. */}
+      <ConfirmStrip />
 
       <View style={styles.filters}>
         {FILTERS.map((filter) => (
