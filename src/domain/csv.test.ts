@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
-import { fromCsv, parseCsv, toCsv } from "@/domain/csv";
-import type { Copy, Release } from "@janne6565/music-collector-shared";
+import { fromCsv, parseCsv, toCsv, wishlistToCsv } from "@/domain/csv";
+import type { Copy, Release, WishlistItem } from "@janne6565/music-collector-shared";
 const release: Release = {
   id: "r1",
   albumId: "rg1",
@@ -115,5 +115,70 @@ describe("csv", () => {
       ["a", "b"],
       ["1", "2"],
     ]);
+  });
+});
+
+function wish(over: Partial<WishlistItem>): WishlistItem {
+  return {
+    id: "w1",
+    albumId: "rg1",
+    title: "Ege Bamyasi",
+    artistName: "Can",
+    year: 1972,
+    desiredFormat: "VINYL",
+    note: null,
+    sortIndex: null,
+    createdAt: Date.UTC(2026, 7, 20),
+    deletedAt: null,
+    fieldClocks: {} as WishlistItem["fieldClocks"],
+    ...over,
+  };
+}
+
+describe("wishlist csv", () => {
+  it("writes one row per entry, with the columns a person reads", () => {
+    const text = wishlistToCsv([wish({})]);
+
+    expect(text).toBe(
+      "albumId,title,artist,year,desiredFormat,note,addedAt\r\n" +
+        "rg1,Ege Bamyasi,Can,1972,VINYL,,2026-08-20T00:00:00.000Z\r\n",
+    );
+  });
+
+  it("says ANY rather than leaving the format blank", () => {
+    // A wish with no format named is an answer, not a gap: an empty cell would read as one
+    // nobody filled in.
+    expect(wishlistToCsv([wish({ desiredFormat: null })])).toContain(",ANY,");
+  });
+
+  it("quotes a note that carries commas and newlines", () => {
+    const text = wishlistToCsv([wish({ note: 'Any press but the "red" one,\nmono if possible.' })]);
+
+    expect(text).toContain('"Any press but the ""red"" one,\nmono if possible."');
+  });
+
+  it("exports the order the person built, once they have built one", () => {
+    const text = wishlistToCsv([
+      wish({ id: "w1", albumId: "a", title: "Added first", sortIndex: 2, createdAt: 1 }),
+      wish({ id: "w2", albumId: "b", title: "Added second", sortIndex: 0, createdAt: 2 }),
+      wish({ id: "w3", albumId: "c", title: "Added third", sortIndex: 1, createdAt: 3 }),
+    ]);
+
+    expect(
+      text
+        .split("\r\n")
+        .slice(1, 4)
+        .map((row) => row.split(",")[0]),
+    ).toEqual(["b", "c", "a"]);
+  });
+
+  it("falls back to the default sort when nothing has been dragged", () => {
+    // Newest first, which is what the list itself shows before a drag.
+    const text = wishlistToCsv([
+      wish({ id: "w1", albumId: "older", createdAt: 1 }),
+      wish({ id: "w2", albumId: "newer", createdAt: 2 }),
+    ]);
+
+    expect(text.split("\r\n")[1].split(",")[0]).toBe("newer");
   });
 });

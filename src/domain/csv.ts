@@ -1,10 +1,19 @@
-import type { Condition, Copy, Format, Release } from "@janne6565/music-collector-shared";
+import type {
+  Condition,
+  Copy,
+  Format,
+  Release,
+  WishlistItem,
+} from "@janne6565/music-collector-shared";
 import {
   CONDITIONS,
+  DEFAULT_WISH_SORT,
   FORMATS,
   copyFormat,
   formatCentsForInput,
+  hasManualOrder,
   parseMoneyToCents,
+  sortWishlist,
 } from "@janne6565/music-collector-shared";
 /**
  * The collection as a spreadsheet: one row per copy.
@@ -208,4 +217,59 @@ export function fromCsv(text: string): { rows: CsvRow[]; skipped: number } {
     });
   }
   return { rows, skipped };
+}
+
+/**
+ * The wishlist as a spreadsheet: one row per entry.
+ *
+ * Separate from the copies export rather than extra rows in it, because the two describe
+ * different things — a copy is a record you own, with a price, a condition and a pressing;
+ * a wish is an album and the format you are hunting for. One file with half its columns
+ * blank on every other row is a file no spreadsheet can pivot.
+ *
+ * `albumId` leads for the same reason `releaseId` does above: it is what makes the export
+ * re-importable, and the human-readable columns beside it are for the person.
+ */
+export const WISHLIST_CSV_COLUMNS = [
+  "albumId",
+  "title",
+  "artist",
+  "year",
+  "desiredFormat",
+  "note",
+  "addedAt",
+] as const;
+
+/**
+ * The order the list is exported in: the one the person built, when they have built one.
+ *
+ * A wishlist's order is a statement — "this is the one I am closest to finding" — so an
+ * export that arrived in insertion order would throw away the only ranking in the app. It
+ * is a decision both clients have to make identically, which is why it lives here rather
+ * than at the call site.
+ */
+export function wishlistExportOrder(items: readonly WishlistItem[]): readonly WishlistItem[] {
+  return sortWishlist(items, hasManualOrder(items) ? "MANUAL" : DEFAULT_WISH_SORT);
+}
+
+export function wishlistToCsv(items: readonly WishlistItem[]): string {
+  const lines = [WISHLIST_CSV_COLUMNS.join(",")];
+  for (const item of wishlistExportOrder(items)) {
+    lines.push(
+      [
+        item.albumId,
+        item.title,
+        item.artistName,
+        item.year === null ? "" : String(item.year),
+        // "ANY" rather than a blank: a wish with no format named is a deliberate answer —
+        // any pressing will do — and an empty cell would read as one nobody filled in.
+        item.desiredFormat ?? "ANY",
+        item.note ?? "",
+        new Date(item.createdAt).toISOString(),
+      ]
+        .map(quote)
+        .join(","),
+    );
+  }
+  return `${lines.join("\r\n")}\r\n`;
 }

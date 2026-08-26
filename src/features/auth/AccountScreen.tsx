@@ -148,13 +148,21 @@ function SignedIn({ logic }: { readonly logic: ReturnType<typeof useAccountLogic
             />
           }
         />
-        <Pressable accessibilityRole="button" onPress={() => void logic.exportCsv()} style={styles.row}>
-          <View style={styles.rowText}>
-            <Text style={styles.rowTitle}>{t("account.export.title")}</Text>
-            <Text style={styles.rowBody}>{t("account.export.body")}</Text>
-          </View>
-          <ChevronRight size={16} color={colors.inkSubtle} strokeWidth={1.75} />
-        </Pressable>
+        {/* Two files, not one. The collection and the wishlist are different shapes — a
+            copy has a price, a condition and a pressing; a wish has an album and a format
+            — and a single sheet with half its columns blank on every other row is a sheet
+            no spreadsheet can pivot. */}
+        <ExportRow
+          title={t("account.export.library.title")}
+          body={t("account.export.library.body")}
+          onPress={() => void logic.exportCsv()}
+        />
+        <ExportRow
+          title={t("account.export.wishlist.title")}
+          body={t("account.export.wishlist.body")}
+          onPress={() => void logic.exportWishlistCsv()}
+          last
+        />
       </View>
 
       <Text style={styles.section}>{t("legal.title")}</Text>
@@ -242,6 +250,32 @@ function NameRow({ logic }: { readonly logic: ReturnType<typeof useAccountLogic>
         {logic.renameFailed ? t("account.name.failed") : t("account.name.body")}
       </Text>
     </View>
+  );
+}
+
+function ExportRow({
+  title,
+  body,
+  onPress,
+  last = false,
+}: {
+  readonly title: string;
+  readonly body: string;
+  readonly onPress: () => void;
+  readonly last?: boolean;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      style={[styles.row, last && styles.rowLast]}
+    >
+      <View style={styles.rowText}>
+        <Text style={styles.rowTitle}>{title}</Text>
+        <Text style={styles.rowBody}>{body}</Text>
+      </View>
+      <ChevronRight size={16} color={colors.inkSubtle} strokeWidth={1.75} />
+    </Pressable>
   );
 }
 

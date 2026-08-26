@@ -14,7 +14,7 @@ import {
   updateDisplayName,
 } from "@/api/auth";
 import { signInWithProvider } from "@/features/auth/externalSignIn";
-import { toCsv } from "@/domain/csv";
+import { toCsv, wishlistToCsv } from "@/domain/csv";
 import { useStore } from "@/local/StoreProvider";
 import { readLastSyncedAt, readSyncEnabled, writeLastSyncedAt, writeSyncEnabled } from "@/local/settings";
 import { firstSyncResolved, renamed, signedIn, signedOut } from "@/store/authSlice";
@@ -198,20 +198,35 @@ export function useAccountLogic() {
   }, [dispatch]);
 
   /**
+   * Hands a finished CSV to the share sheet, which is the only way to get a file off a
+   * phone: there is no download folder to write to and no browser to hand it to.
+   */
+  const shareCsv = useCallback(async (name: string, text: string) => {
+    const file = `${FileSystem.cacheDirectory}${name}-${new Date().toISOString().slice(0, 10)}.csv`;
+    await FileSystem.writeAsStringAsync(file, text);
+    if (await Sharing.isAvailableAsync()) {
+      await Sharing.shareAsync(file, { mimeType: "text/csv", UTI: "public.comma-separated-values-text" });
+    }
+  }, []);
+
+  /**
    * The collection as a file. Built on the device from the local store, so it works
    * offline and works identically with no account at all.
    */
   const exportCsv = useCallback(async () => {
     const copies = await store.listCopies();
     const releases = await store.getReleases(copies.map((copy) => copy.releaseId));
-    const file = `${FileSystem.cacheDirectory}music-collector-${new Date().toISOString().slice(0, 10)}.csv`;
-    await FileSystem.writeAsStringAsync(file, toCsv(copies, releases));
-    // The share sheet is the only way to get a file off a phone: there is no download
-    // folder to write to and no browser to hand it to.
-    if (await Sharing.isAvailableAsync()) {
-      await Sharing.shareAsync(file, { mimeType: "text/csv", UTI: "public.comma-separated-values-text" });
-    }
-  }, [store]);
+    await shareCsv("music-collector", toCsv(copies, releases));
+  }, [store, shareCsv]);
+
+  /**
+   * The wishlist as its own file, for the same reason it is its own screen: it is a list of
+   * records you do not have, and folding it into the collection export would put a row in
+   * the spreadsheet for something that is not on the shelf.
+   */
+  const exportWishlistCsv = useCallback(async () => {
+    await shareCsv("music-collector-wishlist", wishlistToCsv(await store.listWishlist()));
+  }, [store, shareCsv]);
 
   /**
    * The whole record as JSON: the server's copy when there is an account, the device's own
@@ -294,6 +309,7 @@ export function useAccountLogic() {
     ),
     lastSyncedAt,
     exportCsv,
+    exportWishlistCsv,
     exportJson,
     deleteAccount: removeAccount,
     firstSyncPending,

@@ -363,7 +363,10 @@ const enCommon = {
       title: "Keep a local copy",
       always: "Always on — every screen reads from this phone",
     },
-    export: { title: "Export as CSV", body: "One row per copy" },
+    export: {
+      library: { title: "Export library as CSV", body: "One row per copy" },
+      wishlist: { title: "Export wishlist as CSV", body: "One row per entry" },
+    },
     delete: {
       title: "Delete account",
       action: "Delete",
@@ -868,7 +871,10 @@ const deCommon: CommonSchema = {
       title: "Lokale Kopie behalten",
       always: "Immer an — jede Ansicht liest von diesem Gerät",
     },
-    export: { title: "Als CSV exportieren", body: "Eine Zeile pro Exemplar" },
+    export: {
+      library: { title: "Sammlung als CSV exportieren", body: "Eine Zeile pro Exemplar" },
+      wishlist: { title: "Wunschliste als CSV exportieren", body: "Eine Zeile pro Eintrag" },
+    },
     delete: {
       title: "Konto löschen",
       action: "Löschen",
