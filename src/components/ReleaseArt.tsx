@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Animated, StyleSheet, View, type ViewStyle } from "react-native";
 import { FormatThumb } from "@/components/FormatThumb";
+import { usePulse } from "@/components/Skeleton";
 import type { Format } from "@janne6565/music-collector-shared";
 /**
  * Everything the art actually needs: a URL to try, and a format to fall back to.
@@ -109,6 +110,9 @@ export function ReleaseArt({
    * what stops a grid of covers arriving as a series of snaps.
    */
   const reveal = useRef(new Animated.Value(0)).current;
+  /** Only a fetch is worth breathing about; a photo already on this phone is not away. */
+  const waiting = fetched && !shown;
+  const pulse = usePulse(waiting);
 
   const art = gone ? null : (
     <Animated.Image
@@ -128,17 +132,32 @@ export function ReleaseArt({
 
   if (variant === "bleed") {
     return (
-      <View style={[styles.frame, style]}>
-        {/*
-          * Kept mounted underneath rather than swapped out -- which the code said and did
-          * not do, and it is load-bearing twice over. It stops anything behind the frame
-          * showing through an image that is still decoding, and it is the only thing
-          * giving the frame a height: the cover is absolutely positioned, so with the
-          * silhouette conditional the box collapsed, the image was laid out at zero and
-          * React Native never even fetched it. The shelf was unaffected because a sleeve
-          * nests the cover in a box with real bounds; only the hero drew nothing.
-          */}
-        <FormatThumb format={format ?? release?.format ?? "OTHER"} waiting={fetched && !shown} />
+      /*
+       * The frame carries its own aspect ratio here. It used to take its height from the
+       * silhouette underneath, which meant the hero collapsed to nothing -- image laid out
+       * at zero, never even fetched -- the moment that silhouette was conditional. Anything
+       * layered in this frame is absolutely positioned, so the box has to be definite on
+       * its own or the whole thing quietly disappears.
+       */
+      <View style={[styles.frame, styles.bleed, style]}>
+        {gone ? (
+          /*
+           * Nothing is coming: the silhouette is the answer, not a wait. This is the one
+           * place it still belongs in the hero -- it says what is on the shelf when there
+           * is no picture of it.
+           */
+          <FormatThumb format={format ?? release?.format ?? "OTHER"} />
+        ) : (
+          /*
+           * A plain ground while the cover is on its way. The hero is edge to edge, and a
+           * format silhouette at that size reads as the answer rather than as a wait --
+           * so it flashes a vinyl the size of the screen and then throws it away. A quiet
+           * rectangle says "not yet" without claiming anything.
+           */
+          <Animated.View
+            style={[StyleSheet.absoluteFill, styles.ground, { opacity: waiting ? pulse : 1 }]}
+          />
+        )}
         {art}
       </View>
     );
@@ -149,7 +168,7 @@ export function ReleaseArt({
       format={format ?? release?.format ?? "OTHER"}
       style={style}
       cover={art}
-      waiting={fetched && !shown}
+      waiting={waiting}
     />
   );
 }
@@ -161,4 +180,7 @@ const styles = StyleSheet.create({
    * `aspectRatio`, and Yoga does not treat that as definite -- so it came out as zero.
    */
   frame: { width: "100%", overflow: "hidden" },
+  /** Square, and definite, so the hero has a height with or without a silhouette in it. */
+  bleed: { aspectRatio: 1 },
+  ground: { backgroundColor: "#efece6" },
 });

@@ -297,6 +297,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     marginTop: 15,
+    // The list starts straight under this row, and without it the first entry crowded the
+    // pill. On the controls rather than the header, so an empty wishlist -- which has no
+    // controls at all -- does not gain a gap it has nothing to separate.
+    marginBottom: 12,
   },
   sortChip: {
     flexDirection: "row",
