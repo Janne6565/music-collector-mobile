@@ -111,7 +111,7 @@ function SignedIn({ logic }: { readonly logic: ReturnType<typeof useAccountLogic
       <Text style={styles.section}>{t("account.section.signIn")}</Text>
       <View style={styles.card}>
         <Row title={t("auth.email")} value={logic.user?.email ?? ""} />
-        <Row title={t("auth.password")} value={t("account.passwordBody")} last />
+        <Row title={t("auth.password")} body={t("account.passwordBody")} last />
       </View>
 
       <Text style={styles.section}>{t("account.section.storage")}</Text>
@@ -346,7 +346,14 @@ const styles = StyleSheet.create({
   rowText: { flex: 1 },
   rowTitle: { fontSize: 13.5, color: colors.ink },
   rowBody: { fontSize: 11, color: colors.inkSubtle, marginTop: 2 },
-  rowValue: { fontSize: 12.5, color: colors.inkSubtle, flexShrink: 1 },
+  /*
+   * Capped, because a value is measured on one line and shrinks from there: with a basis
+   * of its whole width against the label's basis of zero, every point that had to give
+   * came out of the label. A long e-mail took the row down to "E-m…"; the password row,
+   * which was handing a whole sentence to a value rather than to a body, got "Pas/sw/ord".
+   * Past the cap the value ellipsises, which is what it was already asking for.
+   */
+  rowValue: { fontSize: 12.5, color: colors.inkSubtle, flexShrink: 1, maxWidth: "60%" },
   nameRow: { flexDirection: "column", alignItems: "stretch", gap: 8 },
   nameField: { flexDirection: "row", alignItems: "center", gap: 8 },
   nameInput: {
