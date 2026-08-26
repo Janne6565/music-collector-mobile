@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { Check, ChevronLeft, Disc3, Eye, EyeOff, HardDrive, Lock, Mail, User } from "lucide-react-native";
+import { Check, Disc3, Eye, EyeOff, HardDrive, Lock, Mail, User } from "lucide-react-native";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
@@ -17,14 +17,12 @@ export function AuthForm({ logic }: { readonly logic: ReturnType<typeof useAccou
   const registering = logic.mode === "REGISTER";
 
   /**
-   * Both the back control and the no-account path go to the library, because that is what
-   * "without an account" means here: the app you already have. Sign-in lives in a tab, so
-   * there is no stack to pop — leaving is a sideways move, not a retreat.
-   */
-  const leave = () => router.replace("/");
-
-  /**
-   * The no-account path goes past the local-only notice the first time (17b).
+   * The no-account path goes to the library, because that is what "without an account"
+   * means here: the app you already have. There is no back control beside it — sign-in is
+   * a tab, not a pushed screen, so there would be nothing to pop and an arrow would
+   * promise a retreat the tab bar already offers as a sideways move.
+   *
+   * It goes past the local-only notice the first time (17b).
    *
    * Once only: showing it on every visit would turn a disclosure into an obstacle, and the
    * same text stays reachable from the Datenschutzerklärung afterwards.
@@ -37,14 +35,6 @@ export function AuthForm({ logic }: { readonly logic: ReturnType<typeof useAccou
 
   return (
     <View style={styles.root}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={t("common.back")}
-        onPress={leave}
-        style={styles.back}
-      >
-        <ChevronLeft size={18} color={colors.inkMuted} strokeWidth={1.75} />
-      </Pressable>
       {registering ? (
         <Text style={styles.title}>{t("auth.createTitle")}</Text>
       ) : (
@@ -370,16 +360,6 @@ const styles = StyleSheet.create({
   },
   secondaryText: { fontSize: 14, fontWeight: "600", color: colors.ink },
   switchMode: { textAlign: "center", fontSize: 13, color: colors.inkMuted, marginTop: 4 },
-  back: {
-    width: 34,
-    height: 34,
-    borderRadius: 999,
-    backgroundColor: colors.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.line,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   without: {
     flexDirection: "row",
     gap: 9,
