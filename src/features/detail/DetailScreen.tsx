@@ -1,6 +1,6 @@
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
-import { ChevronLeft, Pencil, Star, Trash2 } from "lucide-react-native";
+import { Pencil, Star, Trash2, X } from "lucide-react-native";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -168,7 +168,7 @@ function DetailBody({
               onPress={() => router.back()}
               style={[styles.back, { backgroundColor: chrome.surface }]}
             >
-              <ChevronLeft size={18} color={chrome.ink} strokeWidth={1.75} />
+              <X size={18} color={chrome.ink} strokeWidth={1.75} />
             </Pressable>
           </SafeAreaView>
         </View>

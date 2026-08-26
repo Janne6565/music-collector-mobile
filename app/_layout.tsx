@@ -43,7 +43,23 @@ export default function RootLayout() {
                 */}
               <Stack
                 screenOptions={{ headerShown: false, animation: reduced ? "none" : "default" }}
-              />
+              >
+                {/*
+                  * A copy is something you open and close again, not a place you navigate
+                  * to -- and as a sheet the two gestures stop competing. Dismissal moves to
+                  * the vertical axis, where the platform provides it, which leaves the
+                  * horizontal one entirely to moving between copies. As a page in the stack
+                  * every sideways swipe was fighting the interactive back gesture, and that
+                  * is not something you can tune your way out of.
+                  */}
+                <Stack.Screen
+                  name="copies/[copyId]"
+                  options={{
+                    presentation: "modal",
+                    animation: reduced ? "none" : "slide_from_bottom",
+                  }}
+                />
+              </Stack>
             </UndoProvider>
             </SyncProvider>
           </StoreProvider>

@@ -349,7 +349,7 @@ const enCommon = {
     save: "Save",
   },
   detail: {
-    back: "Library",
+    back: "Close",
     notFound: "That item is no longer in your collection.",
     mediaCondition: "Media",
     sleeveCondition: "Sleeve",
@@ -1070,7 +1070,7 @@ const deCommon: CommonSchema = {
     save: "Speichern",
   },
   detail: {
-    back: "Sammlung",
+    back: "Schließen",
     notFound: "Dieses Exemplar ist nicht mehr in deiner Sammlung.",
     mediaCondition: "Tonträger",
     sleeveCondition: "Hülle",
