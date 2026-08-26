@@ -5,6 +5,13 @@ import Constants from "expo-constants";
  *
  * A physical device cannot reach the developer's localhost, so a dev build points at the
  * Metro host's LAN address when one is available and falls back to staging otherwise.
+ *
+ * That default expects a backend running on that machine. With none, every call fails and
+ * the app looks broken in a way that does not say so: no sign-in, no OAuth, and every cover
+ * falling back to its format silhouette because the metadata proxy answered nothing. To
+ * work against a deployed backend instead, start with `bun run dev:staging` or
+ * `bun run dev:prod`, which set the override below. Keep those script names and this
+ * comment in step.
  */
 const PRODUCTION = "https://music.jannekeipert.de";
 const STAGING = "https://music-staging.jannekeipert.de";

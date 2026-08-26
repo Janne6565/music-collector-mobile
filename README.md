@@ -8,6 +8,26 @@ and is fully usable with no account; signing in only starts syncing it to
 [`music-collector-backend`](https://github.com/Janne6565/music-collector-backend). See that
 repo's `docs/PLAN.md` for the architecture.
 
+
+## Running against a backend
+
+`bun start` points the app at `http://<your machine>:8080` — a backend running locally.
+Without one, nothing works and little says so: sign-in and OAuth fail, and every cover
+falls back to its format silhouette because the metadata proxy answered nothing.
+
+| | |
+|---|---|
+| `bun start` / `bun run dev` | a backend on this machine, port 8080 |
+| `bun run start:staging` / `dev:staging` | `music-staging.jannekeipert.de` |
+| `bun run start:prod` / `dev:prod` | `music.jannekeipert.de` |
+
+The `dev:*` variants need a dev-client build; the plain ones run in Expo Go. **OAuth needs
+a dev client** — the callback returns to `musiccollector://`, which Expo Go does not own.
+
+`prod` is the real collection. Anything added there is added for real, which is why the
+`preview` EAS profile deliberately points at staging instead.
+
+
 ## Stack
 
 Expo SDK 57 · React Native 0.86 · expo-router · TanStack Query · Redux Toolkit ·
