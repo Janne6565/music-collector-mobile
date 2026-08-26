@@ -387,7 +387,9 @@ const styles = StyleSheet.create({
   loading: { flex: 1, alignItems: "center", justifyContent: "center" },
   scroll: { paddingBottom: 40 },
   cover: { width: "100%", aspectRatio: 1 },
-  coverImage: { width: "100%", height: "100%" },
+  // Width only: the hero is square because `cover` is, and a percentage height here is
+  // what collapsed the art to nothing.
+  coverImage: { width: "100%" },
   backWrap: { position: "absolute", left: 18, top: 0 },
   back: { width: 34, height: 34, borderRadius: 999, alignItems: "center", justifyContent: "center", marginTop: 8 },
   body: { paddingHorizontal: 20, paddingTop: 22 },

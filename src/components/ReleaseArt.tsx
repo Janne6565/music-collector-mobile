@@ -129,9 +129,16 @@ export function ReleaseArt({
   if (variant === "bleed") {
     return (
       <View style={[styles.frame, style]}>
-        {/* Kept mounted underneath rather than swapped out, so nothing behind the frame
-            is ever visible through an image that is still decoding. */}
-        {!shown && <FormatThumb format={format ?? release?.format ?? "OTHER"} waiting={fetched} />}
+        {/*
+          * Kept mounted underneath rather than swapped out -- which the code said and did
+          * not do, and it is load-bearing twice over. It stops anything behind the frame
+          * showing through an image that is still decoding, and it is the only thing
+          * giving the frame a height: the cover is absolutely positioned, so with the
+          * silhouette conditional the box collapsed, the image was laid out at zero and
+          * React Native never even fetched it. The shelf was unaffected because a sleeve
+          * nests the cover in a box with real bounds; only the hero drew nothing.
+          */}
+        <FormatThumb format={format ?? release?.format ?? "OTHER"} waiting={fetched && !shown} />
         {art}
       </View>
     );
@@ -148,5 +155,10 @@ export function ReleaseArt({
 }
 
 const styles = StyleSheet.create({
-  frame: { width: "100%", height: "100%", overflow: "hidden" },
+  /*
+   * No height of its own: it takes the silhouette's, which is square by its own aspect
+   * ratio. A percentage height here resolves against a parent whose own height comes from
+   * `aspectRatio`, and Yoga does not treat that as definite -- so it came out as zero.
+   */
+  frame: { width: "100%", overflow: "hidden" },
 });
