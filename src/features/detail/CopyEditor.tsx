@@ -167,7 +167,9 @@ export function CopyEditor({
               <Star
                 size={22}
                 strokeWidth={1.5}
-                color={star <= (editor.fields.rating ?? 0) ? chrome.accent : chrome.line}
+                // Same as the read-only row: `line` is a rule tone, not a glyph tone, and
+                // a rating you cannot see the empty half of is one you cannot read.
+                color={star <= (editor.fields.rating ?? 0) ? chrome.accent : chrome.muted}
                 fill={star <= (editor.fields.rating ?? 0) ? chrome.accent : "transparent"}
               />
             </Pressable>

@@ -207,7 +207,10 @@ function DetailBody({
                 key={star}
                 size={15}
                 strokeWidth={1.5}
-                color={star <= (copy.rating ?? 0) ? chrome.accent : chrome.line}
+                // An empty star is a secondary glyph, so it takes the tone every other
+                // secondary glyph on this screen takes. `line` is 9% -- a hairline weight
+                // for 1px rules, which left the unearned stars all but invisible.
+                color={star <= (copy.rating ?? 0) ? chrome.accent : chrome.muted}
                 fill={star <= (copy.rating ?? 0) ? chrome.accent : "transparent"}
               />
             ))}
