@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Animated, StyleSheet, View, type ViewStyle } from "react-native";
 import { FormatThumb } from "@/components/FormatThumb";
 import { usePulse } from "@/components/Skeleton";
@@ -114,18 +114,33 @@ export function ReleaseArt({
   const waiting = fetched && !shown;
   const pulse = usePulse(waiting);
 
+  /*
+   * Opacity is driven from state, never from the Image's own callbacks.
+   *
+   * It used to be reset in `onLoadStart` and raised in `onLoad`, which made the cover
+   * appear or not appear depending on whether React Native happened to have the bytes
+   * cached: for an image it has already decoded it may fire `onLoadStart` without ever
+   * firing `onLoad` again, and the reveal then sat at zero for good. That is exactly the
+   * shape of the bug -- the same record loading one time and showing nothing the next,
+   * with a placeholder underneath standing in for a picture that was in fact right there.
+   *
+   * Keyed on the URL, so a component handed a second release still hides the old cover
+   * the instant the source swaps rather than flashing it at full opacity.
+   */
+  useEffect(() => {
+    reveal.setValue(0);
+  }, [url, reveal]);
+
+  useEffect(() => {
+    if (!shown) return;
+    Animated.timing(reveal, { toValue: 1, duration: 220, useNativeDriver: true }).start();
+  }, [shown, reveal]);
+
   const art = gone ? null : (
     <Animated.Image
       source={{ uri: url }}
       style={[StyleSheet.absoluteFill, { opacity: reveal }]}
-      // Reset here rather than on the URL changing: a component handed a second release
-      // would otherwise show its cover at full opacity the instant the source swapped,
-      // before any of its bytes had arrived.
-      onLoadStart={() => reveal.setValue(0)}
-      onLoad={() => {
-        setLoadedUrl(url);
-        Animated.timing(reveal, { toValue: 1, duration: 220, useNativeDriver: true }).start();
-      }}
+      onLoad={() => setLoadedUrl(url)}
       onError={() => setFailed((seen) => new Set(seen).add(url))}
     />
   );
