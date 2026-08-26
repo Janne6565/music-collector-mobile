@@ -192,9 +192,17 @@ eas submit --platform ios --latest      # submit an already-finished build
   EXPO_NO_CAPABILITY_SYNC=1 eas build --platform ios --profile development
   ```
 
-  Revisit only if the app ever gains a real entitlement — Sign in with Apple, push
-  notifications, associated domains, app groups — in which case enable it by hand at
-  <https://developer.apple.com/account/resources/identifiers> instead.
+  **This no longer applies.** The app gained a real entitlement on 2026-08-27: push
+  notifications. `expo-notifications` is in `plugins`, so `aps-environment` is declared and
+  the capability sync now has something legitimate to do — drop `EXPO_NO_CAPABILITY_SYNC`
+  and let it run. If it fails again, enable the capability by hand at
+  <https://developer.apple.com/account/resources/identifiers> rather than skipping the sync.
+
+- **Push credentials.** The APNs key is set up: `C7GRM25UPA`, assigned to
+  `de.jannekeipert.musiccollector` and shared with the other apps on this team. Nothing in
+  this repo or the backend holds it — EAS does, and a device's Expo token is what the server
+  sends to. Android push is **not** set up: it needs a Firebase project and an FCM V1 service
+  account key uploaded with `eas credentials --platform android`.
 
 - **`appVersionSource: remote`** means EAS owns the build number and `versionCode`;
   `production.autoIncrement` bumps them server-side. Don't hand-edit `version` in

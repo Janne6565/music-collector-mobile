@@ -650,6 +650,35 @@ const enCommon = {
       PRODUCT_NEWS: { title: "News about the app", short: "Two or three times a year" },
     },
   },
+  push: {
+    priming: {
+      skip: "Skip",
+      eyebrow: "You and {{name}} are friends now",
+      title: "Want a nudge when a friend asks for you?",
+      lede: "iOS will ask once, and only we can ask it. So before it does: here is everything we would ever send.",
+      request: {
+        title: "A friend request",
+        body: "Someone asks to follow your collection. Perhaps a handful a year.",
+      },
+      signIn: {
+        title: "A sign-in you should know about",
+        body: "A new device on your account. Hopefully never.",
+      },
+      notThis:
+        "Not this: what your friends added. That is a mail on Sunday, never a buzz — a record going onto someone else's shelf is not news you need in the moment.",
+      allow: "Allow notifications",
+      notNow: "Not now",
+      footnote:
+        "Not now does not ask iOS anything, so the question stays available. You · Notifications turns it on whenever.",
+    },
+    devices: {
+      thisPhone: "This phone",
+      allowed: "Allowed on this device",
+      muted: "Muted here",
+      mute: "Mute",
+      unmute: "Unmute",
+    },
+  },
   common: {
     save: "Save",
     cancel: "Cancel",
@@ -1343,6 +1372,35 @@ const deCommon: CommonSchema = {
       FRIEND_ACTIVITY: { title: "Was Freunde eingestellt haben", short: "Wöchentlich, Sonntagmorgen" },
       SECURITY: { title: "Sicherheitshinweise", short: "Anmeldungen und Änderungen" },
       PRODUCT_NEWS: { title: "Neues über die App", short: "Zwei- bis dreimal im Jahr" },
+    },
+  },
+  push: {
+    priming: {
+      skip: "Überspringen",
+      eyebrow: "Du und {{name}} seid jetzt befreundet",
+      title: "Einen Hinweis, wenn jemand nach dir fragt?",
+      lede: "iOS fragt einmal, und nur wir können es auslösen. Also vorher: das hier ist alles, was wir je senden würden.",
+      request: {
+        title: "Eine Freundschaftsanfrage",
+        body: "Jemand möchte deiner Sammlung folgen. Vielleicht eine Handvoll im Jahr.",
+      },
+      signIn: {
+        title: "Eine Anmeldung, von der du wissen solltest",
+        body: "Ein neues Gerät an deinem Konto. Hoffentlich nie.",
+      },
+      notThis:
+        "Nicht das hier: was deine Freunde eingestellt haben. Das ist eine Mail am Sonntag, nie ein Vibrieren — eine Platte in fremdem Regal ist keine Nachricht für den Moment.",
+      allow: "Benachrichtigungen erlauben",
+      notNow: "Jetzt nicht",
+      footnote:
+        "„Jetzt nicht“ fragt iOS gar nichts, die Frage bleibt also offen. Unter Du · Benachrichtigungen lässt sie sich jederzeit einschalten.",
+    },
+    devices: {
+      thisPhone: "Dieses Telefon",
+      allowed: "Auf diesem Gerät erlaubt",
+      muted: "Hier stummgeschaltet",
+      mute: "Stumm",
+      unmute: "Ton an",
     },
   },
   common: {

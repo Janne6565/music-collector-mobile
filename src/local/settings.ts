@@ -62,6 +62,23 @@ const CATALOGUE_GAP = "catalogueGap";
  */
 const CONFIRM_STRIP_SEEN = "confirmStripSeen";
 
+/**
+ * Whether the push priming screen (22b) has had its one showing on this device.
+ *
+ * Device-local, because the OS permission is: a phone that said no and an iPad that was
+ * never asked are different questions, and the account cannot answer either of them.
+ * Declined once means never shown again — the switch under Notifications is the only way
+ * back, and turning it on there is what re-opens the system prompt.
+ */
+const PUSH_PRIMING_SEEN = "pushPrimingSeen";
+
+/** True the first time it is asked on this device, false ever after. */
+export async function claimPushPriming(store: LocalStore): Promise<boolean> {
+  if ((await store.readSetting(PUSH_PRIMING_SEEN)) === "true") return false;
+  await store.writeSetting(PUSH_PRIMING_SEEN, "true");
+  return true;
+}
+
 /** True the first time it is asked on this device, false ever after. */
 export async function claimConfirmStrip(store: LocalStore): Promise<boolean> {
   if ((await store.readSetting(CONFIRM_STRIP_SEEN)) === "true") return false;

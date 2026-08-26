@@ -1,6 +1,10 @@
 import { friendsApi } from "@/api/friends";
+import { canStillAskForPush } from "@/features/notifications/push";
+import { claimPushPriming } from "@/local/settings";
+import { useStore } from "@/local/StoreProvider";
 import { useAppSelector } from "@/store/hooks";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 
 /** Shorter and the server returns nothing, so asking would only make the field flicker. */
@@ -15,6 +19,8 @@ const MIN_QUERY = 3;
 export function useFriendsLogic() {
   const signedIn = useAppSelector((state) => state.auth.status === "signedIn");
   const queryClient = useQueryClient();
+  const router = useRouter();
+  const { store } = useStore();
   const [query, setQuery] = useState("");
 
   const sharing = useQuery({
@@ -56,7 +62,23 @@ export function useFriendsLogic() {
   }, [queryClient]);
 
   const ask = useMutation({ mutationFn: friendsApi.ask, onSuccess: refresh });
-  const accept = useMutation({ mutationFn: friendsApi.accept, onSuccess: refresh });
+  const accept = useMutation({
+    mutationFn: friendsApi.accept,
+    onSuccess: async (_answer, id) => {
+      await refresh();
+      // 22b: the moment the prompt is earned, and the only moment it is offered. Never at
+      // launch, never on sign-in -- iOS asks once, and spending it on a hypothetical is how
+      // an app ends up unable to say anything ever again. Gated three ways: a friendship
+      // has to exist, the OS has to still be askable, and this device gets one showing.
+      const asked = people.data?.incoming?.find((request) => request.id === id)?.from;
+      if (!(await canStillAskForPush())) return;
+      if (!(await claimPushPriming(store))) return;
+      router.push({
+        pathname: "/notifications/priming",
+        params: { friend: asked?.displayName ?? asked?.handle ?? "" },
+      });
+    },
+  });
   const decline = useMutation({ mutationFn: friendsApi.decline, onSuccess: refresh });
 
   return {

@@ -3,12 +3,15 @@ import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ChevronLeft, Lock } from "lucide-react-native";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   type NotificationCategory,
   notificationPreferences,
   updateNotificationPreference,
 } from "@/api/notifications";
+import { listDevices, muteDevice } from "@/api/devices";
+import { useStore } from "@/local/StoreProvider";
 import { useAppSelector } from "@/store/hooks";
 import { colors, fonts } from "@/theme/colors";
 
@@ -35,7 +38,12 @@ export function NotificationsScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { store } = useStore();
   const user = useAppSelector((state) => state.auth.user);
+  const [deviceId, setDeviceId] = useState<string | null>(null);
+  useEffect(() => {
+    void store.deviceId().then(setDeviceId);
+  }, [store]);
 
   const grid = useQuery({
     queryKey: ["notificationPreferences"],
@@ -47,6 +55,18 @@ export function NotificationsScreen() {
     mutationFn: async (next: { category: NotificationCategory; mail: boolean; push: boolean }) =>
       updateNotificationPreference(next.category, next.mail, next.push),
     onSuccess: (answer) => queryClient.setQueryData(["notificationPreferences"], answer),
+  });
+
+  const devices = useQuery({
+    queryKey: ["notificationDevices"],
+    queryFn: () => listDevices(deviceId ?? ""),
+    enabled: user !== null && deviceId !== null,
+  });
+
+  const mute = useMutation({
+    mutationFn: async (next: { id: string; muted: boolean }) =>
+      muteDevice(next.id, next.muted, deviceId ?? ""),
+    onSuccess: (answer) => queryClient.setQueryData(["notificationDevices"], answer),
   });
 
   const categories = grid.data?.categories ?? [];
@@ -143,19 +163,42 @@ export function NotificationsScreen() {
 
         <Text style={styles.footnote}>{t("notifications.lockFootnote")}</Text>
 
-        {!pushAvailable && (
-          <>
-            <Text style={styles.sectionLabel}>{t("notifications.devices.heading")}</Text>
-            <View style={styles.card}>
-              <View style={[styles.row, styles.rowLast]}>
-                <View style={styles.categoryColumn}>
-                  <Text style={styles.rowTitle}>{t("notifications.devices.none")}</Text>
-                  <Text style={styles.rowBody}>{t("notifications.noPush.bodyMobile")}</Text>
-                </View>
+        {/* The second, shorter question: which device buzzes. One mute per device, and the
+            categories above are never duplicated per phone. */}
+        <Text style={styles.sectionLabel}>{t("notifications.devices.heading")}</Text>
+        <View style={styles.card}>
+          {(devices.data ?? []).length === 0 ? (
+            <View style={[styles.row, styles.rowLast]}>
+              <View style={styles.categoryColumn}>
+                <Text style={styles.rowTitle}>{t("notifications.devices.none")}</Text>
+                <Text style={styles.rowBody}>{t("notifications.noPush.bodyMobile")}</Text>
               </View>
             </View>
-          </>
-        )}
+          ) : (
+            (devices.data ?? []).map((device, index) => (
+              <View
+                key={device.id}
+                style={[styles.row, index === (devices.data ?? []).length - 1 && styles.rowLast]}
+              >
+                <View style={styles.categoryColumn}>
+                  <Text style={styles.rowTitle}>
+                    {device.current ? t("push.devices.thisPhone") : (device.label ?? device.platform)}
+                  </Text>
+                  <Text style={styles.rowBody}>
+                    {device.mutedAt === null
+                      ? t("push.devices.allowed")
+                      : t("push.devices.muted")}
+                  </Text>
+                </View>
+                <Switch
+                  value={device.mutedAt === null}
+                  onValueChange={(on) => mute.mutate({ id: device.id, muted: !on })}
+                  trackColor={{ true: colors.ink, false: colors.line }}
+                />
+              </View>
+            ))
+          )}
+        </View>
 
         <Text style={styles.footnote}>{t("notifications.savesAsYouGo")}</Text>
       </ScrollView>

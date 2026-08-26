@@ -26,7 +26,8 @@
         }
       ],
       "expo-sharing",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-notifications"
     ],
     "ios": {
       "supportsTablet": true,
