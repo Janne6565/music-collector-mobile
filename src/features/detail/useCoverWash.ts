@@ -68,7 +68,24 @@ export interface CoverWash {
 const bezier = (curve: readonly [number, number, number, number]) =>
   Easing.bezier(curve[0], curve[1], curve[2], curve[3]);
 
-export function useCoverWash(theme: CoverTheme | null): CoverWash {
+export function useCoverWash(given: CoverTheme | null): CoverWash {
+  /*
+   * A null palette almost never means "this record is paper-coloured". It is sampled only
+   * on the single-release lookup, so every release reached any other way -- through sync,
+   * through search -- arrives without one and gets it fetched afterwards. Leafing through
+   * records therefore ran theme -> null -> theme, and the null leg is paper: a white flash
+   * on every copy whose detail had not been opened before.
+   *
+   * So an unknown palette holds whatever is already on screen instead of falling back to
+   * paper. Paper is still the answer on arrival, when there is nothing to hold. The cost is
+   * that a record which genuinely has no cover keeps the previous one's tone while you are
+   * leafing, which is a far smaller lie than a strobe.
+   */
+  const [held, setHeld] = useState<CoverTheme | null>(given);
+  useEffect(() => {
+    if (given !== null) setHeld(given);
+  }, [given]);
+  const theme = given ?? held;
   const chrome = chromeFor(theme);
 
   const paper = useRef(new Animated.Value(0)).current;

@@ -1,8 +1,10 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { lookupRelease } from "@/api/releases";
+import { neighboursOf } from "@/features/library/copyOrder";
 import type { Copy, CopyPatch, Release } from "@janne6565/music-collector-shared";
 import { applyCopyPatch, tombstoneCopy } from "@janne6565/music-collector-shared";
+import { useEffect } from "react";
 import { useStore } from "@/local/StoreProvider";
 
 export interface DetailData {
@@ -52,6 +54,8 @@ export function useDetailLogic(copyId: string) {
   });
 
   useCoverThemeEnrichment(detailQuery.data?.release);
+  // Warm the records either side, so leafing usually has nothing left to wait for.
+  useNeighbourPalettes(copyId);
 
   const invalidate = async () => {
     await queryClient.invalidateQueries({ queryKey: ["copy", copyId] });
@@ -122,4 +126,42 @@ export function useCoverThemeEnrichment(release: Release | undefined): void {
       return enriched;
     },
   });
+}
+
+/**
+ * Fetches the palettes of the copies either side of this one, before they are asked for.
+ *
+ * The palette is sampled server-side on the single-release lookup and nowhere else, so a
+ * record whose detail has never been opened arrives without one. That is fine when a screen
+ * is opened -- it holds paper for a moment and washes -- and it is not fine when the record
+ * next door is a swipe away, because then it is a wash on every single swipe.
+ *
+ * Best effort and deliberately quiet: a neighbour that cannot be reached simply gets its
+ * palette the old way, when it is opened.
+ */
+function useNeighbourPalettes(copyId: string): void {
+  const { store } = useStore();
+
+  useEffect(() => {
+    let alive = true;
+    const { previous, next } = neighboursOf(copyId);
+
+    void (async () => {
+      for (const neighbour of [next, previous]) {
+        if (neighbour === null || !alive) continue;
+        const copy = await store.getCopy(neighbour);
+        if (copy === undefined || !alive) continue;
+        const release = await store.getRelease(copy.releaseId);
+        // Already sampled, or nothing to sample: either way there is nothing to fetch.
+        if (release === undefined || release.coverTheme !== null || !alive) continue;
+        const enriched = await lookupRelease(release.id).catch(() => null);
+        if (enriched === null || !alive) continue;
+        await store.cacheReleases([enriched]);
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, [copyId, store]);
 }
