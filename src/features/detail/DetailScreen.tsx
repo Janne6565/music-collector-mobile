@@ -12,7 +12,6 @@ import {
   CONDITION_LABELS,
   CONDITION_SHORT,
   FORMAT_LABELS,
-  chromeFor,
   copyFormat,
   copyPreviewSrc,
 } from "@janne6565/music-collector-shared";
@@ -71,7 +70,7 @@ export function DetailScreen({
       <View style={[StyleSheet.absoluteFill, { backgroundColor: wash.chrome.background }]} />
       <Animated.View
         pointerEvents="none"
-        style={[StyleSheet.absoluteFill, { backgroundColor: PAPER, opacity: wash.paper }]}
+        style={[StyleSheet.absoluteFill, { backgroundColor: wash.washFrom, opacity: wash.paper }]}
       />
       <DetailBody
         chrome={wash.chrome}
@@ -108,8 +107,6 @@ export function DetailScreen({
 }
 
 /** The paper the screen washes away from, and the only colour that is not the chrome's. */
-const PAPER = chromeFor(null).background;
-
 interface DetailBodyProps {
   readonly chrome: DetailChrome;
   readonly accent: Animated.Value;
@@ -151,7 +148,7 @@ function DetailBody({
     // No background of its own: the layers behind it own the colour, which is what
     // lets the paper one fade away on the native driver while this stays put.
     <Animated.View
-      style={[styles.root, { transform: [{ translateX: swipe.dragX }] }]}
+      style={[styles.root, { opacity: swipe.fade }]}
       {...swipe.handlers}
     >
       <ScrollView contentContainerStyle={styles.scroll}>

@@ -37,8 +37,17 @@ export interface CoverWash {
   readonly chrome: DetailChrome;
   /** The chrome the outgoing copy is drawn in, or null when there is nothing to fade out. */
   readonly outgoing: DetailChrome | null;
-  /** Opacity of the paper layer covering the themed background. */
+  /** Opacity of the layer covering the themed background while it washes in. */
   readonly paper: Animated.Value;
+  /**
+   * What that covering layer is coloured.
+   *
+   * Paper when the screen is arriving from no theme at all, and the *previous* sleeve's
+   * tone when one cover is being swapped for another. Fading through paper on the way from
+   * one dark cover to another would be a white flash between two near-blacks -- worse than
+   * the snap it was meant to replace.
+   */
+  readonly washFrom: string;
   /** Opacity of the outgoing copy of the screen's content. */
   readonly outgoingOpacity: Animated.Value;
   /** Opacity of accent-coloured marks, which land last. */
@@ -62,6 +71,7 @@ export function useCoverWash(theme: CoverTheme | null): CoverWash {
   const [outgoing, setOutgoing] = useState<DetailChrome | null>(null);
   const [barStyle, setBarStyle] = useState<"light" | "dark">(chrome.dark ? "light" : "dark");
   const previous = useRef<CoverTheme | null>(theme);
+  const [washFrom, setWashFrom] = useState<string>(chromeFor(null).background);
   const reduced = useRef(false);
 
   useEffect(() => {
@@ -82,9 +92,9 @@ export function useCoverWash(theme: CoverTheme | null): CoverWash {
     const was = previous.current;
     previous.current = theme;
 
-    // Nothing arrived, or nothing changed. No fade to neutral, no flash, no retry
-    // affordance — paper was already the answer, and a failure looks identical to it.
-    if (theme === null || was !== null) {
+    // Nothing arrived. No fade to neutral, no flash, no retry affordance — paper was
+    // already the answer, and a failure looks identical to it.
+    if (theme === null) {
       setBarStyle(chrome.dark ? "light" : "dark");
       return;
     }
@@ -95,6 +105,28 @@ export function useCoverWash(theme: CoverTheme | null): CoverWash {
       setBarStyle(to.dark ? "light" : "dark");
       return;
     }
+
+    /*
+     * One cover swapped for another, which only happens now that the record next to this
+     * one is a swipe away. The background alone crosses -- the words are already being
+     * handed over by whatever caused the swap, and a second fade on top of that reads as
+     * mud. It crosses *from the old sleeve's tone*, never through paper: two dark covers
+     * with a white flash between them would be worse than the snap this replaces.
+     */
+    if (was !== null) {
+      setWashFrom(from.background);
+      paper.setValue(1);
+      const flipBar = setTimeout(() => setBarStyle(to.dark ? "light" : "dark"), WASH_LANES.textAt);
+      Animated.timing(paper, {
+        toValue: 0,
+        duration: reduced.current ? REDUCED.washDuration : DURATION.wash,
+        easing: bezier(EASING.move),
+        useNativeDriver: true,
+      }).start();
+      return () => clearTimeout(flipBar);
+    }
+
+    setWashFrom(chromeFor(null).background);
 
     /*
      * Landed while the push was still settling. A wash inside a push reads as a glitch, so
@@ -168,5 +200,5 @@ export function useCoverWash(theme: CoverTheme | null): CoverWash {
     return () => clearTimeout(flip);
   }, [theme, chrome.dark, paper, outgoingOpacity, accent]);
 
-  return { chrome, outgoing, paper, outgoingOpacity, accent, barStyle };
+  return { chrome, outgoing, paper, washFrom, outgoingOpacity, accent, barStyle };
 }
