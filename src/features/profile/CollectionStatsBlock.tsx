@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, Text, View } from "react-native";
 import { FORMAT_LABELS } from "@janne6565/music-collector-shared";
+import { formatMoney, spendByCurrency } from "@/domain/currency";
 import { useStore } from "@/local/StoreProvider";
 import { colors, fonts } from "@/theme/colors";
 
@@ -12,12 +13,25 @@ import { colors, fonts } from "@/theme/colors";
  * the same numbers, and calculating them twice in two places is how they drift.
  */
 export function CollectionStatsBlock() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { store } = useStore();
   const stats = useQuery({ queryKey: ["stats"], queryFn: () => store.stats() });
+  /**
+   * Split by the currency each copy was actually paid in (20d).
+   *
+   * The tiles used to add every `pricePaidCents` together and print a euro sign, which was
+   * harmless only while nothing could produce a copy in anything else. Since Settings has a
+   * currency picker, mixed collections are deliberate — and nothing here converts, because
+   * a total that silently depends on today's exchange rate is worse than two side by side.
+   */
+  const spend = useQuery({
+    queryKey: ["collectionSpend"],
+    queryFn: async () => spendByCurrency(await store.listCopies()),
+  });
 
   if (stats.data === undefined) return null;
-  const { copyCount, releaseGroupCount, totalSpentCents, averageSpentCents, byFormat } = stats.data;
+  const { copyCount, releaseGroupCount, byFormat } = stats.data;
+  const byCurrency = spend.data ?? [];
 
   return (
     <View style={styles.root}>
@@ -27,8 +41,40 @@ export function CollectionStatsBlock() {
       </Text>
 
       <View style={styles.tiles}>
-        <Tile value={money(totalSpentCents)} label={t("profile.totalSpent")} />
-        <Tile value={money(averageSpentCents)} label={t("profile.averagePerCopy")} />
+        <Tile
+          value={
+            byCurrency.length === 0
+              ? "—"
+              : byCurrency
+                  .map((entry) => formatMoney(entry.totalCents, entry.currency, i18n.language))
+                  .join(" + ")
+          }
+          label={
+            byCurrency.length === 1
+              ? t("profile.totalSpentIn", { currency: byCurrency[0].currency })
+              : t("profile.totalSpent")
+          }
+        />
+        <Tile
+          value={
+            byCurrency.length === 0
+              ? "—"
+              : byCurrency
+                  .map((entry) =>
+                    formatMoney(
+                      Math.round(entry.totalCents / entry.copies),
+                      entry.currency,
+                      i18n.language,
+                    ),
+                  )
+                  .join(" · ")
+          }
+          label={
+            byCurrency.length === 1
+              ? t("profile.averageIn", { currency: byCurrency[0].currency })
+              : t("profile.averagePerCopy")
+          }
+        />
       </View>
 
       <View style={styles.formats}>
@@ -52,14 +98,6 @@ function Tile({ value, label }: { readonly value: string; readonly label: string
       <Text style={styles.tileLabel}>{label}</Text>
     </View>
   );
-}
-
-function money(cents: number): string {
-  return new Intl.NumberFormat(undefined, {
-    style: "currency",
-    currency: "EUR",
-    maximumFractionDigits: 0,
-  }).format(cents / 100);
 }
 
 const styles = StyleSheet.create({

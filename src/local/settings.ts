@@ -1,3 +1,4 @@
+import { type CurrencyCode, DEFAULT_CURRENCY, isCurrencyCode } from "@/domain/currency";
 import type { LocalStore } from "@/local/LocalStore";
 import type { LegalLanguage, WishSort } from "@janne6565/music-collector-shared";
 import { parseWishSort } from "@janne6565/music-collector-shared";
@@ -172,4 +173,44 @@ export async function readLocalOnlyNoticeSeen(store: LocalStore): Promise<boolea
 
 export async function markLocalOnlyNoticeSeen(store: LocalStore): Promise<void> {
   await store.writeSetting(LOCAL_ONLY_NOTICE_SEEN, "true");
+}
+
+const APP_LANGUAGE = "appLanguage";
+const DEFAULT_CURRENCY_KEY = "defaultCurrency";
+
+/**
+ * The interface language, or "system" for the phone's own answer.
+ *
+ * "system" is a real third value rather than the absence of a stored one: somebody who has
+ * chosen English on a German phone and then changes their mind needs a way back to
+ * following the system, and deleting the setting is not something a picker can express.
+ */
+export type AppLanguage = "system" | "en" | "de";
+
+export async function readAppLanguage(store: LocalStore): Promise<AppLanguage> {
+  const stored = await store.readSetting(APP_LANGUAGE);
+  return stored === "en" || stored === "de" ? stored : "system";
+}
+
+export async function writeAppLanguage(store: LocalStore, language: AppLanguage): Promise<void> {
+  await store.writeSetting(APP_LANGUAGE, language);
+}
+
+/**
+ * The currency new copies start in.
+ *
+ * Per device and never synced, like everything else here — and, unlike everything else
+ * here, it is only ever a *starting* value. Once a copy is saved its currency is part of
+ * that purchase, and changing this setting must not rewrite history.
+ */
+export async function readDefaultCurrency(store: LocalStore): Promise<CurrencyCode> {
+  const stored = await store.readSetting(DEFAULT_CURRENCY_KEY);
+  return stored !== undefined && isCurrencyCode(stored) ? stored : DEFAULT_CURRENCY;
+}
+
+export async function writeDefaultCurrency(
+  store: LocalStore,
+  currency: CurrencyCode,
+): Promise<void> {
+  await store.writeSetting(DEFAULT_CURRENCY_KEY, currency);
 }

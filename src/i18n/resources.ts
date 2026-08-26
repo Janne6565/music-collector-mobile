@@ -7,6 +7,7 @@ const enCommon = {
     wishlist: "Wishlist",
     friends: "Friends",
     you: "You",
+    settings: "Settings",
   },
   format: {
     all: "All",
@@ -94,6 +95,8 @@ const enCommon = {
     collectingSince: "Collecting since {{year}}",
     copies: "{{count}} copies",
     totalSpent: "total spent",
+    totalSpentIn: "total spent, {{currency}}",
+    averageIn: "average, {{currency}}",
     averagePerCopy: "average per copy",
     exportNote: "Music Collector 1.0 · your collection lives on this device",
   },
@@ -148,6 +151,72 @@ const enCommon = {
         ok: "Available.",
       },
     },
+  },
+  settings: {
+    scope: {
+      signedIn:
+        "Your collection, wishlist and photos are on all your devices. These settings are only on this phone.",
+      anonymous:
+        "Everything is stored on this phone, including these settings. Nothing here needs an account.",
+    },
+    section: {
+      languageCurrency: "Language and currency",
+      storageSync: "Storage and sync",
+    },
+    saved: "Saved",
+    language: { en: "English", de: "Deutsch" },
+    appLanguage: {
+      title: "App language",
+      following: "Following your phone, which asks for {{language}}",
+      chosen: "Chosen for this phone, whatever the system asks for",
+      option: { system: "System", en: "English", de: "Deutsch" },
+      sheetNote: "Applies to this phone only. Other devices keep their own choice.",
+      failed: "Couldn’t save that on this phone — storage may be full. The app stays in {{value}}.",
+    },
+    documents: {
+      title: "Legal documents",
+      body: "Deutsch is the binding version. English is a translation of it.",
+      failed:
+        "Couldn’t save that on this phone — storage may be full. The documents stay in {{value}}.",
+    },
+    currency: {
+      title: "Currency for new copies",
+      body_one: "The one already saved keeps its own",
+      body_other: "The {{count}} already saved keep theirs",
+      sheetNote_one:
+        "From now on, the price field starts in this currency. The one copy already in your collection keeps the currency it was saved with.",
+      sheetNote_other:
+        "From now on, the price field starts in this currency. The {{count}} copies already in your collection keep the currency they were saved with.",
+      sheetFootnote:
+        "Totals are never converted. With two currencies in the collection, the statistics show both.",
+      failed:
+        "Couldn’t save that on this phone — storage may be full. New copies still use {{value}}.",
+    },
+    sync: {
+      title: "Sync across devices",
+      lastSynced: "Last synced {{when}}",
+      never: "Not synced yet",
+      anonymous_one: "One copy lives on this phone only",
+      anonymous_other: "{{count}} copies live on this phone only",
+      signIn: "Sign in",
+      failed: "Couldn’t change that on this phone — storage may be full.",
+    },
+    local: {
+      title: "Keep a local copy",
+      bodyPhone: "Works offline on this phone",
+      always: "The app reads from this copy, so it cannot be turned off.",
+    },
+    searches: {
+      title: "Recent searches",
+      bodyPhone_one: "One kept on this phone",
+      bodyPhone_other: "{{count}} kept on this phone",
+      emptyPhone: "Nothing kept on this phone",
+      clear: "Clear",
+      cleared_one: "1 cleared",
+      cleared_other: "{{count}} cleared",
+      failed: "Couldn’t clear them — storage may be full.",
+    },
+    footnote: { savesPhone: "Changes save as you make them." },
   },
   sharing: {
     title: "Sharing",
@@ -362,6 +431,10 @@ const enCommon = {
     passwordBody: "Change it from the reset link on the sign-in screen.",
     stat: { copies: "copies", releases: "releases" },
     section: { profile: "Profile", signIn: "Sign-in", storage: "Storage and sync" },
+    deviceSettings: {
+      title: "Sync, offline copy and language",
+      body: "Set per device, in Settings",
+    },
     name: {
       title: "Display name",
       body: "What the app calls you. Leave it empty to go by your e-mail.",
@@ -527,6 +600,7 @@ const deCommon: CommonSchema = {
     wishlist: "Wunschliste",
     friends: "Freunde",
     you: "Du",
+    settings: "Einstellungen",
   },
   format: {
     all: "Alle",
@@ -615,6 +689,8 @@ const deCommon: CommonSchema = {
     collectingSince: "Sammelt seit {{year}}",
     copies: "{{count}} Exemplare",
     totalSpent: "insgesamt ausgegeben",
+    totalSpentIn: "insgesamt ausgegeben, {{currency}}",
+    averageIn: "im Schnitt, {{currency}}",
     averagePerCopy: "im Schnitt pro Exemplar",
     exportNote: "Music Collector 1.0 · deine Sammlung liegt auf diesem Gerät",
   },
@@ -669,6 +745,74 @@ const deCommon: CommonSchema = {
         ok: "Frei.",
       },
     },
+  },
+  settings: {
+    scope: {
+      signedIn:
+        "Sammlung, Wunschliste und Fotos sind auf allen deinen Geräten. Diese Einstellungen gelten nur für dieses Telefon.",
+      anonymous:
+        "Alles wird auf diesem Telefon gespeichert, auch diese Einstellungen. Nichts hier braucht ein Konto.",
+    },
+    section: {
+      languageCurrency: "Sprache und Währung",
+      storageSync: "Speicher und Synchronisierung",
+    },
+    saved: "Gespeichert",
+    language: { en: "Englisch", de: "Deutsch" },
+    appLanguage: {
+      title: "Sprache der App",
+      following: "Richtet sich nach dem Telefon, das {{language}} verlangt",
+      chosen: "Für dieses Telefon festgelegt, unabhängig vom System",
+      option: { system: "System", en: "Englisch", de: "Deutsch" },
+      sheetNote: "Gilt nur für dieses Telefon. Andere Geräte behalten ihre eigene Wahl.",
+      failed:
+        "Konnte auf diesem Telefon nicht gespeichert werden — der Speicher ist womöglich voll. Die App bleibt auf {{value}}.",
+    },
+    documents: {
+      title: "Rechtliche Dokumente",
+      body: "Deutsch ist die verbindliche Fassung, Englisch eine Übersetzung davon.",
+      failed:
+        "Konnte auf diesem Telefon nicht gespeichert werden — der Speicher ist womöglich voll. Die Dokumente bleiben auf {{value}}.",
+    },
+    currency: {
+      title: "Währung für neue Exemplare",
+      body_one: "Das eine gespeicherte Exemplar behält seine Währung",
+      body_other: "Die {{count}} gespeicherten Exemplare behalten ihre Währung",
+      sheetNote_one:
+        "Ab jetzt startet das Preisfeld in dieser Währung. Das eine Exemplar in deiner Sammlung behält die Währung, mit der es gespeichert wurde.",
+      sheetNote_other:
+        "Ab jetzt startet das Preisfeld in dieser Währung. Die {{count}} Exemplare in deiner Sammlung behalten die Währung, mit der sie gespeichert wurden.",
+      sheetFootnote:
+        "Beträge werden nie umgerechnet. Bei zwei Währungen zeigt die Statistik beide.",
+      failed:
+        "Konnte auf diesem Telefon nicht gespeichert werden — der Speicher ist womöglich voll. Neue Exemplare verwenden weiterhin {{value}}.",
+    },
+    sync: {
+      title: "Geräteübergreifend synchronisieren",
+      lastSynced: "Zuletzt {{when}} abgeglichen",
+      never: "Noch nicht abgeglichen",
+      anonymous_one: "Ein Exemplar liegt nur auf diesem Telefon",
+      anonymous_other: "{{count}} Exemplare liegen nur auf diesem Telefon",
+      signIn: "Anmelden",
+      failed:
+        "Konnte auf diesem Telefon nicht geändert werden — der Speicher ist womöglich voll.",
+    },
+    local: {
+      title: "Lokale Kopie behalten",
+      bodyPhone: "Funktioniert auf diesem Telefon auch offline",
+      always: "Die App liest aus dieser Kopie, sie lässt sich daher nicht abschalten.",
+    },
+    searches: {
+      title: "Zuletzt gesuchte Begriffe",
+      bodyPhone_one: "Ein Begriff auf diesem Telefon",
+      bodyPhone_other: "{{count}} Begriffe auf diesem Telefon",
+      emptyPhone: "Nichts auf diesem Telefon gespeichert",
+      clear: "Löschen",
+      cleared_one: "1 gelöscht",
+      cleared_other: "{{count}} gelöscht",
+      failed: "Konnten nicht gelöscht werden — der Speicher ist womöglich voll.",
+    },
+    footnote: { savesPhone: "Änderungen werden sofort gespeichert." },
   },
   sharing: {
     title: "Freigabe",
@@ -888,6 +1032,10 @@ const deCommon: CommonSchema = {
     passwordBody: "Änderbar über den Zurücksetzen-Link auf der Anmeldeseite.",
     stat: { copies: "Exemplare", releases: "Veröffentlichungen" },
     section: { profile: "Profil", signIn: "Anmeldung", storage: "Speicher und Sync" },
+    deviceSettings: {
+      title: "Synchronisierung, Offline-Kopie und Sprache",
+      body: "Pro Gerät, unter Einstellungen",
+    },
     name: {
       title: "Anzeigename",
       body: "Wie die App dich nennt. Leer lassen, dann steht deine E-Mail dort.",

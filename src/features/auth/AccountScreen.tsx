@@ -6,14 +6,12 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   TextInput,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
-import { formatRelativeTime } from "@/domain/relativeTime";
 import { AuthForm } from "@/features/auth/AuthForm";
 import { FirstSyncPrompt } from "@/features/auth/FirstSyncPrompt";
 import { useAccountLogic } from "@/features/auth/useAccountLogic";
@@ -61,7 +59,7 @@ export function AccountScreen() {
 }
 
 function SignedIn({ logic }: { readonly logic: ReturnType<typeof useAccountLogic> }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const router = useRouter();
   const { store } = useStore();
   const stats = useQuery({ queryKey: ["stats"], queryFn: () => store.stats() });
@@ -116,38 +114,20 @@ function SignedIn({ logic }: { readonly logic: ReturnType<typeof useAccountLogic
 
       <Text style={styles.section}>{t("account.section.storage")}</Text>
       <View style={styles.card}>
-        <Row
-          title={t("account.sync.title")}
-          body={
-            logic.lastSyncedAt === null
-              ? t("account.sync.never")
-              : t("account.sync.last", {
-                  when: formatRelativeTime(logic.lastSyncedAt, i18n.language),
-                })
-          }
-          trailing={
-            <Switch
-              value={logic.syncEnabled}
-              onValueChange={(next) => void logic.setSyncEnabled(next)}
-              accessibilityLabel={t("account.sync.title")}
-              trackColor={{ true: colors.ink, false: colors.line }}
-            />
-          }
-        />
-        <Row
-          title={t("account.local.title")}
-          body={t("account.local.always")}
-          trailing={
-            // Fixed on, and honest about it. Every screen reads from the local store, so a
-            // switch that turned it off would break reading rather than move data.
-            <Switch
-              value
-              disabled
-              accessibilityLabel={`${t("account.local.title")} — ${t("account.local.always")}`}
-              trackColor={{ true: colors.ink, false: colors.line }}
-            />
-          }
-        />
+        {/* 20f: the two device toggles moved to Settings, because they describe this phone
+            rather than the account. One pointer row replaces them, so the sync switch stays
+            findable from the screen people already know it by. */}
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push("/settings")}
+          style={styles.row}
+        >
+          <View style={styles.rowText}>
+            <Text style={styles.rowTitle}>{t("account.deviceSettings.title")}</Text>
+            <Text style={styles.rowBody}>{t("account.deviceSettings.body")}</Text>
+          </View>
+          <ChevronRight size={16} color={colors.inkSubtle} strokeWidth={1.75} />
+        </Pressable>
         {/* Two files, not one. The collection and the wishlist are different shapes — a
             copy has a price, a condition and a pressing; a wish has an album and a format
             — and a single sheet with half its columns blank on every other row is a sheet

@@ -5,6 +5,7 @@ import { useCallback, useMemo, useState } from "react";
 import type { Format, ManualRelease } from "@janne6565/music-collector-shared";
 import { createManualCopy } from "@janne6565/music-collector-shared";
 import { useStore } from "@/local/StoreProvider";
+import { readDefaultCurrency } from "@/local/settings";
 
 /**
  * Preselected, because the shelf has to draw something.
@@ -107,7 +108,7 @@ export function useManualEntryLogic() {
           sleeveCondition: null,
           catalogArt: "AUTO",
           pricePaidCents: null,
-          currency: "EUR",
+          currency: await readDefaultCurrency(store),
           purchasedOn: null,
           purchasedAt: null,
           notes: null,

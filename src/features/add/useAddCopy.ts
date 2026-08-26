@@ -8,6 +8,7 @@ import { createCopy } from "@janne6565/music-collector-shared";
 import type { LocalStore } from "@/local/LocalStore";
 import { useSatisfyWishes } from "@/features/wishlist/useSatisfyWishes";
 import { useStore } from "@/local/StoreProvider";
+import { readDefaultCurrency } from "@/local/settings";
 
 /**
  * Taking a release out of the catalogue and making it a copy you own.
@@ -39,7 +40,7 @@ export function useAddCopy(options: { readonly stay?: boolean } = {}) {
           sleeveCondition: null,
           catalogArt: "AUTO",
           pricePaidCents: null,
-          currency: "EUR",
+          currency: await readDefaultCurrency(store),
           purchasedOn: null,
           purchasedAt: null,
           notes: null,
