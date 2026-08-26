@@ -19,7 +19,13 @@ import { lookupAlbumCovers } from "@/api/releases";
 import { readPhotoBytes } from "@/local/photoBytes";
 import { encodeBase64 } from "@/local/sqliteStore";
 import { useStore } from "@/local/StoreProvider";
-import { readLastSyncedAt, readSyncEnabled, writeLastSyncedAt, writeSyncEnabled } from "@/local/settings";
+import {
+  readLastSyncedAt,
+  readSyncEnabled,
+  writeCatalogueGap,
+  writeLastSyncedAt,
+  writeSyncEnabled,
+} from "@/local/settings";
 import { firstSyncResolved, renamed, signedIn, signedOut } from "@/store/authSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { createSyncEngine } from "@/sync/transport";
@@ -103,7 +109,13 @@ export function useAccountLogic() {
       if (!(await readSyncEnabled(store))) return;
       syncing.current = true;
       try {
-        await engine.sync();
+        const result = await engine.sync();
+        // Recorded before the screens are told to refetch, so the shelf reads this pass's
+        // answer rather than the one before it.
+        await writeCatalogueGap(store, {
+          missing: result.releasesMissing,
+          unreachable: result.releasesUnreachable,
+        });
         // Every screen reads the local store through a query, and a sync writes to that
         // store behind their backs. Without this the shelf keeps the empty result it
         // fetched before the first sync landed: the tabs stay mounted, so nothing remounts

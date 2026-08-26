@@ -20,6 +20,13 @@ const enCommon = {
     itemCount: "{{count}} items",
     addItem: "Add item",
     noMatches: "No items match this filter.",
+    catalogue: {
+      pending_one: "1 record is still waiting for its details.",
+      pending_other: "{{count}} records are still waiting for their details.",
+      offline: "Couldn't reach the catalogue. Pull down to try again.",
+      unknown_one: "1 record isn't in the catalogue, so it stays untitled here.",
+      unknown_other: "{{count}} records aren't in the catalogue, so they stay untitled here.",
+    },
     empty: {
       title: "Nothing here yet",
       body: "Scan a barcode or search to add your first record, tape, disc or download.",
@@ -526,6 +533,13 @@ const deCommon: CommonSchema = {
     itemCount: "{{count}} Exemplare",
     addItem: "Hinzufügen",
     noMatches: "Keine Einträge passen zu diesem Filter.",
+    catalogue: {
+      pending_one: "Bei 1 Exemplar fehlen noch die Angaben.",
+      pending_other: "Bei {{count}} Exemplaren fehlen noch die Angaben.",
+      offline: "Der Katalog war nicht erreichbar. Zum Neuladen nach unten ziehen.",
+      unknown_one: "1 Exemplar steht nicht im Katalog und bleibt hier ohne Titel.",
+      unknown_other: "{{count}} Exemplare stehen nicht im Katalog und bleiben hier ohne Titel.",
+    },
     empty: {
       title: "Noch nichts da",
       body: "Scanne einen Barcode oder suche, um dein erstes Exemplar hinzuzufügen.",

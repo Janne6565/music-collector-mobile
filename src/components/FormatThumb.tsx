@@ -48,7 +48,12 @@ export function FormatThumb({
       <Sleeve pulse={pulse} cover={cover} elevated={format === "VINYL"} />
       {format === "CD" && <Disc />}
       {format === "CASSETTE" && <Cassette />}
-      {(format === "DIGITAL" || format === "OTHER") && <Waveform />}
+      {/* `OTHER` wears nothing. It is not a format but the absence of one — the answer for
+          a copy whose release this device cannot describe yet — and the waveform is the
+          furniture of a specific format, so drawing it here both claims a file that was
+          never claimed and stamps nine bars across whatever cover or photo the copy does
+          have. A bare sleeve is what "not known" actually looks like. */}
+      {format === "DIGITAL" && <Waveform />}
     </View>
   );
 }

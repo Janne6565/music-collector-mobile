@@ -10,6 +10,7 @@ import { catalogArtShown, copyFormat, copyPreviewSrc } from "@janne6565/music-co
 import { FORMAT_LABELS } from "@janne6565/music-collector-shared";
 import { type FormatFilter, type LibraryRow, useLibraryLogic } from "@/features/library/useLibraryLogic";
 import { useCoverPhotos } from "@/features/photos/useCoverPhotos";
+import type { CatalogueGap } from "@/local/settings";
 import { colors, fonts } from "@/theme/colors";
 
 const FILTERS: readonly FormatFilter[] = ["ALL", "VINYL", "CD", "CASSETTE", "DIGITAL"];
@@ -56,6 +57,8 @@ export function LibraryScreen() {
         ))}
       </View>
 
+      <CatalogueNotice gap={logic.catalogueGap} />
+
       {logic.collectionEmpty ? (
         <View style={styles.empty}>
           <Text style={styles.emptyTitle}>{t("library.empty.title")}</Text>
@@ -84,6 +87,32 @@ export function LibraryScreen() {
         />
       )}
     </SafeAreaView>
+  );
+}
+
+/**
+ * What the shelf says when it is holding records it cannot name.
+ *
+ * Sync brings the copies and leaves the catalogue behind them to be fetched separately, so
+ * a device that has just signed in can hold a full collection of untitled placeholders.
+ * That state used to be completely silent, and it reads on screen as a broken import
+ * rather than an unfinished one — which is the opposite of what to do about it.
+ */
+function CatalogueNotice({ gap }: { readonly gap: CatalogueGap | undefined }) {
+  const { t } = useTranslation();
+  if (gap === undefined || gap.missing === 0) return null;
+
+  return (
+    <View style={styles.notice}>
+      <Text style={styles.noticeText}>
+        {gap.unreachable
+          ? t("library.catalogue.pending", { count: gap.missing })
+          : t("library.catalogue.unknown", { count: gap.missing })}
+      </Text>
+      {gap.unreachable ? (
+        <Text style={styles.noticeHint}>{t("library.catalogue.offline")}</Text>
+      ) : null}
+    </View>
   );
 }
 
@@ -152,6 +181,19 @@ const styles = StyleSheet.create({
   chipActive: { backgroundColor: colors.ink, borderColor: colors.ink },
   chipText: { fontSize: 12, fontWeight: "500", color: colors.ink },
   chipTextActive: { color: colors.paper, fontWeight: "600" },
+  notice: {
+    marginHorizontal: 18,
+    marginBottom: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 8,
+    backgroundColor: colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.line,
+    gap: 3,
+  },
+  noticeText: { fontSize: 12, color: colors.ink },
+  noticeHint: { fontSize: 11.5, color: colors.inkMuted },
   grid: { paddingHorizontal: 18, paddingTop: 12, paddingBottom: 24, gap: 12 },
   column: { gap: 10 },
   item: { flex: 1 / 3 },

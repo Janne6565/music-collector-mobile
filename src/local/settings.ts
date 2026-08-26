@@ -41,6 +41,17 @@ const DOCUMENT_LANGUAGE = "documentLanguage";
  */
 const LOCAL_ONLY_NOTICE_SEEN = "localOnlyNoticeSeen";
 
+/**
+ * What the last sync was unable to describe.
+ *
+ * Sync moves copies, not the catalogue behind them, so a device that has just signed in
+ * holds records it cannot yet name. Until this was recorded the shelf had no way to say
+ * so: thirty untitled placeholders looked exactly like thirty successfully synced records
+ * that happened to have no metadata, and the only honest reading — "the catalogue has not
+ * arrived yet, and it is still coming" — was the one nothing on screen could express.
+ */
+const CATALOGUE_GAP = "catalogueGap";
+
 /** Defaults to on: someone who signed in asked for sync, and asked for it silently. */
 export async function readSyncEnabled(store: LocalStore): Promise<boolean> {
   return (await store.readSetting(SYNC_ENABLED)) !== "false";
@@ -120,6 +131,39 @@ export async function writeDocumentLanguage(
   language: LegalLanguage,
 ): Promise<void> {
   await store.writeSetting(DOCUMENT_LANGUAGE, language);
+}
+
+/** How many records the last sync left undescribed, and whether the mirror answered at all. */
+export interface CatalogueGap {
+  readonly missing: number;
+  /**
+   * True when the request itself failed rather than coming back without those entries.
+   *
+   * Worth telling apart on screen: an unreachable mirror is a wait, and a mirror that
+   * answered and simply does not hold these pressings is not going to start.
+   */
+  readonly unreachable: boolean;
+}
+
+const NO_GAP: CatalogueGap = { missing: 0, unreachable: false };
+
+export async function readCatalogueGap(store: LocalStore): Promise<CatalogueGap> {
+  const raw = await store.readSetting(CATALOGUE_GAP);
+  if (raw === undefined) return NO_GAP;
+  try {
+    const parsed = JSON.parse(raw) as Partial<CatalogueGap>;
+    return typeof parsed.missing === "number"
+      ? { missing: parsed.missing, unreachable: parsed.unreachable === true }
+      : NO_GAP;
+  } catch {
+    // The same call this makes everywhere else in this file: a preference that will not
+    // parse is not worth an error path, and "nothing is missing" is the quiet answer.
+    return NO_GAP;
+  }
+}
+
+export async function writeCatalogueGap(store: LocalStore, gap: CatalogueGap): Promise<void> {
+  await store.writeSetting(CATALOGUE_GAP, JSON.stringify(gap));
 }
 
 export async function readLocalOnlyNoticeSeen(store: LocalStore): Promise<boolean> {

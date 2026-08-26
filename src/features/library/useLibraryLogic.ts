@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 import type { Copy, Format, Release } from "@janne6565/music-collector-shared";
 import type { LibraryFilter } from "@/local/LocalStore";
+import { readCatalogueGap } from "@/local/settings";
 import { useStore } from "@/local/StoreProvider";
 
 export type FormatFilter = Format | "ALL";
@@ -17,6 +18,17 @@ export function useLibraryLogic() {
   const [sort] = useState<NonNullable<LibraryFilter["sort"]>>("ADDED_DESC");
 
   const statsQuery = useQuery({ queryKey: ["stats"], queryFn: () => store.stats() });
+  /**
+   * What the last sync could not describe.
+   *
+   * Read here rather than derived from the rows on screen: a row with no release looks
+   * the same whether the catalogue is still on its way or the mirror has answered and
+   * has nothing, and only the sync knows which.
+   */
+  const gapQuery = useQuery({
+    queryKey: ["catalogueGap"],
+    queryFn: () => readCatalogueGap(store),
+  });
 
   const copiesQuery = useQuery({
     queryKey: ["copies", format, sort],
@@ -30,6 +42,7 @@ export function useLibraryLogic() {
   return {
     rows: copiesQuery.data ?? [],
     stats: statsQuery.data,
+    catalogueGap: gapQuery.data,
     loading: copiesQuery.isLoading,
     failed: copiesQuery.isError,
     collectionEmpty: statsQuery.data !== undefined && statsQuery.data.copyCount === 0,
@@ -38,6 +51,7 @@ export function useLibraryLogic() {
     refetch: useCallback(() => {
       void copiesQuery.refetch();
       void statsQuery.refetch();
-    }, [copiesQuery, statsQuery]),
+      void gapQuery.refetch();
+    }, [copiesQuery, statsQuery, gapQuery]),
   };
 }
