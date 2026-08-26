@@ -123,15 +123,12 @@ export function DetailScreen({
 
 /** The paper the screen washes away from, and the only colour that is not the chrome's. */
 /**
- * What the hero shrinks to: a thumbnail tucked into the top corner opposite the way out,
- * so the record you are reading about is still named by its sleeve however far down you
- * have gone. Its resting size is the width of the screen, read per render rather than
- * frozen at import — a tablet that turns would otherwise keep yesterday's geometry.
+ * How much of the sleeve survives the crop once the header has closed up — a band across
+ * the top, full width, so the record is still named by its artwork however far down you
+ * have read. The resting height is the width of the screen, read per render rather than
+ * frozen at import: a tablet that turns would otherwise keep yesterday's geometry.
  */
-const COVER_MIN = 44;
-/** How far the collapsed cover sits from the edges it settles against. */
-const COVER_EDGE = 14;
-
+const COVER_MIN = 96;
 interface DetailBodyProps {
   readonly chrome: DetailChrome;
   readonly accent: Animated.Value;
@@ -182,22 +179,17 @@ function DetailBody({
     outputRange: [0, 1],
     extrapolate: "clamp",
   });
-  const shrink = COVER_MIN / COVER_MAX;
-  const scale = collapsed.interpolate({ inputRange: [0, 1], outputRange: [1, shrink] });
   /*
-   * Scaling happens about the centre, so the corner has to be walked to where it should
-   * end up: after shrinking, the top-left sits COVER_MAX * (1 - shrink) / 2 inside the
-   * frame, and these carry it back out to the inset the collapsed cover is drawn at.
+   * The frame rides up out of the picture and clips it; the picture is never resized. Full
+   * width the whole way down, cropped top and bottom, ending as a band across the top.
    */
-  const inset = (COVER_MAX * (1 - shrink)) / 2;
-  const translateX = collapsed.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, COVER_MAX - COVER_MIN - COVER_EDGE - inset],
-  });
-  const translateY = collapsed.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, COVER_EDGE - inset],
-  });
+  const headerY = collapsed.interpolate({ inputRange: [0, 1], outputRange: [0, -travel] });
+  /*
+   * And the picture drifts back down inside it at half the rate, so what survives the crop
+   * is the middle of the sleeve rather than its bottom edge. Without this the frame would
+   * simply slide off the top of the artwork and leave the last few pixels of it standing.
+   */
+  const imageY = collapsed.interpolate({ inputRange: [0, 1], outputRange: [0, travel / 2] });
 
   return (
     // No background of its own: the layers behind it own the colour, which is what
@@ -337,37 +329,35 @@ function DetailBody({
         </View>
       </Animated.ScrollView>
 
-      {/* Under the collapsed cover, not over it: it is the ground the words stop against,
-          and rendering order is z-order here. Fades in only as the header closes up. */}
-      <Animated.View
-        pointerEvents="none"
-        style={[
-          styles.pinnedBar,
-          { height: COVER_MIN + 2 * COVER_EDGE, backgroundColor: chrome.background, opacity: collapsed },
-        ]}
-      />
-
       {/*
-       * The cover is pinned rather than scrolled, and shrinks into the corner instead of
-       * leaving. Scale and translate rather than width and height: only transforms and
-       * opacity run on the native driver, and a header that resizes on the JS thread is
-       * exactly the stutter this screen already refuses elsewhere.
+       * The cover is pinned rather than scrolled, and is clipped rather than resized.
+       * Transforms only: they run on the native driver, and a header that animates its
+       * height runs on the JS thread — exactly the stutter this screen refuses elsewhere.
+       * The scroll offset is written straight into an Animated.Value by `Animated.event`
+       * and never round-trips through JS while a thumb is on the glass.
        */}
       <Animated.View
         pointerEvents="none"
         style={[
           styles.pinnedCover,
-          { width: COVER_MAX, height: COVER_MAX, transform: [{ translateX }, { translateY }, { scale }] },
+          { width: COVER_MAX, height: COVER_MAX, transform: [{ translateY: headerY }] },
         ]}
       >
-        <ReleaseArt
-          release={release}
-          format={copyFormat(copy, release)}
-          style={styles.coverImage}
-          variant="bleed"
-          previewUri={copyPreviewSrc(copy, photos.firstUri)}
-          allowCatalogArt={copy.catalogArt !== "HIDDEN"}
-        />
+        {/* Explicitly square rather than left to work itself out: everything inside this
+            component is absolutely positioned, and a box that is not definite on its own is
+            how the hero twice ended up laid out at nothing. */}
+        <Animated.View
+          style={{ width: COVER_MAX, height: COVER_MAX, transform: [{ translateY: imageY }] }}
+        >
+          <ReleaseArt
+            release={release}
+            format={copyFormat(copy, release)}
+            style={styles.coverImage}
+            variant="bleed"
+            previewUri={copyPreviewSrc(copy, photos.firstUri)}
+            allowCatalogArt={copy.catalogArt !== "HIDDEN"}
+          />
+        </Animated.View>
       </Animated.View>
 
       {/* Outside the scroll view entirely: it is the way out, and a way out that scrolls
@@ -483,8 +473,7 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   loading: { flex: 1, alignItems: "center", justifyContent: "center" },
   scroll: { paddingBottom: 40 },
-  pinnedCover: { position: "absolute", left: 0, top: 0 },
-  pinnedBar: { position: "absolute", left: 0, right: 0, top: 0 },
+  pinnedCover: { position: "absolute", left: 0, top: 0, overflow: "hidden" },
   // Width only: the hero is square because `cover` is, and a percentage height here is
   // what collapsed the art to nothing.
   coverImage: { width: "100%" },
