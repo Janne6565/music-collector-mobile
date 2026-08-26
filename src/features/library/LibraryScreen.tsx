@@ -1,10 +1,11 @@
 import { useRouter } from "expo-router";
 import { Plus } from "lucide-react-native";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ConfirmStrip } from "@/features/auth/ConfirmStrip";
+import { rememberCopyOrder } from "@/features/library/copyOrder";
 import { ReleaseArt } from "@/components/ReleaseArt";
 import type { Format } from "@janne6565/music-collector-shared";
 import { catalogArtShown, copyFormat, copyPreviewSrc } from "@janne6565/music-collector-shared";
@@ -20,7 +21,13 @@ export function LibraryScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const logic = useLibraryLogic();
-  const covers = useCoverPhotos(useMemo(() => logic.rows.map((row) => row.copy.id), [logic.rows]));
+  const copyIds = useMemo(() => logic.rows.map((row) => row.copy.id), [logic.rows]);
+  const covers = useCoverPhotos(copyIds);
+  // Left here on the way past so the detail screen can be swiped through *this* order --
+  // the one with the filter and sort actually applied, not a canonical one it invents.
+  useEffect(() => {
+    rememberCopyOrder(copyIds);
+  }, [copyIds]);
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>

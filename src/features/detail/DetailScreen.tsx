@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Animated, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ReleaseArt } from "@/components/ReleaseArt";
+import { useCopySwipe } from "@/features/detail/useCopySwipe";
 import type { Copy, DetailChrome, Release } from "@janne6565/music-collector-shared";
 import {
   CONDITION_LABELS,
@@ -141,11 +142,15 @@ function DetailBody({
 }: DetailBodyProps) {
   const { t } = useTranslation();
   const router = useRouter();
+  // Left and right move through the order the shelf was showing. The responder sits on the
+  // root rather than the ScrollView so it can watch a gesture before the scroll claims it,
+  // and it only claims clearly horizontal ones.
+  const swipe = useCopySwipe(copy.id);
 
   return (
     // No background of its own: the layers behind it own the colour, which is what
     // lets the paper one fade away on the native driver while this stays put.
-    <View style={styles.root}>
+    <View style={styles.root} {...swipe.handlers}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.cover}>
           <ReleaseArt
@@ -229,7 +234,10 @@ function DetailBody({
 
           <PhotoStrip logic={photos} chrome={chrome} />
 
-          <View style={[styles.card, { backgroundColor: chrome.surface }]}>
+          {/* The photo strip ends flush against whatever follows it, so the notes card
+              carries the gap rather than the strip -- the strip is also used where nothing
+              comes after it. */}
+          <View style={[styles.card, styles.notesCard, { backgroundColor: chrome.surface }]}>
             <Text style={[styles.fieldKey, { color: chrome.muted }]}>{t("detail.notes")}</Text>
             <Text style={[styles.notes, { color: copy.notes === null ? chrome.muted : chrome.ink }]}>
               {copy.notes ?? t("detail.notesEmpty")}
@@ -414,6 +422,7 @@ const styles = StyleSheet.create({
   fieldCard: { width: "47%" },
   fieldKey: { fontSize: 9.5, letterSpacing: 0.9, textTransform: "uppercase", fontWeight: "500" },
   fieldValue: { fontSize: 14, fontWeight: "600", marginTop: 5 },
+  notesCard: { marginTop: 14 },
   notes: { fontSize: 13.5, lineHeight: 21, marginTop: 6 },
   conflict: { marginTop: 10, borderWidth: 1 },
   conflictActions: { flexDirection: "row", gap: 8, marginTop: 12 },
