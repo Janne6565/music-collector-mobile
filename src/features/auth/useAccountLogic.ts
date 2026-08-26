@@ -1,7 +1,7 @@
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   type AuthProvider,
   accountExport,
@@ -19,13 +19,7 @@ import { lookupAlbumCovers, lookupPressingCovers } from "@/api/releases";
 import { readPhotoBytes } from "@/local/photoBytes";
 import { encodeBase64 } from "@/local/sqliteStore";
 import { useStore } from "@/local/StoreProvider";
-import {
-  readLastSyncedAt,
-  readSyncEnabled,
-  writeCatalogueGap,
-  writeLastSyncedAt,
-  writeSyncEnabled,
-} from "@/local/settings";
+import { readSyncEnabled, writeSyncEnabled } from "@/local/settings";
 import { firstSyncResolved, renamed, signedIn, signedOut } from "@/store/authSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { createSyncEngine } from "@/sync/transport";
@@ -72,7 +66,6 @@ function errorsFrom(error: unknown): AuthError[] {
 }
 
 /** Reconcile with the server this often while the app is open and signed in. */
-const SYNC_INTERVAL_MS = 60_000;
 
 export function useAccountLogic() {
   const { store, clock } = useStore();
@@ -115,8 +108,6 @@ export function useAccountLogic() {
   const [renaming, setRenaming] = useState(false);
   const [renameFailed, setRenameFailed] = useState(false);
   const [syncEnabled, setSyncEnabledState] = useState(true);
-  const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
-  const syncing = useRef(false);
 
   const decideFirstSync = useCallback(async () => {
     const hasLocalCollection = (await store.listCopies()).length > 0;
@@ -129,50 +120,9 @@ export function useAccountLogic() {
     void (async () => {
       setProviders(await authProviders());
       setSyncEnabledState(await readSyncEnabled(store));
-      setLastSyncedAt(await readLastSyncedAt(store));
     })();
   }, [store]);
 
-  useEffect(() => {
-    if (user === null || firstSyncPending) return;
-
-    const engine = createSyncEngine(store, clock);
-    const run = async () => {
-      // A slow sync must not stack up behind itself on a flaky connection.
-      if (syncing.current) return;
-      // Read every tick rather than once: the account screen can switch this off while the
-      // interval is already running, and it should take effect on the next tick.
-      if (!(await readSyncEnabled(store))) return;
-      syncing.current = true;
-      try {
-        const result = await engine.sync();
-        // Recorded before the screens are told to refetch, so the shelf reads this pass's
-        // answer rather than the one before it.
-        await writeCatalogueGap(store, {
-          missing: result.releasesMissing,
-          unreachable: result.releasesUnreachable,
-        });
-        // Every screen reads the local store through a query, and a sync writes to that
-        // store behind their backs. Without this the shelf keeps the empty result it
-        // fetched before the first sync landed: the tabs stay mounted, so nothing remounts
-        // and React Native has no window focus to refetch on. Signing in on a new device
-        // looked like the sync had pulled nothing at all.
-        await queryClient.invalidateQueries();
-        const at = Date.now();
-        await writeLastSyncedAt(store, at);
-        setLastSyncedAt(at);
-      } catch {
-        // Offline or the server is down. Local changes stay recorded as pending, so the
-        // next tick picks them up; nothing is lost.
-      } finally {
-        syncing.current = false;
-      }
-    };
-
-    void run();
-    const timer = setInterval(() => void run(), SYNC_INTERVAL_MS);
-    return () => clearInterval(timer);
-  }, [user, firstSyncPending, store, clock, queryClient]);
 
   const submit = useCallback(async () => {
     // The one rule worth checking before the round trip, because the server can only
@@ -403,7 +353,6 @@ export function useAccountLogic() {
       },
       [store],
     ),
-    lastSyncedAt,
     exportCsv,
     exportWishlistCsv,
     exportArchive,

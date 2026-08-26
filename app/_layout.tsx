@@ -7,6 +7,7 @@ import "@/i18n/config";
 import { RestoreSession } from "@/features/auth/RestoreSession";
 import { UndoProvider } from "@/features/wishlist/UndoBar";
 import { StoreProvider } from "@/local/StoreProvider";
+import { SyncProvider } from "@/sync/SyncProvider";
 import { useReducedMotion } from "@/lib/motion";
 import { store } from "@/store";
 
@@ -24,6 +25,10 @@ export default function RootLayout() {
             {/* The session comes back from the keychain here, above the tabs: a tab is not
                 mounted until it is opened, and Friends must not have to guess. */}
             <RestoreSession />
+            {/* The sync loop belongs here for the same reason: a tab is not mounted until
+                it is opened, so hanging it off the account screen meant a cold launch into
+                the shelf never synced at all. */}
+            <SyncProvider>
             {/* Screen 16e's line lives above the stack: the entry that leaves on its own
                 does so wherever a record gets filed, which is rarely the wishlist. */}
             <UndoProvider>
@@ -40,6 +45,7 @@ export default function RootLayout() {
                 screenOptions={{ headerShown: false, animation: reduced ? "none" : "default" }}
               />
             </UndoProvider>
+            </SyncProvider>
           </StoreProvider>
         </SafeAreaProvider>
       </QueryClientProvider>

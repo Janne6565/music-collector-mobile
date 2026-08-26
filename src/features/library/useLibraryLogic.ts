@@ -4,6 +4,7 @@ import type { Copy, Format, Release } from "@janne6565/music-collector-shared";
 import type { LibraryFilter } from "@/local/LocalStore";
 import { readCatalogueGap } from "@/local/settings";
 import { useStore } from "@/local/StoreProvider";
+import { useSync } from "@/sync/SyncProvider";
 
 export type FormatFilter = Format | "ALL";
 
@@ -14,7 +15,9 @@ export interface LibraryRow {
 
 export function useLibraryLogic() {
   const { store } = useStore();
+  const { syncNow } = useSync();
   const [format, setFormat] = useState<FormatFilter>("ALL");
+  const [refreshing, setRefreshing] = useState(false);
   const [sort] = useState<NonNullable<LibraryFilter["sort"]>>("ADDED_DESC");
 
   const statsQuery = useQuery({ queryKey: ["stats"], queryFn: () => store.stats() });
@@ -48,10 +51,26 @@ export function useLibraryLogic() {
     collectionEmpty: statsQuery.data !== undefined && statsQuery.data.copyCount === 0,
     format,
     setFormat: useCallback((next: FormatFilter) => setFormat(next), []),
-    refetch: useCallback(() => {
+    refreshing,
+    /**
+     * A pull on the shelf runs a sync, not just a re-read.
+     *
+     * Re-reading the local store was all this used to do, which can only ever redraw what
+     * the last sync already wrote -- so the one gesture anybody makes at a shelf full of
+     * untitled placeholders was the one gesture guaranteed not to fix it.
+     */
+    refetch: useCallback(async () => {
+      setRefreshing(true);
+      try {
+        await syncNow();
+      } finally {
+        setRefreshing(false);
+      }
+      // The sync invalidates every query when it changes something; these cover the case
+      // where it did not, so a pull still ends in fresh reads.
       void copiesQuery.refetch();
       void statsQuery.refetch();
       void gapQuery.refetch();
-    }, [copiesQuery, statsQuery, gapQuery]),
+    }, [syncNow, copiesQuery, statsQuery, gapQuery]),
   };
 }

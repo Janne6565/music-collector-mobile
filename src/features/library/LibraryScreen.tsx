@@ -71,8 +71,8 @@ export function LibraryScreen() {
           numColumns={3}
           columnWrapperStyle={styles.column}
           contentContainerStyle={styles.grid}
-          refreshing={logic.loading}
-          onRefresh={logic.refetch}
+          refreshing={logic.refreshing || logic.loading}
+          onRefresh={() => void logic.refetch()}
           renderItem={({ item }) => (
             <GridItem
               row={item}
