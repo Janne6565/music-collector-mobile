@@ -3,7 +3,6 @@ import * as Sharing from "expo-sharing";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  type AccountUser,
   type AuthProvider,
   accountExport,
   authProviders,
@@ -14,11 +13,12 @@ import {
   signOut,
   updateDisplayName,
 } from "@/api/auth";
-import { refreshSession } from "@/api/client";
 import { signInWithProvider } from "@/features/auth/externalSignIn";
 import { toCsv } from "@/domain/csv";
 import { useStore } from "@/local/StoreProvider";
 import { readLastSyncedAt, readSyncEnabled, writeLastSyncedAt, writeSyncEnabled } from "@/local/settings";
+import { firstSyncResolved, renamed, signedIn, signedOut } from "@/store/authSlice";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { createSyncEngine } from "@/sync/transport";
 import type { FirstSyncStrategy } from "@janne6565/music-collector-shared";
 
@@ -31,9 +31,15 @@ const SYNC_INTERVAL_MS = 60_000;
 export function useAccountLogic() {
   const { store, clock } = useStore();
   const queryClient = useQueryClient();
-  const [user, setUser] = useState<AccountUser | null>(null);
-  const [restoring, setRestoring] = useState(true);
-  const [firstSyncPending, setFirstSyncPending] = useState(false);
+  const dispatch = useAppDispatch();
+  /*
+   * The session is read from the store rather than held here, because this hook is mounted
+   * three times (the account screen, Your data, the legal index) and the Friends tab needs
+   * the same answer without mounting it at all. Restoring it is <RestoreSession />'s job.
+   */
+  const user = useAppSelector((state) => state.auth.user);
+  const restoring = useAppSelector((state) => state.auth.status === "unknown");
+  const firstSyncPending = useAppSelector((state) => state.auth.firstSyncPending);
   const [mode, setMode] = useState<AuthMode>("SIGN_IN");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -72,28 +78,14 @@ export function useAccountLogic() {
     return hasLocalCollection && !hasSyncedBefore;
   }, [store]);
 
-  // Restore the session from the keychain. Never blocks the UI: the app is fully usable
-  // with no account, so a slow or absent network must not gate anything.
+  // Only the things this screen owns. The session itself is restored once at the root.
   useEffect(() => {
     void (async () => {
-      const token = await refreshSession();
-      if (token !== null) {
-        try {
-          const me = await import("@/api/client").then((m) =>
-            m.request<AccountUser>("/api/v1/auth/me"),
-          );
-          setUser(me);
-          setFirstSyncPending(await decideFirstSync());
-        } catch {
-          setUser(null);
-        }
-      }
       setProviders(await authProviders());
       setSyncEnabledState(await readSyncEnabled(store));
       setLastSyncedAt(await readLastSyncedAt(store));
-      setRestoring(false);
     })();
-  }, [decideFirstSync, store]);
+  }, [store]);
 
   useEffect(() => {
     if (user === null || firstSyncPending) return;
@@ -138,8 +130,7 @@ export function useAccountLogic() {
         mode === "REGISTER"
           ? await createAccount(email.trim(), password, displayName.trim(), agreed, ageConfirmed)
           : await signIn(email.trim(), password, rememberMe);
-      setUser(account);
-      setFirstSyncPending(await decideFirstSync());
+      dispatch(signedIn({ user: account, firstSyncPending: await decideFirstSync() }));
       setPassword("");
     } catch (error) {
       const status = (error as { status?: number }).status;
@@ -147,7 +138,7 @@ export function useAccountLogic() {
     } finally {
       setBusy(false);
     }
-  }, [mode, email, password, displayName, rememberMe, decideFirstSync]);
+  }, [mode, email, password, displayName, rememberMe, decideFirstSync, dispatch]);
 
   /**
    * Google or Apple. Ends in the same place a password sign-in does — the round trip
@@ -166,13 +157,12 @@ export function useAccountLogic() {
           setFailed("generic");
           return;
         }
-        setUser(result.user);
-        setFirstSyncPending(await decideFirstSync());
+        dispatch(signedIn({ user: result.user, firstSyncPending: await decideFirstSync() }));
       } finally {
         setBusy(false);
       }
     },
-    [decideFirstSync],
+    [decideFirstSync, dispatch],
   );
 
   const forgotPassword = useCallback(async () => {
@@ -190,23 +180,22 @@ export function useAccountLogic() {
         // The same reason as the interval sync: whichever way the first one resolved, the
         // store underneath every screen has just changed.
         await queryClient.invalidateQueries();
-        setFirstSyncPending(false);
+        dispatch(firstSyncResolved());
       } finally {
         setBusy(false);
       }
     },
-    [store, clock, queryClient],
+    [store, clock, queryClient, dispatch],
   );
 
   const leave = useCallback(async () => {
     setBusy(true);
     await signOut();
-    setUser(null);
-    setFirstSyncPending(false);
+    dispatch(signedOut());
     setBusy(false);
     // The local collection deliberately stays: signing out returns the app to how it
     // behaves with no account, and wiping someone's records would be a way to lose data.
-  }, []);
+  }, [dispatch]);
 
   /**
    * The collection as a file. Built on the device from the local store, so it works
@@ -255,15 +244,14 @@ export function useAccountLogic() {
     setBusy(true);
     try {
       await deleteAccount();
-      setUser(null);
-      setFirstSyncPending(false);
+      dispatch(signedOut());
       // The cursor points into a change log that no longer exists; leaving it would make a
       // later sign-in believe it had already pulled everything.
       await store.writeSyncCursor(0);
     } finally {
       setBusy(false);
     }
-  }, [store]);
+  }, [store, dispatch]);
 
   const accountName = user?.displayName ?? "";
   const saveName = useCallback(async () => {
@@ -272,7 +260,7 @@ export function useAccountLogic() {
     setRenaming(true);
     setRenameFailed(false);
     try {
-      setUser(await updateDisplayName(next.trim()));
+      dispatch(renamed(await updateDisplayName(next.trim())));
       // Back to following the account, which now says what was just typed.
       setNameDraft(null);
     } catch {
@@ -280,7 +268,7 @@ export function useAccountLogic() {
     } finally {
       setRenaming(false);
     }
-  }, [nameDraft, accountName]);
+  }, [nameDraft, accountName, dispatch]);
 
   return {
     user,

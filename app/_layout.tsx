@@ -4,6 +4,7 @@ import { StatusBar } from "expo-status-bar";
 import { Provider } from "react-redux";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import "@/i18n/config";
+import { RestoreSession } from "@/features/auth/RestoreSession";
 import { UndoProvider } from "@/features/wishlist/UndoBar";
 import { StoreProvider } from "@/local/StoreProvider";
 import { useReducedMotion } from "@/lib/motion";
@@ -20,6 +21,9 @@ export default function RootLayout() {
         <SafeAreaProvider>
           <StatusBar style="dark" />
           <StoreProvider>
+            {/* The session comes back from the keychain here, above the tabs: a tab is not
+                mounted until it is opened, and Friends must not have to guess. */}
+            <RestoreSession />
             {/* Screen 16e's line lives above the stack: the entry that leaves on its own
                 does so wherever a record gets filed, which is rarely the wishlist. */}
             <UndoProvider>
