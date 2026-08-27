@@ -1,7 +1,7 @@
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
-import { Pencil, Star, Trash2, X } from "lucide-react-native";
-import { useState, useRef } from "react";
+import { Pencil, Star, Trash2 } from "lucide-react-native";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
@@ -10,10 +10,10 @@ import {
   StyleSheet,
   Text,
   View,
-  useWindowDimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ReleaseArt } from "@/components/ReleaseArt";
+import { CoverSheet } from "@/features/detail/CoverSheet";
 import { useCopySwipe } from "@/features/detail/useCopySwipe";
 import type { Copy, DetailChrome, Release } from "@janne6565/music-collector-shared";
 import {
@@ -122,15 +122,6 @@ export function DetailScreen({
 }
 
 /** The paper the screen washes away from, and the only colour that is not the chrome's. */
-/**
- * How much of the sleeve survives the crop once the header has closed up — a band across
- * the top, full width, so the record is still named by its artwork however far down you
- * have read. The resting height is the width of the screen, read per render rather than
- * frozen at import: a tablet that turns would otherwise keep yesterday's geometry.
- */
-const COVER_MIN = 96;
-/** How far the collapsed band steps back towards the page's colour. */
-const VEIL = 0.55;
 interface DetailBodyProps {
   readonly chrome: DetailChrome;
   readonly accent: Animated.Value;
@@ -167,52 +158,24 @@ function DetailBody({
   // root rather than the ScrollView so it can watch a gesture before the scroll claims it,
   // and it only claims clearly horizontal ones.
   const swipe = useCopySwipe(copy.id);
-  const COVER_MAX = useWindowDimensions().width;
-
-  /*
-   * The collapse, in one value. `Animated.event` writes the offset straight into it on the
-   * native side, so nothing about the header round-trips through JS while a thumb is on
-   * the glass.
-   */
-  const scrollY = useRef(new Animated.Value(0)).current;
-  const travel = COVER_MAX - COVER_MIN;
-  const collapsed = scrollY.interpolate({
-    inputRange: [0, travel],
-    outputRange: [0, 1],
-    extrapolate: "clamp",
-  });
-  /*
-   * The frame rides up out of the picture and clips it; the picture is never resized. Full
-   * width the whole way down, cropped top and bottom, ending as a band across the top.
-   */
-  const headerY = collapsed.interpolate({ inputRange: [0, 1], outputRange: [0, -travel] });
-  /*
-   * And the picture drifts back down inside it at half the rate, so what survives the crop
-   * is the middle of the sleeve rather than its bottom edge. Without this the frame would
-   * simply slide off the top of the artwork and leave the last few pixels of it standing.
-   */
-  const imageY = collapsed.interpolate({ inputRange: [0, 1], outputRange: [0, travel / 2] });
-  /*
-   * And it recedes as it goes. Once the sleeve is a band behind the words it is no longer
-   * what you are reading, so it steps back towards the page's own colour rather than
-   * competing at full strength — the same move the chrome makes for anything secondary.
-   */
-  const veil = collapsed.interpolate({ inputRange: [0, 1], outputRange: [0, VEIL] });
 
   return (
-    // No background of its own: the layers behind it own the colour, which is what
-    // lets the paper one fade away on the native driver while this stays put.
-    <Animated.View
-      style={[styles.root, { opacity: swipe.fade }]}
-      {...swipe.handlers}
+    <CoverSheet
+      chrome={chrome}
+      onClose={() => router.back()}
+      fade={swipe.fade}
+      handlers={swipe.handlers}
+      art={
+        <ReleaseArt
+          release={release}
+          format={copyFormat(copy, release)}
+          style={styles.coverImage}
+          variant="bleed"
+          previewUri={copyPreviewSrc(copy, photos.firstUri)}
+          allowCatalogArt={copy.catalogArt !== "HIDDEN"}
+        />
+      }
     >
-      <Animated.ScrollView
-        contentContainerStyle={[styles.scroll, { paddingTop: COVER_MAX }]}
-        scrollEventThrottle={16}
-        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
-          useNativeDriver: true,
-        })}
-      >
         <View style={styles.body}>
           <View style={styles.badges}>
             {/* The copy's format, not the release's: a tape of a record listed as vinyl
@@ -339,59 +302,7 @@ function DetailBody({
             <Text style={[styles.removeText, { color: chrome.muted }]}>{t("detail.remove")}</Text>
           </Pressable>
         </View>
-      </Animated.ScrollView>
-
-      {/*
-       * The cover is pinned rather than scrolled, and is clipped rather than resized.
-       * Transforms only: they run on the native driver, and a header that animates its
-       * height runs on the JS thread — exactly the stutter this screen refuses elsewhere.
-       * The scroll offset is written straight into an Animated.Value by `Animated.event`
-       * and never round-trips through JS while a thumb is on the glass.
-       */}
-      <Animated.View
-        pointerEvents="none"
-        style={[
-          styles.pinnedCover,
-          { width: COVER_MAX, height: COVER_MAX, transform: [{ translateY: headerY }] },
-        ]}
-      >
-        {/* Explicitly square rather than left to work itself out: everything inside this
-            component is absolutely positioned, and a box that is not definite on its own is
-            how the hero twice ended up laid out at nothing. */}
-        <Animated.View
-          style={{ width: COVER_MAX, height: COVER_MAX, transform: [{ translateY: imageY }] }}
-        >
-          <ReleaseArt
-            release={release}
-            format={copyFormat(copy, release)}
-            style={styles.coverImage}
-            variant="bleed"
-            previewUri={copyPreviewSrc(copy, photos.firstUri)}
-            allowCatalogArt={copy.catalogArt !== "HIDDEN"}
-          />
-        </Animated.View>
-
-        {/* Inside the frame, so it is clipped by the same crop and never reaches the words
-            below it. Above the picture, below the way out. */}
-        <Animated.View
-          pointerEvents="none"
-          style={[StyleSheet.absoluteFill, { backgroundColor: chrome.background, opacity: veil }]}
-        />
-      </Animated.View>
-
-      {/* Outside the scroll view entirely: it is the way out, and a way out that scrolls
-          away is one you have to go looking for. */}
-      <SafeAreaView style={styles.backWrap} edges={["top"]} pointerEvents="box-none">
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t("detail.back")}
-          onPress={() => router.back()}
-          style={[styles.back, { backgroundColor: chrome.surface }]}
-        >
-          <X size={18} color={chrome.ink} strokeWidth={1.75} />
-        </Pressable>
-      </SafeAreaView>
-    </Animated.View>
+      </CoverSheet>
   );
 }
 
@@ -491,13 +402,9 @@ export function formatMoney(cents: number | null, currency: string): string {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   loading: { flex: 1, alignItems: "center", justifyContent: "center" },
-  scroll: { paddingBottom: 40 },
-  pinnedCover: { position: "absolute", left: 0, top: 0, overflow: "hidden" },
   // Width only: the hero is square because `cover` is, and a percentage height here is
   // what collapsed the art to nothing.
   coverImage: { width: "100%" },
-  backWrap: { position: "absolute", left: 18, right: 18, top: 0, alignItems: "flex-start" },
-  back: { width: 34, height: 34, borderRadius: 999, alignItems: "center", justifyContent: "center", marginTop: 8 },
   body: { paddingHorizontal: 20, paddingTop: 22 },
   badges: { flexDirection: "row", gap: 8 },
   badge: { paddingHorizontal: 9, paddingVertical: 5, borderRadius: 5 },

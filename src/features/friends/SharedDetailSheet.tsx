@@ -1,11 +1,11 @@
 import { useTranslation } from "react-i18next";
-import { Modal, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { X } from "lucide-react-native";
+import { Modal, PanResponder, StyleSheet, Text, View } from "react-native";
 import { useMemo, useRef } from "react";
 import type { Format } from "@janne6565/music-collector-shared";
-import { CONDITION_SHORT, FORMAT_LABELS } from "@janne6565/music-collector-shared";
+import { CONDITION_SHORT, FORMAT_LABELS, chromeFor } from "@janne6565/music-collector-shared";
 import type { SharedCopy, SharedWish } from "@/api/friends";
 import { ReleaseArt } from "@/components/ReleaseArt";
+import { CoverSheet } from "@/features/detail/CoverSheet";
 import { formatMoney } from "@/domain/currency";
 import { colors, fonts } from "@/theme/colors";
 
@@ -102,69 +102,53 @@ export function SharedDetailSheet({
   }
 
   return (
-    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.scrim} onPress={onClose} accessibilityRole="button" />
-      <View style={styles.sheet} {...responder.panHandlers}>
-        <View style={styles.grabber} />
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t("common.close")}
-          onPress={onClose}
-          style={styles.close}
-          hitSlop={10}
-        >
-          <X size={18} color={colors.ink} strokeWidth={1.75} />
-        </Pressable>
-
-        <ScrollView contentContainerStyle={styles.body}>
-          <View style={styles.art}>
+    <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      <View style={styles.screen}>
+        <CoverSheet
+          chrome={CHROME}
+          onClose={onClose}
+          handlers={responder.panHandlers}
+          art={
             <ReleaseArt
-              release={{ coverArtUrl: subject === undefined ? null : (copy?.coverArtUrl ?? null) }}
+              release={{ coverArtUrl: copy?.coverArtUrl ?? null }}
               format={(format as Format | undefined) ?? "OTHER"}
               previewUri={previewUri}
               variant="bleed"
             />
+          }
+        >
+          <View style={styles.body}>
+            <Text style={styles.title}>{subject?.title ?? "—"}</Text>
+            <Text style={styles.artist}>{subject?.artistName ?? ""}</Text>
+
+            {facts.length > 0 && (
+              <View style={styles.facts}>
+                {facts.map((fact) => (
+                  <View key={fact.label} style={styles.fact}>
+                    <Text style={styles.factLabel}>{fact.label}</Text>
+                    <Text style={styles.factValue}>{fact.value}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
           </View>
-
-          <Text style={styles.title}>{subject?.title ?? "—"}</Text>
-          <Text style={styles.artist}>{subject?.artistName ?? ""}</Text>
-
-          {facts.length > 0 && (
-            <View style={styles.facts}>
-              {facts.map((fact) => (
-                <View key={fact.label} style={styles.fact}>
-                  <Text style={styles.factLabel}>{fact.label}</Text>
-                  <Text style={styles.factValue}>{fact.value}</Text>
-                </View>
-              ))}
-            </View>
-          )}
-        </ScrollView>
+        </CoverSheet>
       </View>
     </Modal>
   );
 }
 
+/*
+ * Paper, always. The library's version takes its chrome from the cover's own palette,
+ * which is sampled from the release the *owner* holds — a viewer has no business being
+ * repainted by somebody else's shelf, and a sheet that changed colour per record on a
+ * stranger's page would read as a different app each time.
+ */
+const CHROME = chromeFor(null);
+
 const styles = StyleSheet.create({
-  scrim: { flex: 1, backgroundColor: "rgba(25,23,19,0.45)" },
-  sheet: {
-    backgroundColor: colors.paper,
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
-    paddingBottom: 28,
-    maxHeight: "88%",
-  },
-  grabber: {
-    alignSelf: "center",
-    width: 36,
-    height: 4,
-    borderRadius: 999,
-    backgroundColor: colors.line,
-    marginTop: 8,
-  },
-  close: { position: "absolute", right: 14, top: 12, zIndex: 1 },
-  body: { padding: 20, paddingTop: 14 },
-  art: { borderRadius: 10, overflow: "hidden" },
+  screen: { flex: 1, backgroundColor: colors.paper },
+  body: { paddingHorizontal: 20, paddingTop: 20 },
   title: { fontFamily: fonts.serif, fontSize: 26, color: colors.ink, marginTop: 16 },
   artist: { fontFamily: fonts.sans, fontSize: 14, color: colors.inkMuted, marginTop: 3 },
   // Two columns, and an absent fact closes the grid up rather than leaving a hole.
