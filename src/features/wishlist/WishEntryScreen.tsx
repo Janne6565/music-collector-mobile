@@ -53,10 +53,20 @@ export function WishEntryScreen({ wishId }: { readonly wishId: string }) {
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.hero}>
+          {/*
+           * The sleeve, not a drawing of the format. `bleed` is the plain square: a quiet
+           * ground while the artwork is on its way, and the format silhouette only where
+           * there is genuinely no picture to show — the same treatment the copy detail
+           * got. At this size the silhouette read as the answer rather than as a wait.
+           *
+           * It also gives the frame its own aspect ratio, so the box is definite without
+           * depending on the silhouette underneath to give it a height.
+           */}
           <ReleaseArt
             release={{ coverArtUrl: logic.coverOf(entry) }}
             previewUri={cover.uri ?? logic.pictureOf(entry)}
             format={entry.desiredFormat ?? "OTHER"}
+            variant="bleed"
           />
         </View>
 
@@ -218,7 +228,7 @@ const styles = StyleSheet.create({
   backText: { fontSize: 14, color: colors.ink },
   gone: { padding: 18, fontSize: 13, color: colors.inkMuted },
   content: { padding: 18, paddingBottom: 60 },
-  hero: { width: 128, alignSelf: "center" },
+  hero: { width: 148, alignSelf: "center", borderRadius: 8, overflow: "hidden" },
   coverActions: {
     flexDirection: "row",
     flexWrap: "wrap",
