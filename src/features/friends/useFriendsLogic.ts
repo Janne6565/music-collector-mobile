@@ -171,6 +171,24 @@ export function useFriendProfileLogic(handle: string) {
     await queryClient.invalidateQueries({ queryKey: ["friends"] });
   }, [queryClient, clean]);
 
+  /**
+   * Pull-to-refresh, which here means *refetch* rather than sync.
+   *
+   * Your own lists are read out of the local store, so pulling them has to run a sync or it
+   * can only redraw what the last one wrote. None of this is stored locally -- a friend's
+   * shelf is read from the server every time, exactly so that closing it takes effect at
+   * once -- so asking again is the whole of it.
+   */
+  const [refreshing, setRefreshing] = useState(false);
+  const refetch = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([person.refetch(), copies.refetch(), wishes.refetch()]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [person, copies, wishes]);
+
   const ask = useMutation({ mutationFn: () => friendsApi.ask(clean), onSuccess: refresh });
   const unfriend = useMutation({
     mutationFn: (userId: string) => friendsApi.unfriend(userId),
@@ -184,6 +202,8 @@ export function useFriendProfileLogic(handle: string) {
     failed: person.isError,
     copies: copies.data?.copies ?? [],
     wishes: wishItems,
+    refreshing,
+    refetch,
     /** The sleeve for one of their wishes, or null while it is on its way or absent. */
     wishCoverOf: (wish: SharedWish): string | null =>
       (wish.releaseId == null ? undefined : wishPressingCovers.data?.get(wish.releaseId)) ??

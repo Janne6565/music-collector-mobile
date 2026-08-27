@@ -11,7 +11,15 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { ChevronLeft, Lock, UserCheck, UserPlus } from "lucide-react-native";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 /**
@@ -83,7 +91,16 @@ export function ProfileScreen() {
             </View>
           </View>
 
-          <ScrollView contentContainerStyle={styles.body}>
+          <ScrollView
+            contentContainerStyle={styles.body}
+            refreshControl={
+              <RefreshControl
+                refreshing={logic.refreshing}
+                onRefresh={() => void logic.refetch()}
+                tintColor={colors.inkMuted}
+              />
+            }
+          >
             {showing !== true ? (
               <LockedShelf name={name} count={person.copyCount ?? 0} />
             ) : logic.loadingLists ? (
@@ -181,9 +198,13 @@ function Grid({
           subtitle={[
             copy.format ? FORMAT_LABELS[copy.format as Format] : undefined,
             copy.year?.toString(),
-            // Only when the owner turned prices on: sharing a shelf is not sharing what it
-            // cost.
-            pricesVisible && copy.pricePaidCents !== undefined
+            /*
+             * Only when the owner turned prices on -- sharing a shelf is not sharing what it
+             * cost -- and only when there is one. `!== undefined` let a JSON null through,
+             * and `null / 100` is 0, so every copy with no price recorded advertised itself
+             * at nothing. A real zero is still a price somebody entered and still shows.
+             */
+            pricesVisible && copy.pricePaidCents != null
               ? `${(copy.pricePaidCents / 100).toFixed(0)} ${copy.currency ?? ""}`.trim()
               : undefined,
           ]
