@@ -1,3 +1,4 @@
+import * as FileSystem from "expo-file-system/legacy";
 import { downloadPhotoBytes, uploadPhotoBytes } from "@/api/photos";
 import { lookupReleases } from "@/api/releases";
 import { pullChanges, pushChanges } from "@/api/sync";
@@ -64,4 +65,35 @@ export function createSyncTransport(store: NativeLocalStore): SyncTransport {
 /** The engine, wired to this app's transport. Every caller goes through here. */
 export function createSyncEngine(store: NativeLocalStore, clock: ClockSource): SyncEngine {
   return new SyncEngine(store, clock, createSyncTransport(store));
+}
+
+/**
+ * Bytes for pictures this device knows about but has never held.
+ *
+ * The shared engine already fetches these — but only for the photos pulled in the same
+ * pass, so a row that arrived before its bytes did, or whose download failed once, is never
+ * looked at again. Its comment says "try again next sync"; there was no next attempt,
+ * because the photo cannot appear in a later pull.
+ *
+ * What that looks like is not a missing photo. `ReleaseArt` is handed a file URI for a file
+ * that is not there, the image fails, and the copy quietly falls back to the catalogue's
+ * cover — so a starred photo taken on another device shows the pressing's sleeve instead,
+ * and a hand-entered record with no catalogue at all shows the silhouette for ever.
+ *
+ * Existence is checked with `getInfoAsync` rather than `getPhotoBytes`, which would read
+ * every file on the device into base64 to answer a yes-or-no question.
+ */
+export async function fetchMissingPhotoBytes(store: NativeLocalStore): Promise<number> {
+  let fetched = 0;
+  for (const photo of await store.listAllPhotos()) {
+    if (photo.storageKey === null || photo.deletedAt !== null) continue;
+    if ((await FileSystem.getInfoAsync(store.photoUri(photo.id))).exists) continue;
+    try {
+      await store.putPhotoBytes(photo.id, await downloadPhotoBytes(photo.id), photo.contentType);
+      fetched += 1;
+    } catch {
+      // Offline, or the object is gone. Next pass tries again — and now there really is one.
+    }
+  }
+  return fetched;
 }
