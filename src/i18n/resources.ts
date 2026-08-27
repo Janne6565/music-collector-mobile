@@ -38,6 +38,10 @@ const enCommon = {
     take: "Take a photo of your copy",
     choose: "Choose a photo",
     remove: "Remove this photo",
+    star: "Use this photo for this copy",
+    useCatalogArt: "Use the catalogue's cover",
+    hideCatalogArt: "Hide the catalogue's cover",
+    showCatalogArt: "Show the catalogue's cover",
     deviceOnly: "on device",
   },
   wishlist: {
@@ -752,6 +756,10 @@ const deCommon: CommonSchema = {
     take: "Foto deines Exemplars aufnehmen",
     choose: "Foto auswählen",
     remove: "Dieses Foto entfernen",
+    star: "Dieses Foto für dieses Exemplar verwenden",
+    useCatalogArt: "Cover aus dem Katalog verwenden",
+    hideCatalogArt: "Katalog-Cover ausblenden",
+    showCatalogArt: "Katalog-Cover einblenden",
     deviceOnly: "nur hier",
   },
   wishlist: {

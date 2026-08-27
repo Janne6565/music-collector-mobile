@@ -1,6 +1,6 @@
-import { Camera, ImagePlus, Trash2 } from "lucide-react-native";
+import { Camera, EyeOff, ImagePlus, Star, Trash2 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { type ReactNode, useEffect, useRef } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import type { DetailChrome } from "@janne6565/music-collector-shared";
 import type { PhotoStripLogic } from "@/features/photos/usePhotoStripLogic";
@@ -16,6 +16,22 @@ import { DURATION } from "@janne6565/music-collector-shared";
  */
 function PhotoThumb({ uri, chrome }: { readonly uri: string; readonly chrome: DetailChrome }) {
   const reveal = useRef(new Animated.Value(0)).current;
+  const [loaded, setLoaded] = useState<string | null>(null);
+
+  /*
+   * Driven from state rather than from the Image's callbacks — the same fix ReleaseArt
+   * needed. Resetting in `onLoadStart` means an image React Native has already decoded can
+   * fire that without ever firing `onLoad` again, and the tile then stays at zero opacity
+   * for good: a photo that is present, loaded, and invisible.
+   */
+  useEffect(() => {
+    reveal.setValue(0);
+  }, [uri, reveal]);
+
+  useEffect(() => {
+    if (loaded !== uri) return;
+    Animated.timing(reveal, { toValue: 1, duration: 200, useNativeDriver: true }).start();
+  }, [loaded, uri, reveal]);
 
   return (
     <>
@@ -23,13 +39,20 @@ function PhotoThumb({ uri, chrome }: { readonly uri: string; readonly chrome: De
       <Animated.Image
         source={{ uri }}
         style={[styles.image, { opacity: reveal }]}
-        onLoadStart={() => reveal.setValue(0)}
-        onLoad={() =>
-          Animated.timing(reveal, { toValue: 1, duration: 200, useNativeDriver: true }).start()
-        }
+        onLoad={() => setLoaded(uri)}
       />
     </>
   );
+}
+
+/**
+ * Whether this photo is the one standing for the copy right now.
+ *
+ * The first in the list, unless the catalogue's artwork has been starred instead — which
+ * is a choice the order cannot express, so it lives on the copy.
+ */
+function isPreview(logic: PhotoStripLogic, photoId: string): boolean {
+  return logic.catalogArt !== "PREFERRED" && logic.photos[0]?.id === photoId;
 }
 
 /**
@@ -41,9 +64,16 @@ function PhotoThumb({ uri, chrome }: { readonly uri: string; readonly chrome: De
 export function PhotoStrip({
   logic,
   chrome,
+  hasCatalogArt,
 }: {
   readonly logic: PhotoStripLogic;
   readonly chrome: DetailChrome;
+  /**
+   * Whether the release has artwork to answer about at all. The strip does not read the
+   * release itself — the screen around it already has one, and a second fetch to ask one
+   * yes-or-no question is how two answers start disagreeing.
+   */
+  readonly hasCatalogArt: boolean;
 }) {
   const { t } = useTranslation();
 
@@ -63,6 +93,22 @@ export function PhotoStrip({
               style={[styles.removeBadge, { backgroundColor: chrome.ink }]}
             >
               <Trash2 size={11} color={chrome.background} strokeWidth={2} />
+            </Pressable>
+            {/* A star is a move to the front, because the preview *is* the first picture —
+                one gesture rather than two, and the same write the web makes. */}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t("photos.star")}
+              onPress={() => logic.star(photo)}
+              disabled={logic.choosing}
+              style={[styles.starBadge, { backgroundColor: chrome.surface }]}
+            >
+              <Star
+                size={11}
+                color={chrome.accent}
+                fill={isPreview(logic, photo.id) ? chrome.accent : "transparent"}
+                strokeWidth={2}
+              />
             </Pressable>
             {photo.storageKey === null && (
               // Not an error: a photo that has not uploaded is perfectly usable here, it
@@ -100,6 +146,44 @@ export function PhotoStrip({
           <ImagePlus size={18} color={chrome.muted} strokeWidth={1.75} />
         </Pressable>
       </View>
+
+      {/*
+       * The catalogue's artwork is one of this copy's images too, but it is not a photo and
+       * has no position in the strip to be starred by dragging — so its two answers live
+       * here instead. Only offered where there is artwork to answer about.
+       */}
+      {hasCatalogArt && (
+        <View style={styles.catalogRow}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={logic.starCatalogArt}
+            disabled={logic.choosing || logic.catalogArt === "HIDDEN"}
+            style={styles.catalogAction}
+          >
+            <Star
+              size={13}
+              color={chrome.accent}
+              fill={logic.catalogArt === "PREFERRED" ? chrome.accent : "transparent"}
+              strokeWidth={1.9}
+            />
+            <Text style={[styles.catalogLabel, { color: chrome.muted }]}>
+              {t("photos.useCatalogArt")}
+            </Text>
+          </Pressable>
+
+          <Pressable
+            accessibilityRole="button"
+            onPress={logic.catalogArt === "HIDDEN" ? logic.restoreCatalogArt : logic.hideCatalogArt}
+            disabled={logic.choosing}
+            style={styles.catalogAction}
+          >
+            <EyeOff size={13} color={chrome.muted} strokeWidth={1.75} />
+            <Text style={[styles.catalogLabel, { color: chrome.muted }]}>
+              {t(logic.catalogArt === "HIDDEN" ? "photos.showCatalogArt" : "photos.hideCatalogArt")}
+            </Text>
+          </Pressable>
+        </View>
+      )}
     </View>
   );
 }
@@ -111,6 +195,19 @@ const styles = StyleSheet.create({
   tile: { width: 64, height: 64 },
   image: { width: "100%", height: "100%", borderRadius: 6 },
   underlay: { position: "absolute", top: 0, left: 0 },
+  starBadge: {
+    position: "absolute",
+    bottom: -5,
+    right: -5,
+    width: 20,
+    height: 20,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  catalogRow: { flexDirection: "row", gap: 16, marginTop: 12 },
+  catalogAction: { flexDirection: "row", alignItems: "center", gap: 6 },
+  catalogLabel: { fontSize: 11.5 },
   removeBadge: {
     position: "absolute",
     top: -5,

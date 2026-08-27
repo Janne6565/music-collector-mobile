@@ -275,7 +275,11 @@ function DetailBody({
             </>
           )}
 
-          <PhotoStrip logic={photos} chrome={chrome} />
+          <PhotoStrip
+            logic={photos}
+            chrome={chrome}
+            hasCatalogArt={release?.coverArtUrl != null}
+          />
 
           {/* The photo strip ends flush against whatever follows it, so the notes card
               carries the gap rather than the strip -- the strip is also used where nothing
