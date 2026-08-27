@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Modal, PanResponder, StyleSheet, Text, View } from "react-native";
+import { Animated, Modal, PanResponder, StyleSheet, Text, View } from "react-native";
 import { useMemo, useRef } from "react";
 import type { Format } from "@janne6565/music-collector-shared";
 import { CONDITION_SHORT, FORMAT_LABELS, chromeFor } from "@janne6565/music-collector-shared";
@@ -48,29 +48,37 @@ export function SharedDetailSheet({
   const { t, i18n } = useTranslation();
   const subject = copy ?? wish;
 
-  const moves = useRef({ onClose, onPrev, onNext });
-  moves.current = { onClose, onPrev, onNext };
+  const moves = useRef({ onPrev, onNext });
+  moves.current = { onPrev, onNext };
 
   /*
-   * The dominant axis decides which gesture it was: sideways flips, downwards closes. A
-   * short drag that cannot make up its mind does neither, which is what keeps a scroll
-   * inside the sheet from throwing the record away.
+   * Only clearly horizontal gestures, and the same cross-fade the library's sheet uses.
+   *
+   * The first version also claimed anything dragged more than 48 points downwards, to close
+   * — which took every scroll away from the list underneath it. Closing that way is the
+   * modal's own gesture and always was; claiming it here only broke reading.
    */
+  const fade = useRef(new Animated.Value(1)).current;
   const responder = useMemo(
     () =>
       PanResponder.create({
         onMoveShouldSetPanResponder: (_event, gesture) =>
-          Math.abs(gesture.dx) > 24 || gesture.dy > 48,
+          Math.abs(gesture.dx) > 24 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 2,
         onPanResponderRelease: (_event, gesture) => {
-          if (Math.abs(gesture.dx) > Math.abs(gesture.dy)) {
-            if (Math.abs(gesture.dx) < 48) return;
-            (gesture.dx < 0 ? moves.current.onNext : moves.current.onPrev)?.();
-            return;
-          }
-          if (gesture.dy > 96) moves.current.onClose();
+          const committed = Math.abs(gesture.dx) > 80 || Math.abs(gesture.vx) > 0.4;
+          const go = gesture.dx < 0 ? moves.current.onNext : moves.current.onPrev;
+          // At the ends nothing happens. A shelf that wraps has no last record.
+          if (!committed || go === undefined) return;
+          Animated.timing(fade, { toValue: 0, duration: 110, useNativeDriver: true }).start(
+            ({ finished }) => {
+              if (!finished) return;
+              go();
+              Animated.timing(fade, { toValue: 1, duration: 190, useNativeDriver: true }).start();
+            },
+          );
         },
       }),
-    [],
+    [fade],
   );
 
   const format = copy?.format ?? wish?.desiredFormat;
@@ -107,6 +115,7 @@ export function SharedDetailSheet({
         <CoverSheet
           chrome={CHROME}
           onClose={onClose}
+          fade={fade}
           handlers={responder.panHandlers}
           art={
             <ReleaseArt
