@@ -77,11 +77,20 @@ jobs:
           fi
 
       # Resolve what to build: tag push → production/all; manual run → the inputs.
+      # A tag ships production; which platforms it ships is the EAS_RELEASE_PLATFORMS
+      # repo variable, defaulting to iOS.
+      #
+      # It used to be hardcoded to "all", which was aspirational rather than true: no
+      # Android build has ever succeeded, there is no Play Console record to submit to,
+      # and `--platform all --non-interactive` fails as one command — so the platform
+      # that *is* ready never reached the queue. Android joins by flipping the variable
+      # once its keystore and service account exist:
+      #   gh variable set EAS_RELEASE_PLATFORMS --body all -R Janne6565/music-collector-mobile
       - name: Resolve build parameters
         id: params
         run: |
           if [ "${{ github.event_name }}" = "push" ]; then
-            echo "platform=all" >> "$GITHUB_OUTPUT"
+            echo "platform=${{ vars.EAS_RELEASE_PLATFORMS || 'ios' }}" >> "$GITHUB_OUTPUT"
             echo "profile=production" >> "$GITHUB_OUTPUT"
           else
             echo "platform=${{ inputs.platform }}" >> "$GITHUB_OUTPUT"
@@ -121,4 +130,4 @@ jobs:
       # so it composes with --no-wait (the submit happens server-side).
       - name: EAS build + auto-submit
         if: github.event_name == 'push' && vars.EAS_AUTO_SUBMIT == 'true'
-        run: eas build --platform all --profile production --non-interactive --no-wait --auto-submit
+        run: eas build --platform ${{ steps.params.outputs.platform }} --profile production --non-interactive --no-wait --auto-submit

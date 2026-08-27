@@ -145,7 +145,18 @@ eas build --platform all --profile preview
 ## Releasing
 
 The house convention (agents KB `cicd` skill) is **cut a tag = ship prod**. The
-`EAS Build` workflow builds `production` for both platforms on any `v*.*.*` tag.
+`EAS Build` workflow builds `production` on any `v*.*.*` tag.
+
+Which platforms it builds is the `EAS_RELEASE_PLATFORMS` repo variable, and it
+defaults to `ios`. It used to be hardcoded to `all`, which described an intention
+rather than the setup: no Android build has ever succeeded, there is no Play
+Console record to submit into, and `--platform all --non-interactive` fails as a
+single command — so a tag took iOS down with Android instead of shipping it. Once
+the keystore and the service account exist, Android joins with:
+
+```sh
+gh variable set EAS_RELEASE_PLATFORMS --body all -R Janne6565/music-collector-mobile
+```
 
 Submission is opt-in behind a repo variable, so tags keep building safely until the
 store setup above is actually done:
