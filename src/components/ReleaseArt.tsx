@@ -52,6 +52,7 @@ export function ReleaseArt({
   previewUri = null,
   allowCatalogArt = true,
   format,
+  placeholder = "format",
 }: {
   readonly release: CoverSubject | undefined;
   readonly style?: ArtStyle;
@@ -85,6 +86,18 @@ export function ReleaseArt({
    * sits in should say what is on the shelf — see `copyFormat`.
    */
   readonly format?: Format;
+  /**
+   * What the `bleed` hero draws when there is no picture at all.
+   *
+   * "format" is the silhouette, which on an item detail is the answer: it says what is on
+   * the shelf when there is nothing to show of it. "plain" is the quiet ground, for a
+   * hero whose surroundings already say the format in words — a shared sheet names it in
+   * the facts grid, so drawing a vinyl the width of the sheet on top of that is furniture
+   * repeating what is written directly underneath it.
+   *
+   * Ignored by `sleeve`, whose whole subject is the silhouette.
+   */
+  readonly placeholder?: "format" | "plain";
 }) {
   const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
   // A set rather than one URL: with a preview there are two addresses in play, and
@@ -155,11 +168,12 @@ export function ReleaseArt({
        * its own or the whole thing quietly disappears.
        */
       <View style={[styles.frame, styles.bleed, style]}>
-        {gone ? (
+        {gone && placeholder === "format" ? (
           /*
            * Nothing is coming: the silhouette is the answer, not a wait. This is the one
            * place it still belongs in the hero -- it says what is on the shelf when there
-           * is no picture of it.
+           * is no picture of it. A caller whose layout already says the format in words
+           * asks for "plain" instead and gets the ground below.
            */
           <FormatThumb format={format ?? release?.format ?? "OTHER"} />
         ) : (

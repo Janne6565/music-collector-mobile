@@ -31,6 +31,7 @@ interface Fact {
 export function SharedDetailSheet({
   copy,
   wish,
+  coverArtUrl,
   pricesVisible,
   previewUri,
   onClose,
@@ -39,6 +40,15 @@ export function SharedDetailSheet({
 }: {
   readonly copy?: SharedCopy;
   readonly wish?: SharedWish;
+  /**
+   * The sleeve, already resolved by the caller.
+   *
+   * It used to be read off the copy, which meant a wish never had one: a wish carries an
+   * album and a pressing id, not a cover, and the list resolves it through the catalogue
+   * lookups the profile already holds. The sheet asking the copy for it left every
+   * wishlist entry with no picture -- and so with the silhouette that stands in for one.
+   */
+  readonly coverArtUrl: string | null;
   readonly pricesVisible: boolean;
   readonly previewUri: string | null;
   readonly onClose: () => void;
@@ -119,10 +129,17 @@ export function SharedDetailSheet({
           handlers={responder.panHandlers}
           art={
             <ReleaseArt
-              release={{ coverArtUrl: copy?.coverArtUrl ?? null }}
+              release={{ coverArtUrl }}
               format={(format as Format | undefined) ?? "OTHER"}
               previewUri={previewUri}
               variant="bleed"
+              /*
+               * No silhouette up here. The grid directly below names the format in words --
+               * "Vinyl", or "Wanted: Vinyl" -- so a record drawn the width of the sheet only
+               * repeats it as furniture, and on a record with no picture that furniture is
+               * the whole header.
+               */
+              placeholder="plain"
             />
           }
         >

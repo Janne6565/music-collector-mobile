@@ -140,6 +140,15 @@ export function ProfileScreen() {
         <SharedDetailSheet
           copy={tab === "collection" ? (shelf[at] as SharedCopy) : undefined}
           wish={tab === "wishlist" ? (shelf[at] as SharedWish) : undefined}
+          /*
+           * Resolved here rather than in the sheet: a copy carries its cover, a wish does
+           * not, and the lookups that answer for a wish are the profile's own.
+           */
+          coverArtUrl={
+            tab === "collection"
+              ? ((shelf[at] as SharedCopy).coverArtUrl ?? null)
+              : logic.wishCoverOf(shelf[at] as SharedWish)
+          }
           pricesVisible={logic.person?.pricesVisible === true}
           previewUri={open === undefined ? null : (photos.get(open) ?? null)}
           onClose={() => router.setParams({ open: undefined })}
