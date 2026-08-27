@@ -17,3 +17,7 @@ android/
 
 expo-env.d.ts
 # @end expo-cli
+# Local EAS build artifacts (`eas build --local` writes these into the repo root).
+*.ipa
+*.apk
+*.aab
