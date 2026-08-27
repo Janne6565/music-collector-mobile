@@ -60,7 +60,18 @@ export function AccountScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      <ScrollView contentContainerStyle={styles.body}>
+      {/*
+       * The keyboard is part of this screen in a way it is not on the others: signed out,
+       * the whole tab is a form. Without an inset for it the fields below the fold cannot
+       * be reached at all — the content is there, and the one gesture that would bring it
+       * up is the one the keyboard is sitting on.
+       */}
+      <ScrollView
+        contentContainerStyle={styles.body}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        automaticallyAdjustKeyboardInsets
+      >
         {logic.user === null ? (
           <>
             <AuthForm logic={logic} />
