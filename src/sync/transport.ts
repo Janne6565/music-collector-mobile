@@ -67,19 +67,34 @@ export function createSyncEngine(store: NativeLocalStore, clock: ClockSource): S
 }
 
 /**
- * What this device is holding, in pictures — a development diagnostic.
+ * What this device thinks stands for each copy that has a picture — a development
+ * diagnostic.
  *
- * Reported as three numbers rather than one, because "none missing" is the same answer
- * whether every file is present or there are no photo rows at all, and those two send you
- * looking in completely different places.
+ * Which image wins is two facts, not one: the order of the copy's photos, and whether the
+ * catalogue's artwork has been preferred over them. Reading them off the device is the only
+ * way to tell "the choice did not sync" from "the choice is being ignored".
  */
 export async function describePhotos(store: NativeLocalStore): Promise<string> {
-  const photos = (await store.listAllPhotos()).filter((photo) => photo.deletedAt === null);
-  const onCopies = photos.filter((photo) => photo.copyId !== null).length;
-  let missing = 0;
+  const photos = (await store.listAllPhotos()).filter(
+    (photo) => photo.deletedAt === null && photo.copyId !== null,
+  );
+  if (photos.length === 0) return "no photos on any copy";
+
+  const byCopy = new Map<string, typeof photos>();
   for (const photo of photos) {
-    if (photo.storageKey === null) continue;
-    if (!(await store.hasPhotoBytes(photo.id))) missing += 1;
+    const copyId = photo.copyId as string;
+    byCopy.set(copyId, [...(byCopy.get(copyId) ?? []), photo]);
   }
-  return `${photos.length} photos (${onCopies} on copies), ${missing} without bytes`;
+
+  const lines: string[] = [];
+  for (const [copyId, owned] of byCopy) {
+    const copy = await store.getCopy(copyId);
+    const order = owned
+      .slice()
+      .sort((a, b) => a.sortIndex - b.sortIndex)
+      .map((photo) => `${photo.id.slice(0, 6)}@${photo.sortIndex}${photo.storageKey === null ? "*" : ""}`)
+      .join(" ");
+    lines.push(`  ${copyId.slice(0, 6)} catalogArt=${copy?.catalogArt ?? "?"} photos=[${order}]`);
+  }
+  return `${photos.length} photos on ${byCopy.size} copies\n${lines.join("\n")}`;
 }
