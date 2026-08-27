@@ -91,7 +91,15 @@ export function usePhotoStripLogic(copyId: string) {
    */
   const copy = useQuery({
     queryKey: ["copy", copyId, "catalogArt"],
-    queryFn: () => store.getCopy(copyId),
+    /*
+     * `null` for a copy that is not there, never `undefined`.
+     *
+     * A lookup hides tombstones, so deleting a copy makes it vanish from under a strip
+     * that is still mounted -- and React Query treats `undefined` as "the function forgot
+     * to return" and throws rather than caching it. The absence is a real answer here:
+     * there is no copy, so there is no preference on it, and the default below is right.
+     */
+    queryFn: async () => (await store.getCopy(copyId)) ?? null,
   });
   const catalogArt: CatalogArtChoice = copy.data?.catalogArt ?? "AUTO";
 
