@@ -6,6 +6,7 @@ import { CONDITION_SHORT, FORMAT_LABELS, chromeFor } from "@janne6565/rekordo-sh
 import type { SharedCopy, SharedWish } from "@/api/friends";
 import { ReleaseArt } from "@/components/ReleaseArt";
 import { CoverSheet } from "@/features/detail/CoverSheet";
+import { Tracklist } from "@/features/tracklist/Tracklist";
 import { formatMoney } from "@/domain/currency";
 import { colors, fonts } from "@/theme/colors";
 
@@ -157,6 +158,10 @@ export function SharedDetailSheet({
                 ))}
               </View>
             )}
+
+            {/* 26c: catalogue data, so unlike the grades and the money above it this is
+                the same for every visitor. Read-only like everything else on this sheet. */}
+            <Tracklist releaseId={subject?.releaseId ?? undefined} chrome={CHROME} shared />
           </View>
         </CoverSheet>
       </View>

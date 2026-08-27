@@ -713,6 +713,29 @@ const enCommon = {
     mediaSleeve: "Media · Sleeve",
     paid: "Paid",
   },
+  /* 26d: the titles under the sleeve, on every detail screen that has a release. */
+  tracklist: {
+    label: "Tracklist",
+    /* The header keeps the number and drops the word at 390px \u2014 "26 \u00b7 2 discs \u00b7 81 min". */
+    discs_one: "{{count}} disc",
+    discs_other: "{{count}} discs",
+    minutes: "{{count}} min",
+    hoursMinutes: "{{hours}} h {{minutes}} min",
+    reading: "reading catalogue",
+    none: "none",
+    medium: "{{format}} \u00b7 {{position}} of {{total}}",
+    disc: "Disc",
+    showRemainingShort: "Show the remaining {{count}}",
+    absent: {
+      handEntered: "Typed in by hand, so there is no catalogue entry to read a tracklist from.",
+      discogs: "Matched from Discogs, which gives Rekordo the count but not the titles.",
+      notInCatalogue: "No tracklist for this copy. Nothing in the catalogue matches it.",
+    },
+    unreachable:
+      "The catalogue did not answer. The rest of this copy is yours, stored here \u2014 only the titles come from outside.",
+    unreachableShared: "The catalogue did not answer. Only the titles come from outside.",
+    retry: "Try again",
+  },
   common: {
     save: "Save",
     cancel: "Cancel",
@@ -1466,6 +1489,28 @@ const deCommon: CommonSchema = {
     wanted: "Gesucht",
     mediaSleeve: "Medium · Hülle",
     paid: "Bezahlt",
+  },
+  tracklist: {
+    label: "Titelliste",
+    discs_one: "{{count}} Tontr\u00e4ger",
+    discs_other: "{{count}} Tontr\u00e4ger",
+    minutes: "{{count}} Min.",
+    hoursMinutes: "{{hours}} Std. {{minutes}} Min.",
+    reading: "Katalog wird gelesen",
+    none: "keine",
+    medium: "{{format}} \u00b7 {{position}} von {{total}}",
+    disc: "Tontr\u00e4ger",
+    showRemainingShort: "Restliche {{count}} anzeigen",
+    absent: {
+      handEntered:
+        "Von Hand eingetragen \u2014 es gibt keinen Katalogeintrag, aus dem sich eine Titelliste lesen lie\u00dfe.",
+      discogs: "Von Discogs \u00fcbernommen: Rekordo bekommt von dort die Anzahl, aber nicht die Titel.",
+      notInCatalogue: "Keine Titelliste f\u00fcr dieses Exemplar. Im Katalog passt nichts dazu.",
+    },
+    unreachable:
+      "Der Katalog hat nicht geantwortet. Alles andere an diesem Exemplar geh\u00f6rt dir und liegt hier \u2014 nur die Titel kommen von au\u00dfen.",
+    unreachableShared: "Der Katalog hat nicht geantwortet. Nur die Titel kommen von au\u00dfen.",
+    retry: "Erneut versuchen",
   },
   common: {
     close: "Schließen",

@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ReleaseArt } from "@/components/ReleaseArt";
 import { CoverSheet } from "@/features/detail/CoverSheet";
+import { Tracklist } from "@/features/tracklist/Tracklist";
 import { useCopySwipe } from "@/features/detail/useCopySwipe";
 import type { Copy, DetailChrome, Release } from "@janne6565/rekordo-shared";
 import {
@@ -287,6 +288,15 @@ function DetailBody({
               </View>
             </>
           )}
+
+          {/* 26a on the phone: the last section of the screen, under everything the copy
+              says about itself and above the one action that ends it. */}
+          <Tracklist
+            releaseId={release?.id}
+            chrome={chrome}
+            trackCount={release?.trackCount}
+            discCount={release?.discCount}
+          />
 
           <Pressable
             accessibilityRole="button"

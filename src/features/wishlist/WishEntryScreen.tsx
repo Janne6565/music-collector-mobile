@@ -1,10 +1,11 @@
 import { ReleaseArt } from "@/components/ReleaseArt";
+import { Tracklist } from "@/features/tracklist/Tracklist";
 import { WishSheet } from "@/features/wishlist/WishSheet";
 import { useWishCoverLogic } from "@/features/wishlist/useWishCoverLogic";
 import { useWishEntryLogic } from "@/features/wishlist/useWishlistLogic";
 import { colors, fonts } from "@/theme/colors";
 import type { WishFormat } from "@janne6565/rekordo-shared";
-import { FORMAT_LABELS, asWishFormat } from "@janne6565/rekordo-shared";
+import { FORMAT_LABELS, asWishFormat, chromeFor } from "@janne6565/rekordo-shared";
 import { useRouter } from "expo-router";
 import { Camera, Check, ChevronLeft, Heart, HeartOff, ImagePlus, Pencil, X } from "lucide-react-native";
 import { useState } from "react";
@@ -195,6 +196,13 @@ export function WishEntryScreen({ wishId }: { readonly wishId: string }) {
           </Pressable>
         </View>
 
+        {/* 26c: the same section on a record nobody owns yet. An entry typed in by hand,
+            or made before pressings were recorded, names no release at all — there is
+            nothing to read a tracklist from, so the section is not there. */}
+        <View style={styles.tracklist}>
+          <Tracklist releaseId={entry.releaseId ?? undefined} chrome={PAPER} />
+        </View>
+
         {logic.alsoOwned.length > 0 && (
           <View style={styles.also}>
             <Text style={styles.alsoTitle}>
@@ -222,7 +230,12 @@ function Header({ onBack }: { readonly onBack: () => void }) {
   );
 }
 
+/* The wishlist screen is paper throughout — it never takes a sleeve's palette the way the
+   library's detail screen does, because a wish has no copy to sample. */
+const PAPER = chromeFor(null);
+
 const styles = StyleSheet.create({
+  tracklist: { paddingHorizontal: 20 },
   safe: { flex: 1, backgroundColor: colors.paper },
   back: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 12, paddingVertical: 10 },
   backText: { fontSize: 14, color: colors.ink },
