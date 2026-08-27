@@ -243,13 +243,22 @@ function PeoplePanel({ logic }: { readonly logic: Logic }) {
         </>
       )}
 
-      <Text style={styles.sectionLabel}>
-        {t("friends.yourFriends", { count: logic.friends.length })}
-      </Text>
+      {/*
+       * No heading over an empty section. "Your friends · 0" is a label counting nothing,
+       * directly above a line that already says there is nobody — the board only ever
+       * draws this heading with a list under it.
+       */}
       {logic.friends.length === 0 ? (
         <Text style={styles.emptyBody}>{t("friends.noneYet")}</Text>
       ) : (
-        logic.friends.map((person) => <PersonRow key={person.id} person={person} logic={logic} />)
+        <>
+          <Text style={styles.sectionLabel}>
+            {t("friends.yourFriends", { count: logic.friends.length })}
+          </Text>
+          {logic.friends.map((person) => (
+            <PersonRow key={person.id} person={person} logic={logic} />
+          ))}
+        </>
       )}
     </View>
   );
