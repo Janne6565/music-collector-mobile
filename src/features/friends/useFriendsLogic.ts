@@ -1,11 +1,13 @@
-import { friendsApi } from "@/api/friends";
+import { friendsApi, type SharedWish } from "@/api/friends";
+import { lookupAlbumCovers, lookupPressingCovers } from "@/api/releases";
+import { isManualReleaseId } from "@janne6565/music-collector-shared";
 import { canStillAskForPush } from "@/features/notifications/push";
 import { claimPushPriming } from "@/local/settings";
 import { useStore } from "@/local/StoreProvider";
 import { useAppSelector } from "@/store/hooks";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 /** Shorter and the server returns nothing, so asking would only make the field flicker. */
 const MIN_QUERY = 3;
@@ -129,6 +131,41 @@ export function useFriendProfileLogic(handle: string) {
     enabled: person.data?.canSeeWishlist === true,
   });
 
+  /*
+   * Sleeves for their wishlist, resolved exactly the way your own list resolves them: the
+   * pressing they picked if they picked one, the album otherwise. A wish names an album,
+   * and an album has no cover of its own -- so this cannot be read off the entry and has to
+   * be asked for. Their own uploaded pictures are not in it and never were.
+   */
+  const wishItems = wishes.data?.wishes ?? [];
+  const wishReleaseIds = useMemo(
+    () =>
+      [...new Set(wishItems.map((wish) => wish.releaseId).filter((id): id is string => id != null))]
+        .filter((id) => !isManualReleaseId(id))
+        .sort(),
+    [wishItems],
+  );
+  const wishAlbumIds = useMemo(
+    () =>
+      [...new Set(wishItems.map((wish) => wish.albumId).filter((id): id is string => id != null))]
+        .filter((id) => !isManualReleaseId(id))
+        .sort(),
+    [wishItems],
+  );
+
+  const wishPressingCovers = useQuery({
+    queryKey: ["pressingCovers", wishReleaseIds],
+    enabled: wishReleaseIds.length > 0,
+    staleTime: 60 * 60 * 1000,
+    queryFn: () => lookupPressingCovers(wishReleaseIds),
+  });
+  const wishAlbumCovers = useQuery({
+    queryKey: ["albumCovers", wishAlbumIds],
+    enabled: wishAlbumIds.length > 0,
+    staleTime: 60 * 60 * 1000,
+    queryFn: () => lookupAlbumCovers(wishAlbumIds),
+  });
+
   const refresh = useCallback(async () => {
     await queryClient.invalidateQueries({ queryKey: ["profile", clean] });
     await queryClient.invalidateQueries({ queryKey: ["friends"] });
@@ -146,7 +183,11 @@ export function useFriendProfileLogic(handle: string) {
     loading: person.isLoading,
     failed: person.isError,
     copies: copies.data?.copies ?? [],
-    wishes: wishes.data?.wishes ?? [],
+    wishes: wishItems,
+    /** The sleeve for one of their wishes, or null while it is on its way or absent. */
+    wishCoverOf: (wish: SharedWish): string | null =>
+      (wish.releaseId == null ? undefined : wishPressingCovers.data?.get(wish.releaseId)) ??
+      (wish.albumId == null ? null : (wishAlbumCovers.data?.get(wish.albumId) ?? null)),
     loadingLists: copies.isLoading || wishes.isLoading,
     ask,
     unfriend,

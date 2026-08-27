@@ -1,5 +1,7 @@
 import type { SharedCopy } from "@/api/friends";
+import { CopyTile } from "@/components/CopyTile";
 import { ReleaseArt } from "@/components/ReleaseArt";
+import { WishRow, wishCardStyle } from "@/components/WishRow";
 import { Avatar } from "@/features/friends/Avatar";
 import { useFriendProfileLogic } from "@/features/friends/useFriendsLogic";
 import { colors, fonts } from "@/theme/colors";
@@ -157,28 +159,27 @@ function Grid({
   return (
     <View style={styles.grid}>
       {copies.map((copy) => (
-        <View key={copy.id} style={styles.tile}>
-          <ReleaseArt
-            release={{ coverArtUrl: copy.coverArtUrl ?? null, format: copy.format as Format }}
-            style={styles.tileArt}
-          />
-          <Text style={styles.tileTitle} numberOfLines={1}>
-            {copy.title}
-          </Text>
-          <Text style={styles.tileMeta} numberOfLines={1}>
-            {[
-              copy.format ? FORMAT_LABELS[copy.format as Format] : undefined,
-              copy.year?.toString(),
-              // Only when the owner turned prices on: sharing a shelf is not sharing what
-              // it cost.
-              pricesVisible && copy.pricePaidCents !== undefined
-                ? `${(copy.pricePaidCents / 100).toFixed(0)} ${copy.currency ?? ""}`.trim()
-                : undefined,
-            ]
-              .filter(Boolean)
-              .join(" · ")}
-          </Text>
-        </View>
+        <CopyTile
+          key={copy.id}
+          style={styles.tile}
+          art={
+            <ReleaseArt
+              release={{ coverArtUrl: copy.coverArtUrl ?? null, format: copy.format as Format }}
+            />
+          }
+          title={copy.title ?? "—"}
+          subtitle={[
+            copy.format ? FORMAT_LABELS[copy.format as Format] : undefined,
+            copy.year?.toString(),
+            // Only when the owner turned prices on: sharing a shelf is not sharing what it
+            // cost.
+            pricesVisible && copy.pricePaidCents !== undefined
+              ? `${(copy.pricePaidCents / 100).toFixed(0)} ${copy.currency ?? ""}`.trim()
+              : undefined,
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+        />
       ))}
     </View>
   );
@@ -190,18 +191,32 @@ function WishRows({ logic }: { readonly logic: Logic }) {
     return <Text style={styles.emptyBody}>{t("friendProfile.emptyWishlist")}</Text>;
   }
   return (
-    <View>
+    <View style={styles.wishes}>
       {logic.wishes.map((wish) => (
-        <View key={wish.id} style={styles.wishRow}>
-          <View style={styles.rowText}>
-            <Text style={styles.wishTitle} numberOfLines={1}>
-              {wish.title}
-            </Text>
-            <Text style={styles.meta} numberOfLines={1}>
-              {wish.artistName}
-            </Text>
-          </View>
-          <Text style={styles.wishFormat}>{wish.desiredFormat ?? ""}</Text>
+        /*
+         * The same card your own wishlist uses. It used to be a bare line of text with no
+         * artwork, which made one feature look like two depending on whose list it was.
+         *
+         * No "added" time: when somebody else put a record on their list is not a fact
+         * about you, and the deck's own rule for a shared shelf is that it shows sleeves
+         * rather than a history.
+         */
+        <View key={wish.id} style={styles.wishCard}>
+          <WishRow
+            art={
+              <ReleaseArt
+                release={{ coverArtUrl: logic.wishCoverOf(wish) }}
+                format={(wish.desiredFormat as Format | undefined) ?? "OTHER"}
+              />
+            }
+            title={wish.title ?? "—"}
+            subtitle={wish.artistName ?? ""}
+            format={
+              wish.desiredFormat === undefined || wish.desiredFormat === null
+                ? t("wishlist.anyFormat")
+                : FORMAT_LABELS[wish.desiredFormat as Format]
+            }
+          />
         </View>
       ))}
     </View>
@@ -210,6 +225,8 @@ function WishRows({ logic }: { readonly logic: Logic }) {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.paper },
+  wishes: { gap: 10 },
+  wishCard: wishCardStyle,
   bar: { paddingHorizontal: 16, paddingVertical: 8 },
   centred: { alignItems: "center", justifyContent: "center", paddingVertical: 48, gap: 6 },
   body: { paddingHorizontal: 20, paddingBottom: 40 },
@@ -282,25 +299,7 @@ const styles = StyleSheet.create({
   },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 14, marginTop: 16 },
   tile: { width: "30%" },
-  tileArt: { width: "100%", aspectRatio: 1, borderRadius: 6 },
-  tileTitle: { fontFamily: fonts.sans, fontSize: 12.5, fontWeight: "600", color: colors.ink, marginTop: 6 },
-  tileMeta: { fontFamily: fonts.sans, fontSize: 11, color: colors.inkMuted, marginTop: 1 },
-  wishRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    paddingVertical: 11,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.line,
-  },
   rowText: { flex: 1, minWidth: 0 },
-  wishTitle: { fontFamily: fonts.sans, fontSize: 13.5, fontWeight: "600", color: colors.ink },
-  wishFormat: {
-    fontFamily: fonts.sans,
-    fontSize: 11,
-    textTransform: "uppercase",
-    color: colors.inkSubtle,
-  },
   emptyTitle: { fontFamily: fonts.serif, fontSize: 20, color: colors.ink },
   emptyBody: {
     fontFamily: fonts.sans,

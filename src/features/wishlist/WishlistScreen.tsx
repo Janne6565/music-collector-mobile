@@ -1,4 +1,5 @@
 import { ReleaseArt } from "@/components/ReleaseArt";
+import { WishRow, wishCardStyle } from "@/components/WishRow";
 import { formatRelativeTime } from "@/domain/relativeTime";
 import { WishSheet } from "@/features/wishlist/WishSheet";
 import { useWishlistLogic } from "@/features/wishlist/useWishlistLogic";
@@ -185,50 +186,31 @@ export function WishlistScreen() {
                 lifted === index && { transform: [{ translateY: shift }, { scale: 1.015 }] },
               ]}
             >
-              <Pressable
-                accessibilityRole="button"
+              <WishRow
                 onPress={() =>
                   router.push({ pathname: "/wishlist/[wishId]", params: { wishId: item.id } })
                 }
                 onLongPress={() => setLifted(index)}
-                delayLongPress={250}
-                style={styles.rowPressable}
-              >
-                <View style={styles.thumb}>
-                  {/* The wanted format is the silhouette, not the artwork: an entry for the
-                      vinyl of a record you already have on CD should look like the thing
-                      you are hunting. */}
+                art={
+                  /* The wanted format is the silhouette, not the artwork: an entry for the
+                     vinyl of a record you already have on CD should look like the thing you
+                     are hunting. */
                   <ReleaseArt
                     release={{ coverArtUrl: logic.coverOf(item) }}
                     previewUri={logic.pictureOf(item)}
                     format={item.desiredFormat ?? "OTHER"}
                   />
-                </View>
-                <View style={styles.body}>
-                  <Text style={styles.rowTitle} numberOfLines={1}>
-                    {item.title}
-                  </Text>
-                  <Text style={styles.rowSubtitle} numberOfLines={1}>
-                    {item.artistName}
-                    {item.year === null ? "" : ` · ${item.year}`}
-                  </Text>
-                  {item.note !== null && (
-                    <Text style={styles.rowNote} numberOfLines={1}>
-                      {item.note}
-                    </Text>
-                  )}
-                  <View style={styles.metaRow}>
-                    <Text style={styles.formatChip}>
-                      {item.desiredFormat === null
-                        ? t("wishlist.anyFormat")
-                        : FORMAT_LABELS[item.desiredFormat]}
-                    </Text>
-                    <Text style={styles.added}>
-                      {formatRelativeTime(item.createdAt, i18n.language)}
-                    </Text>
-                  </View>
-                </View>
-              </Pressable>
+                }
+                title={item.title}
+                subtitle={`${item.artistName}${item.year === null ? "" : ` · ${item.year}`}`}
+                note={item.note}
+                format={
+                  item.desiredFormat === null
+                    ? t("wishlist.anyFormat")
+                    : FORMAT_LABELS[item.desiredFormat]
+                }
+                trailing={formatRelativeTime(item.createdAt, i18n.language)}
+              />
             </Animated.View>
           ))}
         </ScrollView>
@@ -336,12 +318,7 @@ const styles = StyleSheet.create({
   sortOptionText: { fontSize: 13, color: colors.ink },
   sortOptionOn: { fontWeight: "700" },
   list: { padding: 18, paddingBottom: 120, gap: 9 },
-  row: {
-    borderRadius: 12,
-    backgroundColor: colors.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.line,
-  },
+  row: wishCardStyle,
   rowLifted: {
     // The deck's carried row: lifted off the page and shadowed. The scale rides along with
     // the drag's own transform above.
@@ -352,23 +329,6 @@ const styles = StyleSheet.create({
     elevation: 8,
     zIndex: 2,
   },
-  rowPressable: { flexDirection: "row", gap: 12, padding: 12 },
-  thumb: { width: 56 },
-  body: { flex: 1, minWidth: 0 },
-  rowTitle: { fontSize: 14, fontWeight: "600", color: colors.ink },
-  rowSubtitle: { fontSize: 12, color: colors.inkMuted, marginTop: 1 },
-  rowNote: { fontSize: 11.5, color: colors.inkSubtle, marginTop: 4 },
-  metaRow: { flexDirection: "row", alignItems: "center", gap: 7, marginTop: 6 },
-  formatChip: {
-    fontSize: 10,
-    color: colors.inkMuted,
-    backgroundColor: "rgba(25,23,19,0.06)",
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 5,
-    overflow: "hidden",
-  },
-  added: { fontSize: 10, color: colors.inkSubtle },
   empty: { flex: 1, alignItems: "center", paddingHorizontal: 30, paddingTop: 70 },
   emptyIcon: {
     width: 56,

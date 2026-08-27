@@ -86,8 +86,19 @@ export interface SharedCopy {
 
 export interface SharedWish {
   id?: string;
+  /**
+   * The album, and the pressing its owner picked when they picked one.
+   *
+   * The server has always sent both; this hand-written client simply did not declare them,
+   * so a friend's wishlist had nothing to resolve a sleeve from and drew bare text. They
+   * are pointers into the catalogue, not anything about the person — their own uploaded
+   * pictures stay private, as they always have.
+   */
+  albumId?: string;
+  releaseId?: string;
   title?: string;
   artistName?: string;
+  year?: number;
   desiredFormat?: string;
 }
 

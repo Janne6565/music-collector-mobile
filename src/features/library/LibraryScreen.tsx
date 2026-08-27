@@ -6,6 +6,7 @@ import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ConfirmStrip } from "@/features/auth/ConfirmStrip";
 import { rememberCopyOrder } from "@/features/library/copyOrder";
+import { CopyTile } from "@/components/CopyTile";
 import { ReleaseArt } from "@/components/ReleaseArt";
 import type { Format } from "@janne6565/music-collector-shared";
 import { catalogArtShown, copyFormat, copyPreviewSrc } from "@janne6565/music-collector-shared";
@@ -141,22 +142,24 @@ function GridItem({
   readonly allowCatalogArt: boolean;
 }) {
   return (
-    <Pressable onPress={onPress} style={styles.item}>
-      <ReleaseArt
-        release={row.release}
-        format={copyFormat(row.copy, row.release)}
-        previewUri={previewUri}
-        allowCatalogArt={allowCatalogArt}
-      />
-      <Text style={styles.itemTitle} numberOfLines={1}>
-        {row.release?.title ?? "—"}
-      </Text>
-      <Text style={styles.itemSubtitle} numberOfLines={1}>
-        {row.release === undefined
+    <CopyTile
+      style={styles.item}
+      onPress={onPress}
+      art={
+        <ReleaseArt
+          release={row.release}
+          format={copyFormat(row.copy, row.release)}
+          previewUri={previewUri}
+          allowCatalogArt={allowCatalogArt}
+        />
+      }
+      title={row.release?.title ?? "—"}
+      subtitle={
+        row.release === undefined
           ? ""
-          : `${row.release.artistName}${row.release.year === null ? "" : ` · ${row.release.year}`}`}
-      </Text>
-    </Pressable>
+          : `${row.release.artistName}${row.release.year === null ? "" : ` · ${row.release.year}`}`
+      }
+    />
   );
 }
 
@@ -210,8 +213,6 @@ const styles = StyleSheet.create({
   grid: { paddingHorizontal: 18, paddingTop: 12, paddingBottom: 24, gap: 12 },
   column: { gap: 10 },
   item: { flex: 1 / 3 },
-  itemTitle: { fontSize: 11.5, fontWeight: "600", marginTop: 6, color: colors.ink },
-  itemSubtitle: { fontSize: 10.5, color: colors.inkMuted },
   empty: { padding: 18, gap: 6 },
   emptyTitle: { fontFamily: fonts.serif, fontSize: 22, color: colors.ink },
   emptyBody: { fontSize: 13, color: colors.inkMuted, padding: 18 },
