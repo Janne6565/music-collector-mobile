@@ -312,7 +312,9 @@ const styles = StyleSheet.create({
     borderColor: colors.line,
   },
   searchInput: { flex: 1, fontFamily: fonts.sans, fontSize: 14, color: colors.ink, padding: 0 },
-  recent: { paddingHorizontal: 20 },
+  // The last row needs air under it before the segments start; the rows only carry
+  // their own vertical padding, which reads as a gap between them, not as an end.
+  recent: { paddingHorizontal: 20, paddingBottom: 12 },
   recentLabel: { marginTop: 0 },
   recentHead: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" },
   recentClear: { fontSize: 11.5, color: colors.accent },
