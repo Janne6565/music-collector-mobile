@@ -7,26 +7,52 @@ import type { ProfileSummary } from "@/api/friends";
 import type { RecentCollector } from "@/local/settings";
 import { formatRelativeTime } from "@/domain/relativeTime";
 import { useRouter } from "expo-router";
-import { ChevronRight, Lock, Search, X } from "lucide-react-native";
-import { useState } from "react";
+import { AtSign, ChevronRight, Lock, Search, X } from "lucide-react-native";
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 /**
- * Screens 15a and 15b — one tab holding activity and people.
+ * Screens 15a, 15b and 24e — one tab holding activity, people, and the way to find them.
  *
  * Two panels behind a segmented control rather than two tabs of their own: they are the
  * same subject looked at two ways, and the phone's tab bar already has four things in it.
+ *
+ * Looking somebody up is a mode, not a field sitting permanently under the title. At rest
+ * it is one round button; opened, it takes the screen — the title goes, the panels go, and
+ * what is left is a handle field and the collectors this device has already been to see.
+ * That is 24e's whole argument: with nothing typed, the useful thing to offer is people,
+ * not the words that once found them.
  */
 export function FriendsScreen() {
   const { t } = useTranslation();
   const logic = useFriendsLogic();
   const [panel, setPanel] = useState<"activity" | "people">("activity");
   const [searching, setSearching] = useState(false);
-  // Only with the field open and nothing typed: once there is a query the results are the
-  // answer, and a list of old ones underneath would be competing with it.
+  const field = useRef<TextInput>(null);
+
+  /**
+   * The field is open and nothing has been typed — 24e's middle frame.
+   *
+   * Once there is a query the results are the answer and a list of old visits underneath
+   * would be competing with it, so this is the one state where the recents show.
+   */
   const showRecent = searching && logic.query.trim() === "";
+
+  const close = () => {
+    logic.setQuery("");
+    field.current?.blur();
+    setSearching(false);
+  };
 
   if (!logic.signedIn) {
     return (
@@ -62,33 +88,68 @@ export function FriendsScreen() {
   return (
     <SafeAreaView style={styles.screen} edges={["top"]}>
       <View style={styles.header}>
-        <Text style={styles.title}>{t("friends.title")}</Text>
-        <View style={styles.searchField}>
-          <Search size={15} color={colors.inkSubtle} strokeWidth={1.75} />
-          <TextInput
-            value={logic.query}
-            onChangeText={(next) => {
-              logic.setQuery(next);
-              // Typing is a request to look at people, whichever panel was open.
-              if (next.trim().length > 0) setPanel("people");
-            }}
-            placeholder={t("friends.searchPlaceholder")}
-            placeholderTextColor={colors.inkSubtle}
-            autoCapitalize="none"
-            autoCorrect={false}
-            onFocus={() => setSearching(true)}
-            onBlur={() => setSearching(false)}
-            style={styles.searchInput}
-          />
-        </View>
+        {searching ? (
+          <View style={styles.searchRow}>
+            <View style={styles.handleField}>
+              <AtSign size={16} color={colors.inkMuted} strokeWidth={1.75} />
+              <TextInput
+                ref={field}
+                autoFocus
+                value={logic.query}
+                onChangeText={(next) => {
+                  logic.setQuery(next);
+                  // Typing is a request to look at people, whichever panel was open.
+                  if (next.trim().length > 0) setPanel("people");
+                }}
+                placeholder={t("friends.handlePlaceholder")}
+                placeholderTextColor={colors.inkSubtle}
+                autoCapitalize="none"
+                autoCorrect={false}
+                selectionColor={colors.accent}
+                onSubmitEditing={() => setPanel("people")}
+                style={styles.handleInput}
+              />
+            </View>
+            <Pressable accessibilityRole="button" onPress={close} hitSlop={8}>
+              <Text style={styles.cancel}>{t("common.cancel")}</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <>
+            <View style={styles.titleRow}>
+              <Text style={styles.title}>{t("friends.title")}</Text>
+              {/* One button, not a field. A search box under the title claims a permanent
+                  strip of every visit for something most of them do not do. */}
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t("friends.search")}
+                onPress={() => setSearching(true)}
+                style={styles.searchButton}
+              >
+                <Search size={16} color={colors.inkMuted} strokeWidth={1.75} />
+              </Pressable>
+            </View>
+
+            <View style={styles.segments}>
+              <Segment active={panel === "activity"} onPress={() => setPanel("activity")}>
+                {t("friends.activity")}
+              </Segment>
+              <Segment
+                active={panel === "people"}
+                count={logic.friends.length}
+                onPress={() => setPanel("people")}
+              >
+                {t("friends.people")}
+              </Segment>
+            </View>
+          </>
+        )}
       </View>
 
-      {showRecent && (
-        <View style={styles.recent}>
+      {showRecent ? (
+        <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
           <View style={styles.recentHead}>
-            {/* The shared label carries a top margin for separating sections inside the
-                body; here it sits directly under the field it belongs to. */}
-            <Text style={[styles.sectionLabel, styles.recentLabel]}>{t("friends.recent")}</Text>
+            <Text style={styles.sectionLabel}>{t("friends.recent")}</Text>
             {logic.recent.length > 0 && (
               <Pressable accessibilityRole="button" onPress={() => void logic.forget()} hitSlop={8}>
                 <Text style={styles.recentClear}>{t("friends.recentClear")}</Text>
@@ -99,62 +160,72 @@ export function FriendsScreen() {
           {logic.recent.length === 0 ? (
             /*
              * Nothing has been visited, so there is nothing to offer — and nothing is
-             * invented. The field explains what it wants and what will collect here.
+             * invented. The card says what a handle looks like and what will collect here.
              */
-            <View style={styles.recentEmpty}>
-              <Text style={styles.recentEmptyTitle}>{t("friends.recentEmpty.title")}</Text>
-              <Text style={styles.recentEmptyBody}>{t("friends.recentEmpty.body")}</Text>
+            <View style={styles.emptyCard}>
+              <View style={styles.emptyCardIcon}>
+                <AtSign size={17} color={colors.inkMuted} strokeWidth={1.9} />
+              </View>
+              <Text style={styles.emptyCardTitle}>{t("friends.recentEmpty.title")}</Text>
+              <Text style={styles.emptyCardBody}>{t("friends.recentEmpty.body")}</Text>
             </View>
           ) : (
-            logic.recent.map((entry) => (
-              <RecentRow key={entry.handle} entry={entry} logic={logic} />
-            ))
+            logic.recent.map((entry) => <RecentRow key={entry.handle} entry={entry} logic={logic} />)
           )}
-        </View>
+        </ScrollView>
+      ) : (
+        <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+          {logic.incoming.map((invite) => (
+            <RequestCard
+              key={invite.id}
+              name={invite.from?.displayName ?? invite.from?.handle ?? ""}
+              handle={invite.from?.handle ?? ""}
+              mutual={invite.mutualFriends ?? 0}
+              busy={logic.accept.isPending || logic.decline.isPending}
+              onAccept={() => logic.accept.mutate(invite.id ?? "")}
+              onDecline={() => logic.decline.mutate(invite.id ?? "")}
+            />
+          ))}
+
+          {searching || panel === "people" ? (
+            <PeoplePanel logic={logic} />
+          ) : (
+            <ActivityList entries={logic.entries} loading={logic.loading} />
+          )}
+        </ScrollView>
       )}
-
-      <View style={styles.segments}>
-        <Segment active={panel === "activity"} onPress={() => setPanel("activity")}>
-          {t("friends.activity")}
-        </Segment>
-        <Segment active={panel === "people"} onPress={() => setPanel("people")}>
-          {t("friends.people", { count: logic.friends.length })}
-        </Segment>
-      </View>
-
-      <ScrollView contentContainerStyle={styles.body}>
-        {logic.incoming.map((invite) => (
-          <RequestCard
-            key={invite.id}
-            name={invite.from?.displayName ?? invite.from?.handle ?? ""}
-            handle={invite.from?.handle ?? ""}
-            mutual={invite.mutualFriends ?? 0}
-            busy={logic.accept.isPending || logic.decline.isPending}
-            onAccept={() => logic.accept.mutate(invite.id ?? "")}
-            onDecline={() => logic.decline.mutate(invite.id ?? "")}
-          />
-        ))}
-
-        {panel === "activity" ? (
-          <ActivityList entries={logic.entries} loading={logic.loading} />
-        ) : (
-          <PeoplePanel logic={logic} />
-        )}
-      </ScrollView>
     </SafeAreaView>
   );
 }
 
 type Logic = ReturnType<typeof useFriendsLogic>;
 
+/**
+ * One half of the track, not a pill of its own.
+ *
+ * The count rides beside its label rather than inside it, so the number reads as a
+ * quantity and not as part of the name.
+ */
 function Segment({
   active,
+  count,
   onPress,
   children,
-}: { readonly active: boolean; readonly onPress: () => void; readonly children: string }) {
+}: {
+  readonly active: boolean;
+  readonly count?: number;
+  readonly onPress: () => void;
+  readonly children: string;
+}) {
   return (
-    <Pressable onPress={onPress} style={[styles.segment, active && styles.segmentActive]}>
+    <Pressable
+      accessibilityRole="tab"
+      accessibilityState={{ selected: active }}
+      onPress={onPress}
+      style={[styles.segment, active && styles.segmentActive]}
+    >
       <Text style={[styles.segmentLabel, active && styles.segmentLabelActive]}>{children}</Text>
+      {count === undefined ? null : <Text style={styles.segmentCount}>{count}</Text>}
     </Pressable>
   );
 }
@@ -172,7 +243,9 @@ function PeoplePanel({ logic }: { readonly logic: Logic }) {
         </>
       )}
 
-      <Text style={styles.sectionLabel}>{t("friends.yourFriends", { count: logic.friends.length })}</Text>
+      <Text style={styles.sectionLabel}>
+        {t("friends.yourFriends", { count: logic.friends.length })}
+      </Text>
       {logic.friends.length === 0 ? (
         <Text style={styles.emptyBody}>{t("friends.noneYet")}</Text>
       ) : (
@@ -183,17 +256,15 @@ function PeoplePanel({ logic }: { readonly logic: Logic }) {
 }
 
 /**
- * One collector this device has been to see.
+ * One collector this device has been to see — 24e.
  *
- * Their name, their handle, and what was there when you looked — a shelf's size and how
- * long ago, which together are the reason to go back rather than merely the fact that you
- * once did. Both halves are optional: a shelf closed to you has no count to report, and
- * rows written before this list said anything simply say less.
+ * Their name, their handle, and what was there when you looked: a shelf's size and how long
+ * ago, which together are the reason to go back rather than merely the fact that you once
+ * did. Both halves are optional and the line shortens — a shelf closed to you reports no
+ * count, and rows written before any of this was stored say less rather than being thrown
+ * away to gain a subtitle.
  */
-function RecentRow({
-  entry,
-  logic,
-}: { readonly entry: RecentCollector; readonly logic: Logic }) {
+function RecentRow({ entry, logic }: { readonly entry: RecentCollector; readonly logic: Logic }) {
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const name = entry.displayName ?? entry.handle;
@@ -280,7 +351,8 @@ function PersonRow({ person, logic }: { readonly person: ProfileSummary; readonl
           )}
           <Text style={styles.rowMeta} numberOfLines={1}>
             @{person.handle}
-            {person.copyCount !== undefined && ` · ${t("friends.copies", { count: person.copyCount })}`}
+            {person.copyCount !== undefined &&
+              ` · ${t("friends.copies", { count: person.copyCount })}`}
           </Text>
         </View>
       </View>
@@ -330,26 +402,32 @@ interface RequestCardProps {
   readonly onDecline: () => void;
 }
 
-/** Pinned above the feed: a person waiting for an answer outranks any record. */
+/**
+ * Pinned above the feed: a person waiting for an answer outranks any record.
+ *
+ * A drawn accent edge on the paper surface rather than an accent wash (22d). What separates
+ * a request from activity is that it is addressed to you and waits — the card is the same
+ * material as everything else, outlined.
+ */
 function RequestCard({ name, handle, mutual, busy, onAccept, onDecline }: RequestCardProps) {
   const { t } = useTranslation();
   return (
     <View style={styles.requestCard}>
       <Avatar name={name} size={38} />
       <View style={styles.rowText}>
-        <Text style={styles.rowTitle} numberOfLines={1}>
+        <Text style={styles.requestName} numberOfLines={1}>
           {name}
         </Text>
-        <Text style={styles.rowMeta} numberOfLines={1}>
+        <Text style={styles.requestMeta} numberOfLines={1}>
           @{handle}
           {mutual > 0 ? ` · ${t("friends.mutual", { count: mutual })}` : ` · ${t("friends.wants")}`}
         </Text>
       </View>
-      <Pressable onPress={onDecline} disabled={busy} style={styles.declineButton}>
-        <Text style={styles.declineLabel}>{t("friends.decline")}</Text>
-      </Pressable>
       <Pressable onPress={onAccept} disabled={busy} style={styles.acceptButton}>
         <Text style={styles.acceptLabel}>{t("friends.accept")}</Text>
+      </Pressable>
+      <Pressable onPress={onDecline} disabled={busy} hitSlop={6}>
+        <Text style={styles.declineLabel}>{t("friends.decline")}</Text>
       </Pressable>
     </View>
   );
@@ -358,31 +436,83 @@ function RequestCard({ name, handle, mutual, busy, onAccept, onDecline }: Reques
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.paper },
   centred: { flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 8 },
-  header: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 10, gap: 12 },
-  title: { fontFamily: fonts.serif, fontSize: 26, color: colors.ink },
-  searchField: {
-    flexDirection: "row",
+
+  header: { paddingHorizontal: 18, paddingTop: 8 },
+  titleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  title: { fontFamily: fonts.serif, fontSize: 28, color: colors.ink },
+  searchButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 999,
     alignItems: "center",
-    gap: 8,
-    height: 38,
-    paddingHorizontal: 12,
-    borderRadius: 10,
+    justifyContent: "center",
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.line,
   },
-  searchInput: { flex: 1, fontFamily: fonts.sans, fontSize: 14, color: colors.ink, padding: 0 },
-  // The last row needs air under it before the segments start; the rows only carry
-  // their own vertical padding, which reads as a gap between them, not as an end.
-  recent: { paddingHorizontal: 20, paddingBottom: 12 },
-  recentLabel: { marginTop: 0 },
-  recentHead: {
+
+  searchRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  /*
+   * Open, the field is a capsule with a drawn edge. The resting screen has no field at all,
+   * so this one is not a box among other things — it is the screen, and says so.
+   */
+  handleField: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingTop: 8,
-    paddingBottom: 6,
+    gap: 9,
+    height: 44,
+    paddingHorizontal: 15,
+    borderRadius: 999,
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.ink,
   },
+  handleInput: { flex: 1, fontFamily: fonts.sans, fontSize: 14, color: colors.ink, padding: 0 },
+  cancel: { fontFamily: fonts.sans, fontSize: 13.5, fontWeight: "500", color: colors.inkMuted },
+
+  /* A track, and the halves live inside it. */
+  segments: {
+    flexDirection: "row",
+    gap: 2,
+    marginTop: 16,
+    padding: 3,
+    borderRadius: 9,
+    backgroundColor: "rgba(25,23,19,0.06)",
+  },
+  segment: {
+    flex: 1,
+    height: 30,
+    borderRadius: 7,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+  },
+  segmentActive: {
+    backgroundColor: colors.surface,
+    shadowColor: "rgba(25,23,19,1)",
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  segmentLabel: { fontFamily: fonts.sans, fontSize: 12.5, color: colors.inkMuted },
+  segmentLabelActive: { color: colors.ink, fontWeight: "600" },
+  segmentCount: { fontFamily: "Menlo", fontSize: 11, color: colors.inkSubtle },
+
+  body: { paddingHorizontal: 18, paddingTop: 16, paddingBottom: 24 },
+  sectionLabel: {
+    fontFamily: "Menlo",
+    fontSize: 10,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    color: colors.inkSubtle,
+    marginTop: 24,
+    marginBottom: 10,
+  },
+
+  recentHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   recentClear: { fontFamily: fonts.sans, fontSize: 11.5, fontWeight: "600", color: colors.accent },
   /*
    * A rule above each row rather than between them: the first row then separates itself
@@ -408,63 +538,75 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "rgba(25,23,19,0.05)",
   },
-  recentEmpty: { paddingTop: 6, paddingBottom: 4 },
-  recentEmptyTitle: { fontFamily: fonts.sans, fontSize: 13.5, fontWeight: "600", color: colors.ink },
-  recentEmptyBody: {
-    fontFamily: fonts.sans,
-    fontSize: 12,
-    lineHeight: 18,
-    color: colors.inkMuted,
+
+  emptyCard: {
     marginTop: 4,
+    paddingVertical: 26,
+    paddingHorizontal: 20,
+    borderRadius: 14,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.line,
+    alignItems: "center",
   },
-  segments: { flexDirection: "row", gap: 6, paddingHorizontal: 20, paddingBottom: 8 },
-  segment: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
-  segmentActive: { backgroundColor: colors.surface },
-  segmentLabel: { fontFamily: fonts.sans, fontSize: 13, color: colors.inkMuted },
-  segmentLabelActive: { color: colors.ink, fontWeight: "600" },
-  body: { paddingHorizontal: 20, paddingBottom: 32, gap: 4 },
-  sectionLabel: {
+  emptyCardIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(25,23,19,0.05)",
+  },
+  emptyCardTitle: { fontFamily: fonts.serif, fontSize: 19, color: colors.ink, marginTop: 12 },
+  emptyCardBody: {
     fontFamily: fonts.sans,
-    fontSize: 10,
-    letterSpacing: 1,
-    textTransform: "uppercase",
-    color: colors.inkSubtle,
-    marginTop: 16,
-    marginBottom: 6,
+    fontSize: 12.5,
+    lineHeight: 20,
+    color: colors.inkMuted,
+    marginTop: 7,
+    textAlign: "center",
   },
+
   row: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10 },
   rowText: { flex: 1, minWidth: 0 },
-  rowTitle: { fontFamily: fonts.sans, fontSize: 14, fontWeight: "600", color: colors.ink },
+  rowTitle: { fontFamily: fonts.sans, fontSize: 13, fontWeight: "600", color: colors.ink },
   rowMetaLine: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 },
-  rowMeta: { fontFamily: fonts.sans, fontSize: 12, color: colors.inkMuted, flexShrink: 1 },
-  flatState: { fontFamily: fonts.sans, fontSize: 12, color: colors.inkSubtle },
+  rowMeta: { fontFamily: "Menlo", fontSize: 11, color: colors.inkMuted, flexShrink: 1 },
+  flatState: { fontFamily: fonts.sans, fontSize: 12, fontWeight: "500", color: colors.inkSubtle },
   addButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
+    height: 30,
+    paddingHorizontal: 13,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: colors.ink,
   },
   addLabel: { fontFamily: fonts.sans, fontSize: 12, fontWeight: "600", color: colors.paper },
+
   requestCard: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    padding: 12,
-    marginTop: 12,
-    borderRadius: 14,
+    gap: 12,
+    paddingVertical: 13,
+    paddingHorizontal: 14,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: "rgba(162,87,58,0.25)",
-    backgroundColor: "rgba(162,87,58,0.06)",
+    borderColor: "rgba(162,87,58,0.35)",
+    backgroundColor: colors.surface,
   },
-  declineButton: { paddingHorizontal: 8, paddingVertical: 6 },
-  declineLabel: { fontFamily: fonts.sans, fontSize: 12, color: colors.inkMuted },
+  requestName: { fontFamily: fonts.sans, fontSize: 13, fontWeight: "600", color: colors.ink },
+  requestMeta: { fontFamily: "Menlo", fontSize: 11, color: colors.inkMuted, marginTop: 2 },
   acceptButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 8,
+    height: 30,
+    paddingHorizontal: 13,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: colors.ink,
   },
   acceptLabel: { fontFamily: fonts.sans, fontSize: 12, fontWeight: "600", color: colors.paper },
+  declineLabel: { fontFamily: fonts.sans, fontSize: 12, fontWeight: "500", color: colors.inkSubtle },
+
   emptyTitle: { fontFamily: fonts.serif, fontSize: 20, color: colors.ink, textAlign: "center" },
   emptyBody: {
     fontFamily: fonts.sans,
