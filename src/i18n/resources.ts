@@ -114,6 +114,14 @@ const enCommon = {
     searchPlaceholder: "Find a collector by handle",
     recent: "Recently looked at",
     recentClear: "Clear",
+    /** The X on one row. The label names who it forgets, because the icon cannot. */
+    recentForget: "Forget {{name}}",
+    /** Copies and when, joined; either half is dropped when it is not known. */
+    recentSeen: "seen {{when}}",
+    recentEmpty: {
+      title: "Type a handle",
+      body: "Handles look like @friedrich.k. Once you have visited a shelf, it will wait here.",
+    },
     results: "Results",
     people: "People \u00b7 {{count}}",
     yourFriends: "Your friends \u00b7 {{count}}",
@@ -845,6 +853,12 @@ const deCommon: CommonSchema = {
     searchPlaceholder: "Sammler:in \u00fcber Handle finden",
     recent: "Zuletzt angesehen",
     recentClear: "Leeren",
+    recentForget: "{{name}} vergessen",
+    recentSeen: "gesehen {{when}}",
+    recentEmpty: {
+      title: "Handle eingeben",
+      body: "Handles sehen aus wie @friedrich.k. Sobald du ein Regal besucht hast, wartet es hier.",
+    },
     results: "Treffer",
     people: "Leute \u00b7 {{count}}",
     yourFriends: "Deine Freunde \u00b7 {{count}}",

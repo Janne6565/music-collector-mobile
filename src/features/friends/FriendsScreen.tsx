@@ -4,8 +4,10 @@ import { ClaimHandlePanel } from "@/features/friends/ClaimHandlePanel";
 import { useFriendsLogic } from "@/features/friends/useFriendsLogic";
 import { colors, fonts } from "@/theme/colors";
 import type { ProfileSummary } from "@/api/friends";
+import type { RecentCollector } from "@/local/settings";
+import { formatRelativeTime } from "@/domain/relativeTime";
 import { useRouter } from "expo-router";
-import { ChevronRight, Lock, Search } from "lucide-react-native";
+import { ChevronRight, Lock, Search, X } from "lucide-react-native";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
@@ -20,12 +22,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export function FriendsScreen() {
   const { t } = useTranslation();
   const logic = useFriendsLogic();
-  const router = useRouter();
   const [panel, setPanel] = useState<"activity" | "people">("activity");
   const [searching, setSearching] = useState(false);
   // Only with the field open and nothing typed: once there is a query the results are the
   // answer, and a list of old ones underneath would be competing with it.
-  const showRecent = searching && logic.query.trim() === "" && logic.recent.length > 0;
+  const showRecent = searching && logic.query.trim() === "";
 
   if (!logic.signedIn) {
     return (
@@ -88,36 +89,27 @@ export function FriendsScreen() {
             {/* The shared label carries a top margin for separating sections inside the
                 body; here it sits directly under the field it belongs to. */}
             <Text style={[styles.sectionLabel, styles.recentLabel]}>{t("friends.recent")}</Text>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => void logic.forget()}
-              hitSlop={8}
-            >
-              <Text style={styles.recentClear}>{t("friends.recentClear")}</Text>
-            </Pressable>
+            {logic.recent.length > 0 && (
+              <Pressable accessibilityRole="button" onPress={() => void logic.forget()} hitSlop={8}>
+                <Text style={styles.recentClear}>{t("friends.recentClear")}</Text>
+              </Pressable>
+            )}
           </View>
-          {logic.recent.map((entry) => (
-            <Pressable
-              key={entry.handle}
-              accessibilityRole="button"
-              // onPressIn, because the blur that closes this list fires first on a plain
-              // press and takes the row out from under the finger.
-              onPressIn={() =>
-                router.push({ pathname: "/profiles/[handle]", params: { handle: entry.handle } })
-              }
-              style={styles.recentRow}
-            >
-              <Avatar name={entry.displayName ?? entry.handle} size={28} />
-              <View style={styles.rowText}>
-                <Text style={styles.rowTitle} numberOfLines={1}>
-                  {entry.displayName ?? entry.handle}
-                </Text>
-                <Text style={styles.rowMeta} numberOfLines={1}>
-                  @{entry.handle}
-                </Text>
-              </View>
-            </Pressable>
-          ))}
+
+          {logic.recent.length === 0 ? (
+            /*
+             * Nothing has been visited, so there is nothing to offer — and nothing is
+             * invented. The field explains what it wants and what will collect here.
+             */
+            <View style={styles.recentEmpty}>
+              <Text style={styles.recentEmptyTitle}>{t("friends.recentEmpty.title")}</Text>
+              <Text style={styles.recentEmptyBody}>{t("friends.recentEmpty.body")}</Text>
+            </View>
+          ) : (
+            logic.recent.map((entry) => (
+              <RecentRow key={entry.handle} entry={entry} logic={logic} />
+            ))
+          )}
         </View>
       )}
 
@@ -190,6 +182,71 @@ function PeoplePanel({ logic }: { readonly logic: Logic }) {
   );
 }
 
+/**
+ * One collector this device has been to see.
+ *
+ * Their name, their handle, and what was there when you looked — a shelf's size and how
+ * long ago, which together are the reason to go back rather than merely the fact that you
+ * once did. Both halves are optional: a shelf closed to you has no count to report, and
+ * rows written before this list said anything simply say less.
+ */
+function RecentRow({
+  entry,
+  logic,
+}: { readonly entry: RecentCollector; readonly logic: Logic }) {
+  const { t, i18n } = useTranslation();
+  const router = useRouter();
+  const name = entry.displayName ?? entry.handle;
+
+  const parts: string[] = [];
+  if (entry.copyCount !== undefined) parts.push(t("friends.copies", { count: entry.copyCount }));
+  if (entry.seenAt !== undefined) {
+    parts.push(t("friends.recentSeen", { when: formatRelativeTime(entry.seenAt, i18n.language) }));
+  }
+  const meta = parts.join(" · ");
+
+  return (
+    <View style={styles.recentRow}>
+      <Pressable
+        accessibilityRole="button"
+        // onPressIn, because the blur that closes this list fires first on a plain press
+        // and takes the row out from under the finger.
+        onPressIn={() =>
+          router.push({ pathname: "/profiles/[handle]", params: { handle: entry.handle } })
+        }
+        style={styles.recentTap}
+      >
+        <Avatar name={name} size={44} />
+        <View style={styles.rowText}>
+          <Text style={styles.recentName} numberOfLines={1}>
+            {name}
+          </Text>
+          <Text style={styles.recentHandle} numberOfLines={1}>
+            @{entry.handle}
+          </Text>
+          {meta !== "" && (
+            <Text style={styles.recentMeta} numberOfLines={1}>
+              {meta}
+            </Text>
+          )}
+        </View>
+      </Pressable>
+
+      {/* Forgets this one. Clearing the lot is the header's job; a list you can only empty
+          wholesale makes one wrong visit permanent until you throw the rest away too. */}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={t("friends.recentForget", { name })}
+        onPressIn={() => void logic.forgetOne(entry.handle)}
+        hitSlop={8}
+        style={styles.recentForget}
+      >
+        <X size={13} color={colors.inkSubtle} strokeWidth={2} />
+      </Pressable>
+    </View>
+  );
+}
+
 function PersonRow({ person, logic }: { readonly person: ProfileSummary; readonly logic: Logic }) {
   const { t } = useTranslation();
   const router = useRouter();
@@ -204,6 +261,9 @@ function PersonRow({ person, logic }: { readonly person: ProfileSummary; readonl
         void logic.remember({
           handle: person.handle ?? "",
           displayName: person.displayName ?? null,
+          // What their shelf held when you went; absent when it is closed to you, which is
+          // the same reason the row above it has no count either.
+          copyCount: person.copyCount,
         });
         router.push({ pathname: "/profiles/[handle]", params: { handle: person.handle ?? "" } });
       }}
@@ -316,9 +376,47 @@ const styles = StyleSheet.create({
   // their own vertical padding, which reads as a gap between them, not as an end.
   recent: { paddingHorizontal: 20, paddingBottom: 12 },
   recentLabel: { marginTop: 0 },
-  recentHead: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" },
-  recentClear: { fontSize: 11.5, color: colors.accent },
-  recentRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 8 },
+  recentHead: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingTop: 8,
+    paddingBottom: 6,
+  },
+  recentClear: { fontFamily: fonts.sans, fontSize: 11.5, fontWeight: "600", color: colors.accent },
+  /*
+   * A rule above each row rather than between them: the first row then separates itself
+   * from the header it sits under, which is where the list actually needs the line.
+   */
+  recentRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 11,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.line,
+  },
+  recentTap: { flex: 1, flexDirection: "row", alignItems: "center", gap: 12, minWidth: 0 },
+  recentName: { fontFamily: fonts.sans, fontSize: 13.5, fontWeight: "600", color: colors.ink },
+  recentHandle: { fontFamily: "Menlo", fontSize: 11, color: colors.inkMuted, marginTop: 2 },
+  recentMeta: { fontFamily: fonts.sans, fontSize: 11, color: colors.inkSubtle, marginTop: 2 },
+  recentForget: {
+    width: 26,
+    height: 26,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(25,23,19,0.05)",
+  },
+  recentEmpty: { paddingTop: 6, paddingBottom: 4 },
+  recentEmptyTitle: { fontFamily: fonts.sans, fontSize: 13.5, fontWeight: "600", color: colors.ink },
+  recentEmptyBody: {
+    fontFamily: fonts.sans,
+    fontSize: 12,
+    lineHeight: 18,
+    color: colors.inkMuted,
+    marginTop: 4,
+  },
   segments: { flexDirection: "row", gap: 6, paddingHorizontal: 20, paddingBottom: 8 },
   segment: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
   segmentActive: { backgroundColor: colors.surface },

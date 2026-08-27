@@ -70,6 +70,16 @@ const RECENT_COLLECTOR_LIMIT = 6;
 export interface RecentCollector {
   readonly handle: string;
   readonly displayName: string | null;
+  /**
+   * When this device last opened their shelf.
+   *
+   * Optional because rows written before the list showed it have none, and a list that
+   * threw those away would empty itself once to gain a subtitle. A row without it simply
+   * says less.
+   */
+  readonly seenAt?: number;
+  /** What their shelf held when it was last seen; absent when it is closed to this viewer. */
+  readonly copyCount?: number;
 }
 
 export async function readRecentCollectors(store: LocalStore): Promise<RecentCollector[]> {
@@ -96,10 +106,21 @@ export async function rememberCollector(store: LocalStore, entry: RecentCollecto
   const kept = (await readRecentCollectors(store)).filter(
     (existing) => existing.handle.toLowerCase() !== entry.handle.toLowerCase(),
   );
+  // Stamped here rather than by the caller: every write is a visit, and a caller that
+  // forgot the timestamp would silently cost the row its subtitle.
+  const stamped: RecentCollector = { ...entry, seenAt: Date.now() };
   await store.writeSetting(
     RECENT_COLLECTORS,
-    JSON.stringify([entry, ...kept].slice(0, RECENT_COLLECTOR_LIMIT)),
+    JSON.stringify([stamped, ...kept].slice(0, RECENT_COLLECTOR_LIMIT)),
   );
+}
+
+/** One row off the list, for the X beside it. Clearing all is {@link forgetCollectors}. */
+export async function forgetCollector(store: LocalStore, handle: string): Promise<void> {
+  const kept = (await readRecentCollectors(store)).filter(
+    (existing) => existing.handle.toLowerCase() !== handle.toLowerCase(),
+  );
+  await store.writeSetting(RECENT_COLLECTORS, JSON.stringify(kept));
 }
 
 export async function forgetCollectors(store: LocalStore): Promise<void> {

@@ -5,6 +5,7 @@ import { canStillAskForPush } from "@/features/notifications/push";
 import {
   type RecentCollector,
   claimPushPriming,
+  forgetCollector,
   forgetCollectors,
   readRecentCollectors,
   rememberCollector,
@@ -88,6 +89,14 @@ export function useFriendsLogic() {
     [store, queryClient],
   );
 
+  const forgetOne = useCallback(
+    async (handle: string) => {
+      await forgetCollector(store, handle);
+      await queryClient.invalidateQueries({ queryKey: ["recentCollectors"] });
+    },
+    [store, queryClient],
+  );
+
   const forget = useCallback(async () => {
     await forgetCollectors(store);
     await queryClient.invalidateQueries({ queryKey: ["recentCollectors"] });
@@ -135,6 +144,7 @@ export function useFriendsLogic() {
     decline,
     recent: recent.data ?? [],
     remember,
+    forgetOne,
     forget,
   };
 }
