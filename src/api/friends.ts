@@ -79,6 +79,18 @@ export interface SharedCopy {
   year?: number;
   format?: string;
   coverArtUrl?: string;
+  /**
+   * The copy's own first photo, as an id the client turns into a content URL.
+   *
+   * The server resolves it with the same rule the owner's own screens use, so a starred
+   * photo stands for the copy on somebody else's shelf too — and it is the only picture a
+   * hand-entered copy can ever have, pointing at no catalogue as it does. Null when the
+   * copy has no photos or has starred the catalogue's artwork instead.
+   *
+   * The web has always read this; the phone never declared it, so a shared shelf there
+   * could show nothing but catalogue covers.
+   */
+  previewPhotoId?: string;
   condition?: string;
   pricePaidCents?: number;
   currency?: string;

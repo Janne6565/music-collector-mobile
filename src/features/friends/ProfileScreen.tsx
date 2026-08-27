@@ -4,6 +4,7 @@ import { ReleaseArt } from "@/components/ReleaseArt";
 import { WishRow, wishCardStyle } from "@/components/WishRow";
 import { Avatar } from "@/features/friends/Avatar";
 import { useFriendProfileLogic } from "@/features/friends/useFriendsLogic";
+import { useSharedCoverPhotos } from "@/features/friends/useSharedCoverPhotos";
 import { colors, fonts } from "@/theme/colors";
 import type { Format } from "@janne6565/music-collector-shared";
 import { FORMAT_LABELS } from "@janne6565/music-collector-shared";
@@ -180,6 +181,10 @@ function Grid({
   pricesVisible,
 }: { readonly copies: readonly SharedCopy[]; readonly pricesVisible: boolean }) {
   const { t } = useTranslation();
+  // The owner's own picture, where they have one and are sharing it. The server resolves
+  // which that is with the same rule their own screens use, so a starred photo stands for
+  // the copy here too — and it is the only picture a hand-entered copy can ever have.
+  const photos = useSharedCoverPhotos(copies);
   if (copies.length === 0) {
     return <Text style={styles.emptyBody}>{t("friendProfile.emptyShelf")}</Text>;
   }
@@ -192,6 +197,7 @@ function Grid({
           art={
             <ReleaseArt
               release={{ coverArtUrl: copy.coverArtUrl ?? null, format: copy.format as Format }}
+              previewUri={copy.id === undefined ? null : (photos.get(copy.id) ?? null)}
             />
           }
           title={copy.title ?? "—"}
