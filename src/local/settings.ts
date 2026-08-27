@@ -72,6 +72,35 @@ const CONFIRM_STRIP_SEEN = "confirmStripSeen";
  */
 const PUSH_PRIMING_SEEN = "pushPrimingSeen";
 
+/**
+ * Which backend the sync cursor was counted against.
+ *
+ * A cursor is a position in one server's change log and nothing more — no part of the
+ * number says which server. Point the app at a different one and the old number is read as
+ * a position in the new log: if it happens to be higher than anything there, the server
+ * truthfully answers "nothing new" for ever, and the app sits on a stale collection
+ * reporting a successful sync. Which is exactly what a dev build does the first time it is
+ * aimed at production.
+ *
+ * `removeAccount` already knew the shape of this — "the cursor points into a change log
+ * that no longer exists" — it just only handled the one case where the log went away.
+ */
+const SYNC_ORIGIN = "syncOrigin";
+
+/**
+ * Resets the cursor when the backend has changed, and says whether it did.
+ *
+ * Safe to do bluntly: a full re-pull merges into what is already here, and the merge is
+ * asserted commutative and idempotent by the shared fixture. The cost of over-resetting is
+ * one slow sync; the cost of under-resetting is a device that never catches up again.
+ */
+export async function alignSyncOrigin(store: LocalStore, origin: string): Promise<boolean> {
+  if ((await store.readSetting(SYNC_ORIGIN)) === origin) return false;
+  await store.writeSyncCursor(0);
+  await store.writeSetting(SYNC_ORIGIN, origin);
+  return true;
+}
+
 /** True the first time it is asked on this device, false ever after. */
 export async function claimPushPriming(store: LocalStore): Promise<boolean> {
   if ((await store.readSetting(PUSH_PRIMING_SEEN)) === "true") return false;

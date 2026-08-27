@@ -1,7 +1,8 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useRef } from "react";
 import { useStore } from "@/local/StoreProvider";
-import { readSyncEnabled, writeCatalogueGap, writeLastSyncedAt } from "@/local/settings";
+import { alignSyncOrigin, readSyncEnabled, writeCatalogueGap, writeLastSyncedAt } from "@/local/settings";
+import { API_BASE } from "@/api/config";
 import { useAppSelector } from "@/store/hooks";
 import { createSyncEngine } from "@/sync/transport";
 
@@ -65,6 +66,11 @@ export function SyncProvider({ children }: { readonly children: ReactNode }) {
     }
     running.current = true;
     try {
+      // Before anything else: a cursor counted against a different server is worse than no
+      // cursor, because the server answers "nothing new" and means it.
+      if (await alignSyncOrigin(store, API_BASE)) {
+        if (__DEV__) console.log(`[music-collector] backend changed — pulling everything from ${API_BASE}`);
+      }
       const result = await createSyncEngine(store, clock).sync();
       if (__DEV__) {
         console.log(
