@@ -4,7 +4,7 @@ import { useStore } from "@/local/StoreProvider";
 import { alignSyncOrigin, readSyncEnabled, writeCatalogueGap, writeLastSyncedAt } from "@/local/settings";
 import { API_BASE } from "@/api/config";
 import { useAppSelector } from "@/store/hooks";
-import { createSyncEngine, fetchMissingPhotoBytes } from "@/sync/transport";
+import { createSyncEngine } from "@/sync/transport";
 
 /** A minute between passes: often enough to feel live, rare enough to spare the battery. */
 const SYNC_INTERVAL_MS = 60_000;
@@ -83,10 +83,6 @@ export function SyncProvider({ children }: { readonly children: ReactNode }) {
         missing: result.releasesMissing,
         unreachable: result.releasesUnreachable,
       });
-      // After the engine, because it fetches the bytes of this pass's photos itself; this
-      // is the sweep for everything it has already forgotten about.
-      const bytes = await fetchMissingPhotoBytes(store);
-      if (__DEV__ && bytes > 0) console.log(`[music-collector] fetched ${bytes} missing photo(s)`);
       await writeLastSyncedAt(store, Date.now());
       // Every screen reads the local store through a query, and a sync writes to that
       // store behind their backs. Without this the shelf keeps the empty result it

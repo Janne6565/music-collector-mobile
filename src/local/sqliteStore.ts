@@ -651,6 +651,11 @@ export class SqliteLocalStore implements LocalStore {
     return new Blob([decodeBase64(base64).buffer as ArrayBuffer]);
   }
 
+  /** Whether the file is here, without reading it — the sweep asks this about everything. */
+  async hasPhotoBytes(id: string): Promise<boolean> {
+    return (await FileSystem.getInfoAsync(photoPath(id))).exists;
+  }
+
   /**
    * The bytes themselves, which `getPhotoBytes`'s `Blob` cannot give back.
    *
