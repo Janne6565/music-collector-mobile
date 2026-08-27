@@ -88,13 +88,20 @@ export async function describePhotos(store: NativeLocalStore): Promise<string> {
 
   const lines: string[] = [];
   for (const [copyId, owned] of byCopy) {
-    const copy = await store.getCopy(copyId);
+    // Including deleted ones: a photo whose copy is gone and a photo whose copy never
+    // arrived look identical through `getCopy`, and they are completely different problems.
+    const copy = await store.getCopyIncludingDeleted(copyId);
     const order = owned
       .slice()
       .sort((a, b) => a.sortIndex - b.sortIndex)
       .map((photo) => `${photo.id.slice(0, 6)}@${photo.sortIndex}${photo.storageKey === null ? "*" : ""}`)
       .join(" ");
-    lines.push(`  ${copyId.slice(0, 6)} catalogArt=${copy?.catalogArt ?? "?"} photos=[${order}]`);
+    const state =
+      copy === undefined ? "NO SUCH COPY" : copy.deletedAt !== null ? "DELETED" : "live";
+    lines.push(
+      `  ${copyId.slice(0, 6)} ${state} catalogArt=${copy?.catalogArt ?? "-"} photos=[${order}]`,
+    );
   }
-  return `${photos.length} photos on ${byCopy.size} copies\n${lines.join("\n")}`;
+  const live = (await store.listCopies()).length;
+  return `${photos.length} photos on ${byCopy.size} copies, ${live} copies on this device\n${lines.join("\n")}`;
 }
