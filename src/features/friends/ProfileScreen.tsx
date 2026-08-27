@@ -49,44 +49,54 @@ export function ProfileScreen() {
           <Text style={styles.emptyBody}>{t("friendProfile.notFound.body", { handle: logic.handle })}</Text>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.body}>
-          <View style={styles.header}>
-            <Avatar name={name} size={56} />
-            <View style={styles.headerText}>
-              <Text style={styles.name}>{name}</Text>
-              <Text style={styles.meta}>
-                @{person.handle}
-                {person.collectingSince !== undefined &&
-                  ` · ${t("friendProfile.collectingSince", {
-                    year: new Date(person.collectingSince).getFullYear(),
-                  })}`}
-              </Text>
+        <>
+          {/*
+           * Who this is, and which of their lists you are reading — outside the scroll view,
+           * so it stays put. The tabs are the reason: a control that chooses what is below
+           * it has to remain reachable while you are down there, or switching list means
+           * scrolling all the way back up first.
+           */}
+          <View style={styles.pinned}>
+            <View style={styles.header}>
+              <Avatar name={name} size={56} />
+              <View style={styles.headerText}>
+                <Text style={styles.name}>{name}</Text>
+                <Text style={styles.meta}>
+                  @{person.handle}
+                  {person.collectingSince !== undefined &&
+                    ` · ${t("friendProfile.collectingSince", {
+                      year: new Date(person.collectingSince).getFullYear(),
+                    })}`}
+                </Text>
+              </View>
+            </View>
+
+            <RelationshipAction logic={logic} />
+
+            <View style={styles.tabs}>
+              <Tab active={tab === "collection"} onPress={() => setTab("collection")}>
+                {t("friendProfile.tab.collection", { count: person.copyCount ?? 0 })}
+              </Tab>
+              <Tab active={tab === "wishlist"} onPress={() => setTab("wishlist")}>
+                {t("friendProfile.tab.wishlist", { count: person.wishlistCount ?? 0 })}
+              </Tab>
             </View>
           </View>
 
-          <RelationshipAction logic={logic} />
-
-          <View style={styles.tabs}>
-            <Tab active={tab === "collection"} onPress={() => setTab("collection")}>
-              {t("friendProfile.tab.collection", { count: person.copyCount ?? 0 })}
-            </Tab>
-            <Tab active={tab === "wishlist"} onPress={() => setTab("wishlist")}>
-              {t("friendProfile.tab.wishlist", { count: person.wishlistCount ?? 0 })}
-            </Tab>
-          </View>
-
-          {showing !== true ? (
-            <LockedShelf name={name} count={person.copyCount ?? 0} />
-          ) : logic.loadingLists ? (
-            <View style={styles.centred}>
-              <ActivityIndicator color={colors.inkSubtle} />
-            </View>
-          ) : tab === "collection" ? (
-            <Grid copies={logic.copies} pricesVisible={person.pricesVisible === true} />
-          ) : (
-            <WishRows logic={logic} />
-          )}
-        </ScrollView>
+          <ScrollView contentContainerStyle={styles.body}>
+            {showing !== true ? (
+              <LockedShelf name={name} count={person.copyCount ?? 0} />
+            ) : logic.loadingLists ? (
+              <View style={styles.centred}>
+                <ActivityIndicator color={colors.inkSubtle} />
+              </View>
+            ) : tab === "collection" ? (
+              <Grid copies={logic.copies} pricesVisible={person.pricesVisible === true} />
+            ) : (
+              <WishRows logic={logic} />
+            )}
+          </ScrollView>
+        </>
       )}
     </SafeAreaView>
   );
@@ -229,7 +239,15 @@ const styles = StyleSheet.create({
   wishCard: wishCardStyle,
   bar: { paddingHorizontal: 16, paddingVertical: 8 },
   centred: { alignItems: "center", justifyContent: "center", paddingVertical: 48, gap: 6 },
-  body: { paddingHorizontal: 20, paddingBottom: 40 },
+  pinned: {
+    paddingHorizontal: 20,
+    // Something has to mark where the fixed part ends, or the list slides under it with no
+    // boundary and reads as one thing that scrolled halfway.
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.line,
+  },
+  /* The air the list used to inherit from whatever happened to sit above it in the scroll. */
+  body: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 40 },
   header: { flexDirection: "row", alignItems: "center", gap: 14 },
   headerText: { flex: 1, minWidth: 0 },
   name: { fontFamily: fonts.serif, fontSize: 24, color: colors.ink },
