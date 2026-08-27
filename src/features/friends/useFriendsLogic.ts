@@ -24,6 +24,8 @@ const MIN_QUERY = 3;
  *
  * Everything here needs an account — a request nobody can look the sender up by is a
  * request nobody can answer — so the queries are gated rather than fired to collect 401s.
+ * Search is the exception: a handle is handed out to be typed, often by somebody who has
+ * not signed up yet, so the lookup is open on the server and open here.
  */
 export function useFriendsLogic() {
   const signedIn = useAppSelector((state) => state.auth.status === "signedIn");
@@ -54,7 +56,8 @@ export function useFriendsLogic() {
   const results = useQuery({
     queryKey: ["friends", "search", trimmed],
     queryFn: () => friendsApi.search(trimmed),
-    enabled: signedIn && trimmed.length >= MIN_QUERY,
+    // Deliberately not gated on `signedIn` — see the note above the hook.
+    enabled: trimmed.length >= MIN_QUERY,
     // The list belongs to the previous keystroke until the next answer lands, or the
     // results empty out between every letter and read as "no matches" over and over.
     placeholderData: keepPreviousData,
@@ -138,6 +141,8 @@ export function useFriendsLogic() {
     setQuery,
     /** Empty until the query is long enough — never the start of a directory. */
     results: trimmed.length >= MIN_QUERY ? (results.data ?? []) : [],
+    /** Whether a real query has been asked — "nothing typed yet" is not "nobody". */
+    searched: trimmed.length >= MIN_QUERY,
     searching: results.isFetching,
     ask,
     accept,

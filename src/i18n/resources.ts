@@ -155,8 +155,12 @@ const enCommon = {
       body: "When the people you know add a record by hand, it turns up here.",
     },
     signedOut: {
-      title: "Friends needs an account",
-      body: "Your collection works without one. Finding other collectors does not \u2014 there has to be something for them to find.",
+      title: "Find a collector",
+      body: "Type a handle to look at somebody\u2019s shelf. No account needed \u2014 what you get to see is up to them.",
+      noMatches: "Nobody goes by that handle.",
+      invitation:
+        "An account gets you the rest: your own handle so other collectors can find you, friends, and what they add.",
+      action: "Sign in",
     },
     claim: {
       title: "Pick a handle",
@@ -897,8 +901,12 @@ const deCommon: CommonSchema = {
       body: "Sobald Leute, die du kennst, eine Platte von Hand eintragen, steht sie hier.",
     },
     signedOut: {
-      title: "F\u00fcr Freunde brauchst du ein Konto",
-      body: "Deine Sammlung funktioniert ohne. Andere Sammler:innen zu finden nicht \u2014 es muss ja etwas zu finden geben.",
+      title: "Sammler:in finden",
+      body: "Tipp einen Handle ein und schau dir ein Regal an. Ohne Konto \u2014 was du siehst, entscheidet die andere Seite.",
+      noMatches: "Diesen Handle hat niemand.",
+      invitation:
+        "Mit Konto kommt der Rest dazu: dein eigener Handle, damit andere dich finden, Freund:innen und was sie eintragen.",
+      action: "Anmelden",
     },
     claim: {
       title: "W\u00e4hl einen Handle",

@@ -105,14 +105,7 @@ export function FriendsScreen() {
   }, [logic.searching, spinner]);
 
   if (!logic.signedIn) {
-    return (
-      <SafeAreaView style={styles.screen} edges={["top"]}>
-        <View style={styles.centred}>
-          <Text style={styles.emptyTitle}>{t("friends.signedOut.title")}</Text>
-          <Text style={styles.emptyBody}>{t("friends.signedOut.body")}</Text>
-        </View>
-      </SafeAreaView>
-    );
+    return <SignedOutFind logic={logic} />;
   }
 
   // Waiting rather than guessing: flashing the claim form at somebody who already has a
@@ -269,6 +262,69 @@ export function FriendsScreen() {
 
 type Logic = ReturnType<typeof useFriendsLogic>;
 
+/**
+ * The Friends tab with no account: the search, and nothing else.
+ *
+ * Looking a collector up is the one social thing that needs no account — a handle is
+ * handed out exactly so it can be typed by somebody who has not signed up yet, and a tab
+ * that answers that with a wall makes the link useless. What a result leads to is already
+ * guest-safe: the profile draws the open shelf or the locked one on the server's verdict.
+ *
+ * The field sits open rather than behind 24e's round button. There is no title bar, no
+ * segmented control and no feed to compete with it here, so the mode this screen would
+ * switch into is the only mode it has.
+ */
+function SignedOutFind({ logic }: { readonly logic: Logic }) {
+  const { t } = useTranslation();
+  const router = useRouter();
+  const nothingFound = logic.searched && !logic.searching && logic.results.length === 0;
+
+  return (
+    <SafeAreaView style={styles.screen} edges={["top"]}>
+      <View style={styles.header}>
+        <Text style={styles.title}>{t("friends.signedOut.title")}</Text>
+        <Text style={styles.guestLede}>{t("friends.signedOut.body")}</Text>
+        <View style={[styles.handleField, styles.guestField]}>
+          <AtSign size={16} color={colors.inkMuted} strokeWidth={1.75} />
+          <TextInput
+            value={logic.query}
+            onChangeText={logic.setQuery}
+            placeholder={t("friends.handlePlaceholder")}
+            placeholderTextColor={colors.inkSubtle}
+            autoCapitalize="none"
+            autoCorrect={false}
+            selectionColor={colors.accent}
+            style={styles.handleInput}
+          />
+          {logic.searching && <ActivityIndicator size="small" color={colors.inkSubtle} />}
+        </View>
+      </View>
+
+      <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+        {logic.results.map((person) => (
+          <PersonRow key={person.id} person={person} logic={logic} />
+        ))}
+        {nothingFound && (
+          <Text style={styles.guestNote}>{t("friends.signedOut.noMatches")}</Text>
+        )}
+
+        {/* The offer as a footnote rather than the screen: what a visitor came here to do
+            is above it, and this is what staying would add. */}
+        <View style={styles.guestCard}>
+          <Text style={styles.emptyCardBody}>{t("friends.signedOut.invitation")}</Text>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push("/(tabs)/you")}
+            style={styles.guestButton}
+          >
+            <Text style={styles.addLabel}>{t("friends.signedOut.action")}</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
 function PeoplePanel({ logic }: { readonly logic: Logic }) {
   const { t } = useTranslation();
   return (
@@ -399,8 +455,9 @@ function PersonRow({ person, logic }: { readonly person: ProfileSummary; readonl
           )}
           <Text style={styles.rowMeta} numberOfLines={1}>
             @{person.handle}
-            {person.copyCount !== undefined &&
-              ` · ${t("friends.copies", { count: person.copyCount })}`}
+            {/* Null rather than undefined when the shelf is closed, and `!== undefined`
+                rendered the bare word "copies" for every private collector. */}
+            {person.copyCount != null && ` · ${t("friends.copies", { count: person.copyCount })}`}
           </Text>
         </View>
       </View>
@@ -418,6 +475,13 @@ function RelationshipButton({
   logic,
 }: { readonly person: ProfileSummary; readonly logic: Logic }) {
   const { t } = useTranslation();
+
+  // A stranger gets no verdict to act on — the server answers the same for everybody when
+  // nobody is asking — and the row already leads to the shelf, which is the only thing
+  // they can do here. The invitation to sign in is under the list, said once.
+  if (!logic.signedIn) {
+    return null;
+  }
 
   switch (person.relationship) {
     case "FRIENDS":
@@ -627,12 +691,38 @@ const styles = StyleSheet.create({
   acceptLabel: { fontFamily: fonts.sans, fontSize: 12, fontWeight: "600", color: colors.paper },
   declineLabel: { fontFamily: fonts.sans, fontSize: 12, fontWeight: "500", color: colors.inkSubtle },
 
-  emptyTitle: { fontFamily: fonts.serif, fontSize: 20, color: colors.ink, textAlign: "center" },
-  emptyBody: {
+  guestLede: {
     fontFamily: fonts.sans,
     fontSize: 13,
     lineHeight: 19,
     color: colors.inkMuted,
-    textAlign: "center",
+    marginTop: 8,
   },
+  guestField: { marginTop: 16 },
+  guestNote: {
+    fontFamily: fonts.sans,
+    fontSize: 12.5,
+    color: colors.inkSubtle,
+    marginTop: 4,
+  },
+  guestCard: {
+    marginTop: 24,
+    paddingVertical: 18,
+    paddingHorizontal: 18,
+    borderRadius: 14,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.line,
+    alignItems: "center",
+  },
+  guestButton: {
+    height: 34,
+    marginTop: 14,
+    paddingHorizontal: 16,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.ink,
+  },
+
 });
