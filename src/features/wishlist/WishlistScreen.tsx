@@ -15,6 +15,7 @@ import {
   type LayoutChangeEvent,
   PanResponder,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -163,6 +164,13 @@ export function WishlistScreen() {
           contentContainerStyle={styles.list}
           // A carried row must not take the list with it.
           scrollEnabled={lifted === null}
+          refreshControl={
+            <RefreshControl
+              refreshing={logic.refreshing}
+              onRefresh={() => void logic.refetch()}
+              tintColor={colors.inkMuted}
+            />
+          }
         >
           {logic.items.map((item, index) => (
             <Animated.View

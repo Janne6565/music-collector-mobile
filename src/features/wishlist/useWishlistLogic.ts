@@ -1,6 +1,7 @@
 import { lookupAlbumCovers, lookupPressingCovers } from "@/api/releases";
 import { useWishPhotos } from "@/features/wishlist/useWishPhotos";
 import { useStore } from "@/local/StoreProvider";
+import { useSync } from "@/sync/SyncProvider";
 import { readWishlistSort, writeWishlistSort } from "@/local/settings";
 import type { WishPatch, WishSort, WishlistItem } from "@janne6565/music-collector-shared";
 import {
@@ -14,7 +15,7 @@ import {
   tombstoneWishlistItem,
 } from "@janne6565/music-collector-shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 /**
  * Screens 16a and 16b — the list, and what an entry can be told to do.
@@ -24,6 +25,7 @@ import { useMemo } from "react";
  * "found it" means something else is a phone that empties the list wrongly.
  */
 export function useWishlistLogic() {
+  const { syncNow } = useSync();
   const { store, clock } = useStore();
   const queryClient = useQueryClient();
 
@@ -101,6 +103,27 @@ export function useWishlistLogic() {
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["wishlist"] });
 
+  /**
+   * Pull-to-refresh, and it runs a real sync.
+   *
+   * Re-reading the local store would only ever redraw what the last sync already wrote --
+   * so on a list that is out of date, the one gesture anybody makes would be the one
+   * gesture guaranteed not to fix it. The shelf learned this already; this list had no
+   * refresh at all, which is worse: a stale wishlist with nothing to do about it.
+   */
+  const [refreshing, setRefreshing] = useState(false);
+  const refetch = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await syncNow();
+    } finally {
+      setRefreshing(false);
+    }
+    // The sync invalidates everything when it changed something; this covers the case
+    // where it did not, so a pull still ends in a fresh read.
+    void wishlist.refetch();
+  }, [syncNow, wishlist]);
+
   const chooseSort = useMutation({
     mutationFn: (next: WishSort) => writeWishlistSort(store, next),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["wishlistSort"] }),
@@ -152,6 +175,8 @@ export function useWishlistLogic() {
     items: ordered,
     count: items.length,
     loading: wishlist.isLoading,
+    refreshing,
+    refetch,
     sort,
     manual: hasManualOrder(items),
     /**
