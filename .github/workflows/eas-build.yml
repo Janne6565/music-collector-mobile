@@ -119,6 +119,15 @@ jobs:
       # --no-wait: EAS builds on its servers; this job doesn't block.
       - name: EAS build
         if: "!(github.event_name == 'push' && vars.EAS_AUTO_SUBMIT == 'true')"
+        # EAS must not manage this app's Apple capabilities.
+        #
+        # It derives the desired set from the Expo config, which declares no native Apple
+        # auth module — so it asks Apple to turn Sign in with Apple *off*. The app does
+        # offer it, through a browser flow the backend completes against a Services ID
+        # hanging off this bundle, and Apple refuses to remove a capability something is
+        # still attached to. The whole patch is rejected with it, push included.
+        env:
+          EXPO_NO_CAPABILITY_SYNC: "1"
         run: eas build --platform ${{ steps.params.outputs.platform }} --profile ${{ steps.params.outputs.profile }} --non-interactive --no-wait
 
       # Tag pushes only, and only when the EAS_AUTO_SUBMIT repo variable is "true".
@@ -130,4 +139,13 @@ jobs:
       # so it composes with --no-wait (the submit happens server-side).
       - name: EAS build + auto-submit
         if: github.event_name == 'push' && vars.EAS_AUTO_SUBMIT == 'true'
+        # EAS must not manage this app's Apple capabilities.
+        #
+        # It derives the desired set from the Expo config, which declares no native Apple
+        # auth module — so it asks Apple to turn Sign in with Apple *off*. The app does
+        # offer it, through a browser flow the backend completes against a Services ID
+        # hanging off this bundle, and Apple refuses to remove a capability something is
+        # still attached to. The whole patch is rejected with it, push included.
+        env:
+          EXPO_NO_CAPABILITY_SYNC: "1"
         run: eas build --platform ${{ steps.params.outputs.platform }} --profile production --non-interactive --no-wait --auto-submit
