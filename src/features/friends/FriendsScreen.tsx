@@ -20,7 +20,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export function FriendsScreen() {
   const { t } = useTranslation();
   const logic = useFriendsLogic();
+  const router = useRouter();
   const [panel, setPanel] = useState<"activity" | "people">("activity");
+  const [searching, setSearching] = useState(false);
+  // Only with the field open and nothing typed: once there is a query the results are the
+  // answer, and a list of old ones underneath would be competing with it.
+  const showRecent = searching && logic.query.trim() === "" && logic.recent.length > 0;
 
   if (!logic.signedIn) {
     return (
@@ -70,10 +75,49 @@ export function FriendsScreen() {
             placeholderTextColor={colors.inkSubtle}
             autoCapitalize="none"
             autoCorrect={false}
+            onFocus={() => setSearching(true)}
+            onBlur={() => setSearching(false)}
             style={styles.searchInput}
           />
         </View>
       </View>
+
+      {showRecent && (
+        <View style={styles.recent}>
+          <View style={styles.recentHead}>
+            <Text style={styles.sectionLabel}>{t("friends.recent")}</Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => void logic.forget()}
+              hitSlop={8}
+            >
+              <Text style={styles.recentClear}>{t("friends.recentClear")}</Text>
+            </Pressable>
+          </View>
+          {logic.recent.map((entry) => (
+            <Pressable
+              key={entry.handle}
+              accessibilityRole="button"
+              // onPressIn, because the blur that closes this list fires first on a plain
+              // press and takes the row out from under the finger.
+              onPressIn={() =>
+                router.push({ pathname: "/profiles/[handle]", params: { handle: entry.handle } })
+              }
+              style={styles.recentRow}
+            >
+              <Avatar name={entry.displayName ?? entry.handle} size={28} />
+              <View style={styles.rowText}>
+                <Text style={styles.rowTitle} numberOfLines={1}>
+                  {entry.displayName ?? entry.handle}
+                </Text>
+                <Text style={styles.rowMeta} numberOfLines={1}>
+                  @{entry.handle}
+                </Text>
+              </View>
+            </Pressable>
+          ))}
+        </View>
+      )}
 
       <View style={styles.segments}>
         <Segment active={panel === "activity"} onPress={() => setPanel("activity")}>
@@ -152,7 +196,15 @@ function PersonRow({ person, logic }: { readonly person: ProfileSummary; readonl
   return (
     <Pressable
       style={styles.row}
-      onPress={() => router.push({ pathname: "/profiles/[handle]", params: { handle: person.handle ?? "" } })}
+      onPress={() => {
+        // Recorded on the way in, not on the way out of a search: what makes somebody worth
+        // offering again is that you went to look at them.
+        void logic.remember({
+          handle: person.handle ?? "",
+          displayName: person.displayName ?? null,
+        });
+        router.push({ pathname: "/profiles/[handle]", params: { handle: person.handle ?? "" } });
+      }}
       accessibilityRole="button"
     >
       <Avatar name={name} size={38} />
@@ -258,6 +310,10 @@ const styles = StyleSheet.create({
     borderColor: colors.line,
   },
   searchInput: { flex: 1, fontFamily: fonts.sans, fontSize: 14, color: colors.ink, padding: 0 },
+  recent: { paddingHorizontal: 18, paddingTop: 12 },
+  recentHead: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" },
+  recentClear: { fontSize: 11.5, color: colors.accent },
+  recentRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 8 },
   segments: { flexDirection: "row", gap: 6, paddingHorizontal: 20, paddingBottom: 8 },
   segment: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
   segmentActive: { backgroundColor: colors.surface },

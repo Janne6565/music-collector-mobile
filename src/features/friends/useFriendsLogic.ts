@@ -2,7 +2,13 @@ import { friendsApi, type SharedWish } from "@/api/friends";
 import { lookupAlbumCovers, lookupPressingCovers } from "@/api/releases";
 import { isManualReleaseId } from "@janne6565/music-collector-shared";
 import { canStillAskForPush } from "@/features/notifications/push";
-import { claimPushPriming } from "@/local/settings";
+import {
+  type RecentCollector,
+  claimPushPriming,
+  forgetCollectors,
+  readRecentCollectors,
+  rememberCollector,
+} from "@/local/settings";
 import { useStore } from "@/local/StoreProvider";
 import { useAppSelector } from "@/store/hooks";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -63,6 +69,30 @@ export function useFriendsLogic() {
     await queryClient.invalidateQueries({ queryKey: ["friends"] });
   }, [queryClient]);
 
+  /**
+   * The collectors this device has looked at, for the field to offer when it is empty.
+   *
+   * The people rather than the words that found them: handing back what was typed saves a
+   * few characters, handing back who it led to is one tap to their shelf.
+   */
+  const recent = useQuery({
+    queryKey: ["recentCollectors"],
+    queryFn: () => readRecentCollectors(store),
+  });
+
+  const remember = useCallback(
+    async (entry: RecentCollector) => {
+      await rememberCollector(store, entry);
+      await queryClient.invalidateQueries({ queryKey: ["recentCollectors"] });
+    },
+    [store, queryClient],
+  );
+
+  const forget = useCallback(async () => {
+    await forgetCollectors(store);
+    await queryClient.invalidateQueries({ queryKey: ["recentCollectors"] });
+  }, [store, queryClient]);
+
   const ask = useMutation({ mutationFn: friendsApi.ask, onSuccess: refresh });
   const accept = useMutation({
     mutationFn: friendsApi.accept,
@@ -103,6 +133,9 @@ export function useFriendsLogic() {
     ask,
     accept,
     decline,
+    recent: recent.data ?? [],
+    remember,
+    forget,
   };
 }
 

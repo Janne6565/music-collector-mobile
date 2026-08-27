@@ -54,6 +54,59 @@ const LOCAL_ONLY_NOTICE_SEEN = "localOnlyNoticeSeen";
 const CATALOGUE_GAP = "catalogueGap";
 
 /**
+ * Collectors this device has looked at, newest first.
+ *
+ * The people, not the strings that found them. Handing back "jan" so it can be typed again
+ * saves four characters; handing back the person it led to is one tap to their shelf, which
+ * is what somebody opening this field is actually after. A search that ended nowhere is not
+ * worth remembering either way.
+ *
+ * Device-local and never synced: which shelves you have been reading is a fact about this
+ * phone, and it is nobody's business but its owner's.
+ */
+const RECENT_COLLECTORS = "recentCollectors";
+const RECENT_COLLECTOR_LIMIT = 6;
+
+export interface RecentCollector {
+  readonly handle: string;
+  readonly displayName: string | null;
+}
+
+export async function readRecentCollectors(store: LocalStore): Promise<RecentCollector[]> {
+  const raw = await store.readSetting(RECENT_COLLECTORS);
+  if (raw === null || raw === undefined) return [];
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed)
+      ? parsed.filter(
+          (entry): entry is RecentCollector =>
+            typeof entry === "object" && entry !== null && typeof (entry as RecentCollector).handle === "string",
+        )
+      : [];
+  } catch {
+    // Written by a version that shaped it differently, or truncated. One bad row is not
+    // worth a broken screen; the list rebuilds itself the next time somebody looks at
+    // anybody.
+    return [];
+  }
+}
+
+export async function rememberCollector(store: LocalStore, entry: RecentCollector): Promise<void> {
+  if (entry.handle.trim() === "") return;
+  const kept = (await readRecentCollectors(store)).filter(
+    (existing) => existing.handle.toLowerCase() !== entry.handle.toLowerCase(),
+  );
+  await store.writeSetting(
+    RECENT_COLLECTORS,
+    JSON.stringify([entry, ...kept].slice(0, RECENT_COLLECTOR_LIMIT)),
+  );
+}
+
+export async function forgetCollectors(store: LocalStore): Promise<void> {
+  await store.writeSetting(RECENT_COLLECTORS, JSON.stringify([]));
+}
+
+/**
  * Whether the "a link is on its way" strip (21b) has had its one appearance here.
  *
  * Device-local and never synced: it is a fact about a screen somebody has already read,
