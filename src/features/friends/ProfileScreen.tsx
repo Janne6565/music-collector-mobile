@@ -96,12 +96,18 @@ export function ProfileScreen() {
 
             <RelationshipAction logic={logic} />
 
+            {/*
+             * One track with two halves, not two loose pills: the pair is a single choice
+             * between two lists, and a segmented control says that where separate buttons
+             * leave it to be inferred. The count rides alongside its label rather than
+             * inside it, so the number reads as a quantity and not as part of the name.
+             */}
             <View style={styles.tabs}>
-              <Tab active={tab === "collection"} onPress={() => setTab("collection")}>
-                {t("friendProfile.tab.collection", { count: person.copyCount ?? 0 })}
+              <Tab active={tab === "collection"} count={person.copyCount} onPress={() => setTab("collection")}>
+                {t("friendProfile.tab.collection")}
               </Tab>
-              <Tab active={tab === "wishlist"} onPress={() => setTab("wishlist")}>
-                {t("friendProfile.tab.wishlist", { count: person.wishlistCount ?? 0 })}
+              <Tab active={tab === "wishlist"} count={person.wishlistCount} onPress={() => setTab("wishlist")}>
+                {t("friendProfile.tab.wishlist")}
               </Tab>
             </View>
           </View>
@@ -123,12 +129,15 @@ export function ProfileScreen() {
                 <ActivityIndicator color={colors.inkSubtle} />
               </View>
             ) : tab === "collection" ? (
-              <Grid
-              copies={logic.copies}
-              pricesVisible={person.pricesVisible === true}
-              photos={photos}
-              onOpen={(copyId) => router.setParams({ open: copyId })}
-            />
+              <>
+                <ShelfSummary copies={logic.copies} truncated={logic.truncated} />
+                <Grid
+                  copies={logic.copies}
+                  pricesVisible={person.pricesVisible === true}
+                  photos={photos}
+                  onOpen={(copyId) => router.setParams({ open: copyId })}
+                />
+              </>
             ) : (
               <WishRows logic={logic} onOpen={(wishId) => router.setParams({ open: wishId })} />
             )}
@@ -164,12 +173,25 @@ type Logic = ReturnType<typeof useFriendProfileLogic>;
 
 function Tab({
   active,
+  count,
   onPress,
   children,
-}: { readonly active: boolean; readonly onPress: () => void; readonly children: string }) {
+}: {
+  readonly active: boolean;
+  /** Withheld for a shelf this viewer may not see — the count is itself about a collection. */
+  readonly count?: number;
+  readonly onPress: () => void;
+  readonly children: string;
+}) {
   return (
-    <Pressable onPress={onPress} style={[styles.tab, active && styles.tabActive]}>
+    <Pressable
+      accessibilityRole="tab"
+      accessibilityState={{ selected: active }}
+      onPress={onPress}
+      style={[styles.tab, active && styles.tabActive]}
+    >
       <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>{children}</Text>
+      {count === undefined ? null : <Text style={styles.tabCount}>{count}</Text>}
     </Pressable>
   );
 }
@@ -270,6 +292,45 @@ function Grid({
   );
 }
 
+/**
+ * What is above the grid: the order it is in, and what it is made of.
+ *
+ * Neither is decoration. A shelf of somebody else's records arrives newest first and says
+ * nothing about it, so the top of the list looks like a ranking; and the format mix is the
+ * one fact about a collection you cannot read off a grid of sleeves.
+ *
+ * The counts are derived from what came back rather than asked for, which is only honest
+ * while the whole shelf came back — the server caps the list and says so. When it was cut
+ * short the counts describe the newest N and the line says that instead of implying it
+ * counted everything.
+ */
+function ShelfSummary({
+  copies,
+  truncated,
+}: { readonly copies: readonly SharedCopy[]; readonly truncated: boolean }) {
+  const { t } = useTranslation();
+  if (copies.length === 0) return null;
+
+  const tally = new Map<string, number>();
+  for (const copy of copies) {
+    if (copy.format === undefined || copy.format === null) continue;
+    tally.set(copy.format, (tally.get(copy.format) ?? 0) + 1);
+  }
+  const mix = [...tally.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([format, count]) => `${FORMAT_LABELS[format as Format]} ${count}`)
+    .join(" · ");
+
+  return (
+    <View style={styles.summary}>
+      <Text style={styles.summarySort}>{t("friendProfile.newestFirst")}</Text>
+      <Text style={styles.summaryMix} numberOfLines={1}>
+        {truncated ? `${mix} — ${t("friendProfile.countsPartial", { count: copies.length })}` : mix}
+      </Text>
+    </View>
+  );
+}
+
 function WishRows({
   logic,
   onOpen,
@@ -356,18 +417,40 @@ const styles = StyleSheet.create({
     backgroundColor: colors.ink,
   },
   askLabel: { fontFamily: fonts.sans, fontSize: 13, fontWeight: "600", color: colors.paper },
+  /*
+   * A track, and the halves live inside it. Two pills with a rule underneath drew the same
+   * choice as two separate buttons that happened to sit together; this says they are one
+   * control with two positions, which is what it is.
+   */
   tabs: {
     flexDirection: "row",
-    gap: 6,
-    marginTop: 18,
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.line,
+    gap: 2,
+    marginTop: 16,
+    marginBottom: 12,
+    padding: 3,
+    borderRadius: 9,
+    backgroundColor: "rgba(25,23,19,0.06)",
   },
-  tab: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
-  tabActive: { backgroundColor: colors.surface },
-  tabLabel: { fontFamily: fonts.sans, fontSize: 13, color: colors.inkMuted },
+  tab: {
+    flex: 1,
+    height: 30,
+    borderRadius: 7,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+  },
+  tabActive: {
+    backgroundColor: colors.surface,
+    shadowColor: "rgba(25,23,19,1)",
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  tabLabel: { fontFamily: fonts.sans, fontSize: 12.5, color: colors.inkMuted },
   tabLabelActive: { color: colors.ink, fontWeight: "600" },
+  tabCount: { fontFamily: "Menlo", fontSize: 11, color: colors.inkSubtle },
   locked: {
     alignItems: "center",
     marginTop: 28,
@@ -394,8 +477,27 @@ const styles = StyleSheet.create({
     color: colors.inkMuted,
     textAlign: "center",
   },
-  grid: { flexDirection: "row", flexWrap: "wrap", gap: 14, marginTop: 16 },
-  tile: { width: "30%" },
+  /*
+   * Three equal columns. `width: "30%"` came to roughly the same thing on a phone and to
+   * something else on anything wider, because a percentage does not know about the gaps
+   * beside it. A basis of nothing plus an equal grow does.
+   */
+  grid: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: 12 },
+  tile: { flexBasis: "30%", flexGrow: 0, maxWidth: "31%" },
+  summary: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  summarySort: {
+    fontFamily: "Menlo",
+    fontSize: 10,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    color: colors.inkSubtle,
+  },
+  summaryMix: { flexShrink: 1, fontFamily: "Menlo", fontSize: 11, color: colors.inkSubtle },
   rowText: { flex: 1, minWidth: 0 },
   emptyTitle: { fontFamily: fonts.serif, fontSize: 20, color: colors.ink },
   emptyBody: {

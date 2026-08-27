@@ -258,9 +258,12 @@ const enCommon = {
     emptyShelf: "Nothing on this shelf yet.",
     emptyWishlist: "Nothing on this wishlist yet.",
     tab: {
-      collection: "Collection \u00b7 {{count}}",
-      wishlist: "Wishlist \u00b7 {{count}}",
+      collection: "Collection",
+      wishlist: "Wishlist",
     },
+    newestFirst: "Newest first",
+    /** The counts are only what came back, and the shelf said it was cut short. */
+    countsPartial: "of the newest {{count}}",
     locked: {
       title: "This shelf is for friends",
       body: "{{name}} keeps {{count}} copies here. Once they accept, the collection and wishlist open up.",
@@ -991,9 +994,11 @@ const deCommon: CommonSchema = {
     emptyShelf: "Auf diesem Regal steht noch nichts.",
     emptyWishlist: "Auf dieser Wunschliste steht noch nichts.",
     tab: {
-      collection: "Sammlung \u00b7 {{count}}",
-      wishlist: "Wunschliste \u00b7 {{count}}",
+      collection: "Sammlung",
+      wishlist: "Wunschliste",
     },
+    newestFirst: "Neueste zuerst",
+    countsPartial: "von den neuesten {{count}}",
     locked: {
       title: "Dieses Regal ist f\u00fcr Freunde",
       body: "{{name}} verwahrt hier {{count}} Exemplare. Sobald die Anfrage angenommen ist, \u00f6ffnen sich Sammlung und Wunschliste.",

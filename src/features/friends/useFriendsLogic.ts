@@ -234,6 +234,12 @@ export function useFriendProfileLogic(handle: string) {
     loading: person.isLoading,
     failed: person.isError,
     copies: copies.data?.copies ?? [],
+    /*
+     * Whether the cap cut the shelf short. The server says it out loud precisely because
+     * the client derives the format counts under the grid from what it was handed — and
+     * counts taken from a truncated list, presented as the collection, would be wrong.
+     */
+    truncated: copies.data?.truncated === true,
     wishes: wishItems,
     refreshing,
     refetch,
