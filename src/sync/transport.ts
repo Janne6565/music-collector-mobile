@@ -65,3 +65,20 @@ export function createSyncTransport(store: NativeLocalStore): SyncTransport {
 export function createSyncEngine(store: NativeLocalStore, clock: ClockSource): SyncEngine {
   return new SyncEngine(store, clock, createSyncTransport(store));
 }
+
+/**
+ * How many pictures this device knows about but is not holding — a development diagnostic.
+ *
+ * The engine sweeps for these itself and says nothing about it, so when a shelf shows the
+ * wrong cover there is no way to tell a download that is not happening from an image that
+ * is not being redrawn. This separates the two: still missing afterwards means the fetch
+ * is the problem, none missing means the display is.
+ */
+export async function countPhotosMissingBytes(store: NativeLocalStore): Promise<number> {
+  let missing = 0;
+  for (const photo of await store.listAllPhotos()) {
+    if (photo.storageKey === null || photo.deletedAt !== null) continue;
+    if (!(await store.hasPhotoBytes(photo.id))) missing += 1;
+  }
+  return missing;
+}
