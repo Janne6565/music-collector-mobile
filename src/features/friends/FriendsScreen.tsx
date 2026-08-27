@@ -1,6 +1,8 @@
 import { Avatar } from "@/features/friends/Avatar";
 import { ActivityList } from "@/features/friends/ActivityList";
 import { EmptyPanel } from "@/features/friends/EmptyPanel";
+import { Segments } from "@/features/friends/Segments";
+import { useSwap } from "@/features/friends/useSwap";
 import { ClaimHandlePanel } from "@/features/friends/ClaimHandlePanel";
 import { useFriendsLogic } from "@/features/friends/useFriendsLogic";
 import { colors, fonts } from "@/theme/colors";
@@ -9,10 +11,12 @@ import type { RecentCollector } from "@/local/settings";
 import { formatRelativeTime } from "@/domain/relativeTime";
 import { useRouter } from "expo-router";
 import { AtSign, ChevronRight, Lock, Search, X } from "lucide-react-native";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
+  Animated,
+  LayoutAnimation,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -49,11 +53,56 @@ export function FriendsScreen() {
    */
   const showRecent = searching && logic.query.trim() === "";
 
+  /*
+   * The header changes height between its two modes — a title over a control, or a single
+   * field — so the change is a layout change and cannot ride the native driver. One
+   * `LayoutAnimation` covers it: the rows that leave fade out where they stand, the row
+   * that arrives fades in, and everything below slides to meet it. Without it the whole
+   * page jumps by the difference in one frame.
+   *
+   * Degrades to that jump rather than to an error where the platform does not implement
+   * it, which is the right way round for a transition.
+   */
+  const setMode = (open: boolean) => {
+    LayoutAnimation.configureNext({
+      duration: 240,
+      create: { type: "easeInEaseOut", property: "opacity" },
+      update: { type: "easeInEaseOut" },
+      delete: { type: "easeInEaseOut", property: "opacity" },
+    });
+    setSearching(open);
+  };
+
   const close = () => {
     logic.setQuery("");
     field.current?.blur();
-    setSearching(false);
+    setMode(false);
   };
+
+  /**
+   * Which of the four things the body is, held back until the one before it has faded.
+   *
+   * One key rather than a fade per branch: going from the remembered collectors to the
+   * results of what you just typed is as much a change of content as switching panels is,
+   * and it was the one transition that still happened between two frames.
+   */
+  const body = useSwap(searching ? (showRecent ? "recent" : "results") : panel);
+
+  /*
+   * The spinner in the field, faded rather than switched.
+   *
+   * A search runs on nearly every keystroke, so an indicator that appears and disappears
+   * outright flickers the whole time somebody is typing. Fading it, and taking longer to
+   * leave than to arrive, keeps a fast answer from registering as a blink.
+   */
+  const spinner = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(spinner, {
+      toValue: logic.searching ? 1 : 0,
+      duration: logic.searching ? 120 : 260,
+      useNativeDriver: true,
+    }).start();
+  }, [logic.searching, spinner]);
 
   if (!logic.signedIn) {
     return (
@@ -110,6 +159,9 @@ export function FriendsScreen() {
                 onSubmitEditing={() => setPanel("people")}
                 style={styles.handleInput}
               />
+              <Animated.View style={{ opacity: spinner }} pointerEvents="none">
+                <ActivityIndicator size="small" color={colors.inkSubtle} />
+              </Animated.View>
             </View>
             <Pressable accessibilityRole="button" onPress={close} hitSlop={8}>
               <Text style={styles.cancel}>{t("common.cancel")}</Text>
@@ -124,112 +176,98 @@ export function FriendsScreen() {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={t("friends.search")}
-                onPress={() => setSearching(true)}
+                onPress={() => setMode(true)}
                 style={styles.searchButton}
               >
                 <Search size={19} color={colors.inkMuted} strokeWidth={1.9} />
               </Pressable>
             </View>
 
-            <View style={styles.segments}>
-              <Segment active={panel === "activity"} onPress={() => setPanel("activity")}>
-                {t("friends.activity")}
-              </Segment>
-              <Segment
-                active={panel === "people"}
-                count={logic.friends.length}
-                onPress={() => setPanel("people")}
-              >
-                {t("friends.people")}
-              </Segment>
-            </View>
+            <Segments
+              active={panel}
+              onChange={(key) => setPanel(key as "activity" | "people")}
+              options={[
+                { key: "activity", label: t("friends.activity") },
+                { key: "people", label: t("friends.people"), count: logic.friends.length },
+              ]}
+            />
           </>
         )}
       </View>
 
-      {showRecent ? (
+      {/*
+       * One scroll view, whose contents fade between panels. Two of them swapping would
+       * take the scroll position with them, and coming back to a feed you had read halfway
+       * down only to find it at the top is worse than any transition.
+       */}
+      <Animated.View style={[styles.bodyWrap, { opacity: body.opacity }]}>
         <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
-          <View style={styles.recentHead}>
-            <Text style={styles.sectionLabel}>{t("friends.recent")}</Text>
-            {logic.recent.length > 0 && (
-              <Pressable accessibilityRole="button" onPress={() => void logic.forget()} hitSlop={8}>
-                <Text style={styles.recentClear}>{t("friends.recentClear")}</Text>
-              </Pressable>
-            )}
-          </View>
-
-          {logic.recent.length === 0 ? (
-            /*
-             * Nothing has been visited, so there is nothing to offer — and nothing is
-             * invented. The card says what a handle looks like and what will collect here.
-             */
-            <View style={styles.emptyCard}>
-              <View style={styles.emptyCardIcon}>
-                <AtSign size={17} color={colors.inkMuted} strokeWidth={1.9} />
+          {body.shown === "recent" && (
+            <>
+              <View style={styles.recentHead}>
+                <Text style={styles.sectionLabel}>{t("friends.recent")}</Text>
+                {logic.recent.length > 0 && (
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() => void logic.forget()}
+                    hitSlop={8}
+                  >
+                    <Text style={styles.recentClear}>{t("friends.recentClear")}</Text>
+                  </Pressable>
+                )}
               </View>
-              <Text style={styles.emptyCardTitle}>{t("friends.recentEmpty.title")}</Text>
-              <Text style={styles.emptyCardBody}>{t("friends.recentEmpty.body")}</Text>
-            </View>
-          ) : (
-            logic.recent.map((entry) => <RecentRow key={entry.handle} entry={entry} logic={logic} />)
-          )}
-        </ScrollView>
-      ) : (
-        <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
-          {logic.incoming.map((invite) => (
-            <RequestCard
-              key={invite.id}
-              name={invite.from?.displayName ?? invite.from?.handle ?? ""}
-              handle={invite.from?.handle ?? ""}
-              mutual={invite.mutualFriends ?? 0}
-              busy={logic.accept.isPending || logic.decline.isPending}
-              onAccept={() => logic.accept.mutate(invite.id ?? "")}
-              onDecline={() => logic.decline.mutate(invite.id ?? "")}
-            />
-          ))}
 
-          {searching || panel === "people" ? (
-            <PeoplePanel logic={logic} />
-          ) : (
-            <ActivityList entries={logic.entries} loading={logic.loading} />
+              {logic.recent.length === 0 ? (
+                /*
+                 * Nothing has been visited, so there is nothing to offer — and nothing is
+                 * invented. The card says what a handle looks like and what collects here.
+                 */
+                <View style={styles.emptyCard}>
+                  <View style={styles.emptyCardIcon}>
+                    <AtSign size={17} color={colors.inkMuted} strokeWidth={1.9} />
+                  </View>
+                  <Text style={styles.emptyCardTitle}>{t("friends.recentEmpty.title")}</Text>
+                  <Text style={styles.emptyCardBody}>{t("friends.recentEmpty.body")}</Text>
+                </View>
+              ) : (
+                logic.recent.map((entry) => (
+                  <RecentRow key={entry.handle} entry={entry} logic={logic} />
+                ))
+              )}
+            </>
+          )}
+
+          {body.shown === "results" && <PeoplePanel logic={logic} />}
+
+          {(body.shown === "activity" || body.shown === "people") && (
+            <>
+              {logic.incoming.map((invite) => (
+                <RequestCard
+                  key={invite.id}
+                  name={invite.from?.displayName ?? invite.from?.handle ?? ""}
+                  handle={invite.from?.handle ?? ""}
+                  mutual={invite.mutualFriends ?? 0}
+                  busy={logic.accept.isPending || logic.decline.isPending}
+                  onAccept={() => logic.accept.mutate(invite.id ?? "")}
+                  onDecline={() => logic.decline.mutate(invite.id ?? "")}
+                />
+              ))}
+
+              {body.shown === "people" ? (
+                <PeoplePanel logic={logic} />
+              ) : (
+                <ActivityList entries={logic.entries} loading={logic.loading} />
+              )}
+            </>
           )}
         </ScrollView>
-      )}
+      </Animated.View>
+
     </SafeAreaView>
   );
 }
 
 type Logic = ReturnType<typeof useFriendsLogic>;
-
-/**
- * One half of the track, not a pill of its own.
- *
- * The count rides beside its label rather than inside it, so the number reads as a
- * quantity and not as part of the name.
- */
-function Segment({
-  active,
-  count,
-  onPress,
-  children,
-}: {
-  readonly active: boolean;
-  readonly count?: number;
-  readonly onPress: () => void;
-  readonly children: string;
-}) {
-  return (
-    <Pressable
-      accessibilityRole="tab"
-      accessibilityState={{ selected: active }}
-      onPress={onPress}
-      style={[styles.segment, active && styles.segmentActive]}
-    >
-      <Text style={[styles.segmentLabel, active && styles.segmentLabelActive]}>{children}</Text>
-      {count === undefined ? null : <Text style={styles.segmentCount}>{count}</Text>}
-    </Pressable>
-  );
-}
 
 function PeoplePanel({ logic }: { readonly logic: Logic }) {
   const { t } = useTranslation();
@@ -481,36 +519,8 @@ const styles = StyleSheet.create({
   handleInput: { flex: 1, fontFamily: fonts.sans, fontSize: 14, color: colors.ink, padding: 0 },
   cancel: { fontFamily: fonts.sans, fontSize: 13.5, fontWeight: "500", color: colors.inkMuted },
 
-  /* A track, and the halves live inside it. */
-  segments: {
-    flexDirection: "row",
-    gap: 2,
-    marginTop: 16,
-    padding: 3,
-    borderRadius: 9,
-    backgroundColor: "rgba(25,23,19,0.06)",
-  },
-  segment: {
-    flex: 1,
-    height: 30,
-    borderRadius: 7,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-  },
-  segmentActive: {
-    backgroundColor: colors.surface,
-    shadowColor: "rgba(25,23,19,1)",
-    shadowOpacity: 0.08,
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  segmentLabel: { fontFamily: fonts.sans, fontSize: 12.5, color: colors.inkMuted },
-  segmentLabelActive: { color: colors.ink, fontWeight: "600" },
-  segmentCount: { fontFamily: "Menlo", fontSize: 11, color: colors.inkSubtle },
 
+  bodyWrap: { flex: 1 },
   body: { paddingHorizontal: 18, paddingTop: 16, paddingBottom: 24 },
   sectionLabel: {
     fontFamily: "Menlo",
