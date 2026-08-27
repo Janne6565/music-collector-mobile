@@ -615,7 +615,18 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.1)",
   },
   formatChipActive: { backgroundColor: "#fff" },
-  formatChipText: { fontSize: 11.5, fontWeight: "500", color: "rgba(255,255,255,0.7)" },
+  /*
+   * The line height is spelled out because the chip is exactly as tall as this text: with
+   * the box no longer stretching, a line sized to the glyphs alone cropped the tails off
+   * "Vinyl" and "Digital". Ascenders never showed it -- only the descenders were missing,
+   * which reads as a rendering fault rather than as a layout that is too tight.
+   */
+  formatChipText: {
+    fontSize: 11.5,
+    lineHeight: 16,
+    fontWeight: "500",
+    color: "rgba(255,255,255,0.7)",
+  },
   formatChipTextActive: { fontWeight: "600", color: colors.night },
   rowBody: { flex: 1 },
   rowTitle: { fontSize: 13.5, fontWeight: "600", color: "#fff" },
