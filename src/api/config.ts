@@ -40,3 +40,15 @@ export const API_BASE =
     : __DEV__
       ? (developmentBase() ?? STAGING)
       : PRODUCTION;
+
+/*
+ * Said out loud, once, in development only.
+ *
+ * Which backend a dev build is talking to is invisible from inside the app, and getting it
+ * wrong does not look like a connection problem: the collection is local-first, so it still
+ * draws, just without covers, without sign-in and without any of the last sync's changes.
+ * That is a long way to walk before suspecting the URL.
+ */
+if (__DEV__) {
+  console.log(`[music-collector] API_BASE ${API_BASE}`);
+}
