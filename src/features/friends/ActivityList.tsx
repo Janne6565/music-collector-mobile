@@ -8,6 +8,7 @@ import type { Format } from "@janne6565/music-collector-shared";
 import { FORMAT_LABELS } from "@janne6565/music-collector-shared";
 import i18n from "i18next";
 import { Trans, useTranslation } from "react-i18next";
+import { EmptyPanel } from "@/features/friends/EmptyPanel";
 import { StyleSheet, Text, View } from "react-native";
 
 /**
@@ -34,10 +35,7 @@ export function ActivityList({
 
   if (entries.length === 0) {
     return (
-      <View style={styles.empty}>
-        <Text style={styles.emptyTitle}>{t("friends.feedEmpty.title")}</Text>
-        <Text style={styles.emptyBody}>{t("friends.feedEmpty.body")}</Text>
-      </View>
+      <EmptyPanel title={t("friends.feedEmpty.title")} body={t("friends.feedEmpty.body")} />
     );
   }
 
@@ -186,13 +184,4 @@ const styles = StyleSheet.create({
   strong: { fontWeight: "700" },
   meta: { fontFamily: fonts.sans, fontSize: 12, color: colors.inkMuted, marginTop: 2 },
   seeAll: { fontFamily: fonts.sans, fontSize: 12, fontWeight: "600", color: colors.accent, marginTop: 4 },
-  empty: { alignItems: "center", paddingVertical: 40, gap: 6 },
-  emptyTitle: { fontFamily: fonts.sans, fontSize: 14, fontWeight: "600", color: colors.ink },
-  emptyBody: {
-    fontFamily: fonts.sans,
-    fontSize: 12.5,
-    lineHeight: 18,
-    color: colors.inkMuted,
-    textAlign: "center",
-  },
 });

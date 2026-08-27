@@ -1,5 +1,6 @@
 import { Avatar } from "@/features/friends/Avatar";
 import { ActivityList } from "@/features/friends/ActivityList";
+import { EmptyPanel } from "@/features/friends/EmptyPanel";
 import { ClaimHandlePanel } from "@/features/friends/ClaimHandlePanel";
 import { useFriendsLogic } from "@/features/friends/useFriendsLogic";
 import { colors, fonts } from "@/theme/colors";
@@ -126,7 +127,7 @@ export function FriendsScreen() {
                 onPress={() => setSearching(true)}
                 style={styles.searchButton}
               >
-                <Search size={16} color={colors.inkMuted} strokeWidth={1.75} />
+                <Search size={19} color={colors.inkMuted} strokeWidth={1.9} />
               </Pressable>
             </View>
 
@@ -249,7 +250,7 @@ function PeoplePanel({ logic }: { readonly logic: Logic }) {
        * draws this heading with a list under it.
        */}
       {logic.friends.length === 0 ? (
-        <Text style={styles.emptyBody}>{t("friends.noneYet")}</Text>
+        <EmptyPanel title={t("friends.noneYet.title")} body={t("friends.noneYet.body")} />
       ) : (
         <>
           <Text style={styles.sectionLabel}>
@@ -450,8 +451,8 @@ const styles = StyleSheet.create({
   titleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   title: { fontFamily: fonts.serif, fontSize: 28, color: colors.ink },
   searchButton: {
-    width: 32,
-    height: 32,
+    width: 38,
+    height: 38,
     borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",

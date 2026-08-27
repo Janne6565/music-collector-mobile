@@ -128,7 +128,10 @@ const enCommon = {
     results: "Results",
     people: "People",
     yourFriends: "Your friends \u00b7 {{count}}",
-    noneYet: "Nobody yet. Search for a handle above.",
+    noneYet: {
+      title: "Nobody yet",
+      body: "Search for a handle to find the people you know.",
+    },
     wants: "wants to be friends",
     copies_one: "{{count}} copy",
     copies_other: "{{count}} copies",
@@ -867,7 +870,10 @@ const deCommon: CommonSchema = {
     results: "Treffer",
     people: "Leute",
     yourFriends: "Deine Freunde \u00b7 {{count}}",
-    noneYet: "Noch niemand. Such oben nach einem Handle.",
+    noneYet: {
+      title: "Noch niemand",
+      body: "Such nach einem Handle, um Leute zu finden, die du kennst.",
+    },
     wants: "m\u00f6chte befreundet sein",
     copies_one: "{{count}} Exemplar",
     copies_other: "{{count}} Exemplare",
