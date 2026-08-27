@@ -67,18 +67,19 @@ export function createSyncEngine(store: NativeLocalStore, clock: ClockSource): S
 }
 
 /**
- * How many pictures this device knows about but is not holding — a development diagnostic.
+ * What this device is holding, in pictures — a development diagnostic.
  *
- * The engine sweeps for these itself and says nothing about it, so when a shelf shows the
- * wrong cover there is no way to tell a download that is not happening from an image that
- * is not being redrawn. This separates the two: still missing afterwards means the fetch
- * is the problem, none missing means the display is.
+ * Reported as three numbers rather than one, because "none missing" is the same answer
+ * whether every file is present or there are no photo rows at all, and those two send you
+ * looking in completely different places.
  */
-export async function countPhotosMissingBytes(store: NativeLocalStore): Promise<number> {
+export async function describePhotos(store: NativeLocalStore): Promise<string> {
+  const photos = (await store.listAllPhotos()).filter((photo) => photo.deletedAt === null);
+  const onCopies = photos.filter((photo) => photo.copyId !== null).length;
   let missing = 0;
-  for (const photo of await store.listAllPhotos()) {
-    if (photo.storageKey === null || photo.deletedAt !== null) continue;
+  for (const photo of photos) {
+    if (photo.storageKey === null) continue;
     if (!(await store.hasPhotoBytes(photo.id))) missing += 1;
   }
-  return missing;
+  return `${photos.length} photos (${onCopies} on copies), ${missing} without bytes`;
 }
