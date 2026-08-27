@@ -1,9 +1,10 @@
-import type { SharedCopy } from "@/api/friends";
+import type { SharedCopy, SharedWish } from "@/api/friends";
 import { CopyTile } from "@/components/CopyTile";
 import { ReleaseArt } from "@/components/ReleaseArt";
 import { WishRow, wishCardStyle } from "@/components/WishRow";
 import { Avatar } from "@/features/friends/Avatar";
 import { useFriendProfileLogic } from "@/features/friends/useFriendsLogic";
+import { SharedDetailSheet } from "@/features/friends/SharedDetailSheet";
 import { useSharedCoverPhotos } from "@/features/friends/useSharedCoverPhotos";
 import { colors, fonts } from "@/theme/colors";
 import type { Format } from "@janne6565/music-collector-shared";
@@ -32,9 +33,22 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export function ProfileScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { handle } = useLocalSearchParams<{ handle: string }>();
+  const { handle, open } = useLocalSearchParams<{ handle: string; open?: string }>();
   const logic = useFriendProfileLogic(handle ?? "");
   const [tab, setTab] = useState<"collection" | "wishlist">("collection");
+
+  /*
+   * Which record the sheet is showing is an address, not a piece of state — the same
+   * reasoning the web's version gives: a sheet somebody is looking at when they decide to
+   * pass the link on has to be linkable, and one that only existed in memory is not.
+   */
+  // Hoisted so the sheet shows the same picture the tile did — and so the two do not each
+  // fetch it.
+  const photos = useSharedCoverPhotos(logic.copies);
+  const shelf = tab === "collection" ? logic.copies : logic.wishes;
+  const at = open === undefined ? -1 : shelf.findIndex((entry) => entry.id === open);
+  const show = (index: number) =>
+    router.setParams({ open: shelf[index]?.id ?? undefined });
 
   const person = logic.person;
   const name = person?.displayName ?? person?.handle ?? "";
@@ -109,12 +123,29 @@ export function ProfileScreen() {
                 <ActivityIndicator color={colors.inkSubtle} />
               </View>
             ) : tab === "collection" ? (
-              <Grid copies={logic.copies} pricesVisible={person.pricesVisible === true} />
+              <Grid
+              copies={logic.copies}
+              pricesVisible={person.pricesVisible === true}
+              photos={photos}
+              onOpen={(copyId) => router.setParams({ open: copyId })}
+            />
             ) : (
-              <WishRows logic={logic} />
+              <WishRows logic={logic} onOpen={(wishId) => router.setParams({ open: wishId })} />
             )}
           </ScrollView>
         </>
+      )}
+
+      {at >= 0 && (
+        <SharedDetailSheet
+          copy={tab === "collection" ? (shelf[at] as SharedCopy) : undefined}
+          wish={tab === "wishlist" ? (shelf[at] as SharedWish) : undefined}
+          pricesVisible={logic.person?.pricesVisible === true}
+          previewUri={open === undefined ? null : (photos.get(open) ?? null)}
+          onClose={() => router.setParams({ open: undefined })}
+          onPrev={at > 0 ? () => show(at - 1) : undefined}
+          onNext={at < shelf.length - 1 ? () => show(at + 1) : undefined}
+        />
       )}
     </SafeAreaView>
   );
@@ -179,12 +210,19 @@ function LockedShelf({ name, count }: { readonly name: string; readonly count: n
 function Grid({
   copies,
   pricesVisible,
-}: { readonly copies: readonly SharedCopy[]; readonly pricesVisible: boolean }) {
+  photos,
+  onOpen,
+}: {
+  readonly copies: readonly SharedCopy[];
+  readonly pricesVisible: boolean;
+  /**
+   * The owners' own pictures, where they have one and are sharing it. Resolved by the
+   * screen rather than here so the detail sheet shows the same one.
+   */
+  readonly photos: ReadonlyMap<string, string>;
+  readonly onOpen: (copyId: string) => void;
+}) {
   const { t } = useTranslation();
-  // The owner's own picture, where they have one and are sharing it. The server resolves
-  // which that is with the same rule their own screens use, so a starred photo stands for
-  // the copy here too — and it is the only picture a hand-entered copy can ever have.
-  const photos = useSharedCoverPhotos(copies);
   if (copies.length === 0) {
     return <Text style={styles.emptyBody}>{t("friendProfile.emptyShelf")}</Text>;
   }
@@ -194,6 +232,7 @@ function Grid({
         <CopyTile
           key={copy.id}
           style={styles.tile}
+          onPress={copy.id === undefined ? undefined : () => onOpen(copy.id as string)}
           art={
             <ReleaseArt
               release={{ coverArtUrl: copy.coverArtUrl ?? null, format: copy.format as Format }}
@@ -222,7 +261,10 @@ function Grid({
   );
 }
 
-function WishRows({ logic }: { readonly logic: Logic }) {
+function WishRows({
+  logic,
+  onOpen,
+}: { readonly logic: Logic; readonly onOpen: (wishId: string) => void }) {
   const { t } = useTranslation();
   if (logic.wishes.length === 0) {
     return <Text style={styles.emptyBody}>{t("friendProfile.emptyWishlist")}</Text>;
@@ -240,6 +282,7 @@ function WishRows({ logic }: { readonly logic: Logic }) {
          */
         <View key={wish.id} style={styles.wishCard}>
           <WishRow
+            onPress={wish.id === undefined ? undefined : () => onOpen(wish.id as string)}
             art={
               <ReleaseArt
                 release={{ coverArtUrl: logic.wishCoverOf(wish) }}

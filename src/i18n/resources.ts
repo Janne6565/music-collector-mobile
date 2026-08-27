@@ -685,6 +685,13 @@ const enCommon = {
       unmute: "Unmute",
     },
   },
+  sharedDetail: {
+    year: "Year",
+    format: "Format",
+    wanted: "Wanted",
+    mediaSleeve: "Media · Sleeve",
+    paid: "Paid",
+  },
   common: {
     save: "Save",
     cancel: "Cancel",
@@ -1414,6 +1421,13 @@ const deCommon: CommonSchema = {
       mute: "Stumm",
       unmute: "Ton an",
     },
+  },
+  sharedDetail: {
+    year: "Jahr",
+    format: "Format",
+    wanted: "Gesucht",
+    mediaSleeve: "Medium · Hülle",
+    paid: "Bezahlt",
   },
   common: {
     close: "Schließen",

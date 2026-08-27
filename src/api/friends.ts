@@ -91,9 +91,14 @@ export interface SharedCopy {
    * could show nothing but catalogue covers.
    */
   previewPhotoId?: string;
+  /** Media grade. Friends and up; absent on a public page. */
   condition?: string;
+  /** Sleeve grade — graded separately from the media since design 8d. */
+  sleeveCondition?: string;
   pricePaidCents?: number;
   currency?: string;
+  /** When they filed it. Shown as a footnote on the detail sheet, never as a fact. */
+  createdAt?: number;
 }
 
 export interface SharedWish {

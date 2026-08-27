@@ -40,8 +40,8 @@ export function CopyTile({
     </>
   );
 
-  // A tile you cannot open should not answer to a press: a friend's shelf is something you
-  // look at, and a control that does nothing is worse than no control.
+  // Optional because a tile with nowhere to go should not answer to a press — a control
+  // that does nothing is worse than no control.
   return onPress === undefined ? (
     <View style={style}>{content}</View>
   ) : (
