@@ -2,14 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import { Animated, StyleSheet, View, type ViewStyle } from "react-native";
 import { FormatThumb } from "@/components/FormatThumb";
 import { usePulse } from "@/components/Skeleton";
-import type { Format } from "@janne6565/music-collector-shared";
+import type { Format } from "@janne6565/rekordo-shared";
 /**
  * Everything the art actually needs: a URL to try, and a format to fall back to.
  *
  * Structural rather than `Release`, because an album (a release group) has a cover too and
  * has no format of its own — its placeholder is the generic sleeve. Widening the prop is
  * cheaper than casting an album into a shape it is not. Mirrors `CoverSubject` in
- * music-collector-frontend/src/components/ReleaseArt.tsx.
+ * rekordo-frontend/src/components/ReleaseArt.tsx.
  */
 export interface CoverSubject {
   readonly coverArtUrl: string | null;
@@ -43,7 +43,7 @@ type ArtStyle = Pick<ViewStyle, "width" | "height" | "borderRadius" | "aspectRat
  * self-corrects when it is handed a different release without needing to be re-keyed by
  * the caller — a new URL is neither loaded nor failed, which is exactly "loading".
  *
- * Mirrored from music-collector-frontend/src/components/ReleaseArt.tsx.
+ * Mirrored from rekordo-frontend/src/components/ReleaseArt.tsx.
  */
 export function ReleaseArt({
   release,

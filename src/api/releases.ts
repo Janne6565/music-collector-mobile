@@ -6,16 +6,16 @@ import type {
   Format,
   LocalStore,
   Release,
-} from "@janne6565/music-collector-shared";
+} from "@janne6565/rekordo-shared";
 import {
   FORMATS,
   readArchivedAlbumCovers,
   withArchivedCovers,
-} from "@janne6565/music-collector-shared";
+} from "@janne6565/rekordo-shared";
 /**
  * Thin client over the metadata proxy.
  *
- * Mirrors the boundary in music-collector-frontend/src/api/releases.ts: the server types
+ * Mirrors the boundary in rekordo-frontend/src/api/releases.ts: the server types
  * every field optional, so payloads are validated here and unusable rows dropped rather
  * than letting the optionality leak into the screens.
  */
@@ -239,7 +239,7 @@ const COVER_BATCH = 100;
  * for — hand-entered `local:` albums among them — are simply absent from the map, which is
  * the same thing as a null cover to every caller: `ReleaseArt` draws the format silhouette.
  *
- * Mirrors `lookupAlbumCovers` in music-collector-frontend/src/api/releases.ts.
+ * Mirrors `lookupAlbumCovers` in rekordo-frontend/src/api/releases.ts.
  */
 export async function lookupAlbumCovers(
   albumIds: readonly string[],
@@ -272,7 +272,7 @@ export async function lookupAlbumCovers(
  * with what was on screen. A wish that named a pressing asks about that pressing instead,
  * and only falls back to the album's answer when the mirror has nothing to say.
  *
- * Mirrors `lookupPressingCovers` in music-collector-frontend/src/api/releases.ts.
+ * Mirrors `lookupPressingCovers` in rekordo-frontend/src/api/releases.ts.
  */
 export async function lookupPressingCovers(
   releaseIds: readonly string[],
@@ -292,7 +292,7 @@ const RELEASE_BATCH = 100;
  * is an untitled placeholder. Ids the mirror cannot answer for — hand-entered `local:`
  * releases among them — are simply absent, and the caller keeps whatever it had.
  *
- * Mirrors `lookupReleases` in music-collector-frontend/src/api/releases.ts.
+ * Mirrors `lookupReleases` in rekordo-frontend/src/api/releases.ts.
  */
 export async function lookupReleases(releaseIds: readonly string[]): Promise<Release[]> {
   const now = Date.now();

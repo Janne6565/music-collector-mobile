@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
-import type { Copy, Format, Release } from "@janne6565/music-collector-shared";
+import type { Copy, Format, Release } from "@janne6565/rekordo-shared";
 import type { LibraryFilter } from "@/local/LocalStore";
 import { readCatalogueGap } from "@/local/settings";
 import { useStore } from "@/local/StoreProvider";

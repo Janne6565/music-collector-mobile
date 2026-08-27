@@ -6,7 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 import { pullChanges } from "@/api/sync";
 import { useStore } from "@/local/StoreProvider";
-import type { FirstSyncStrategy } from "@janne6565/music-collector-shared";
+import type { FirstSyncStrategy } from "@janne6565/rekordo-shared";
 import { colors, fonts } from "@/theme/colors";
 
 interface FirstSyncPromptProps {

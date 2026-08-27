@@ -1,8 +1,8 @@
-import type { Artist } from "@janne6565/music-collector-shared";
+import type { Artist } from "@janne6565/rekordo-shared";
 /**
  * The line under an artist's name: "Group · GB · 2010–".
  *
- * Mirrors `artistSubtitle` in music-collector-frontend/src/api/releases.ts exactly, so the
+ * Mirrors `artistSubtitle` in rekordo-frontend/src/api/releases.ts exactly, so the
  * same artist reads the same on both clients. It lives in the domain here rather than
  * beside the HTTP client because that module pulls in expo-constants and cannot be loaded
  * outside a native runtime — which would make the one piece of this worth unit-testing

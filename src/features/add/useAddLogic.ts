@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { lookupByBarcode, searchReleases } from "@/api/releases";
-import type { Format, Release } from "@janne6565/music-collector-shared";
+import type { Format, Release } from "@janne6565/rekordo-shared";
 import { useAddCopy } from "@/features/add/useAddCopy";
 import { useArtistSearchLogic } from "@/features/add/useArtistSearchLogic";
 import { clearRecentSearches, readRecentSearches, rememberSearch } from "@/local/settings";

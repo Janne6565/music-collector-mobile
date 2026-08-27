@@ -12,7 +12,7 @@ import { useStore } from "@/local/StoreProvider";
  * A picture uploaded on another device has a row before it has a file; the URI is handed
  * over anyway and `ReleaseArt` falls through to the silhouette until the bytes arrive.
  *
- * Mirrored from music-collector-frontend/src/features/wishlist/useWishPhotos.ts, which
+ * Mirrored from rekordo-frontend/src/features/wishlist/useWishPhotos.ts, which
  * has to build object URLs from IndexedDB blobs instead.
  */
 export function useWishPhotos(wishIds: readonly string[]): ReadonlyMap<string, string> {

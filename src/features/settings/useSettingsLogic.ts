@@ -15,7 +15,7 @@ import {
   writeSyncEnabled,
 } from "@/local/settings";
 import { useAppSelector } from "@/store/hooks";
-import type { LegalLanguage } from "@janne6565/music-collector-shared";
+import type { LegalLanguage } from "@janne6565/rekordo-shared";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NativeModules, Platform } from "react-native";
@@ -28,7 +28,7 @@ import { NativeModules, Platform } from "react-native";
  * it off everywhere — including, absurdly, disabling the sync that would carry the change
  * back. The screen says so once, in the header, rather than warning per row.
  *
- * Mirrors music-collector-frontend/src/features/settings/useSettingsLogic.ts. The two are
+ * Mirrors rekordo-frontend/src/features/settings/useSettingsLogic.ts. The two are
  * drawn very differently but must decide the same things.
  */
 

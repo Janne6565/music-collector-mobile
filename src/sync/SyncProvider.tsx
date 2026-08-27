@@ -48,11 +48,11 @@ export function SyncProvider({ children }: { readonly children: ReactNode }) {
      * one, in development, turns that into an answer in one pull.
      */
     if (user === null) {
-      if (__DEV__) console.log("[music-collector] sync skipped — no account");
+      if (__DEV__) console.log("[rekordo] sync skipped — no account");
       return;
     }
     if (firstSyncPending) {
-      if (__DEV__) console.log("[music-collector] sync skipped — first sync not answered yet (You tab)");
+      if (__DEV__) console.log("[rekordo] sync skipped — first sync not answered yet (You tab)");
       return;
     }
     // A slow sync must not stack up behind itself on a flaky connection, and a pull-to-
@@ -61,7 +61,7 @@ export function SyncProvider({ children }: { readonly children: ReactNode }) {
     // Read every time rather than once: the account screen can switch this off while the
     // interval is already running, and it should take effect on the next pass.
     if (!(await readSyncEnabled(store))) {
-      if (__DEV__) console.log("[music-collector] sync skipped — switched off on this device");
+      if (__DEV__) console.log("[rekordo] sync skipped — switched off on this device");
       return;
     }
     running.current = true;
@@ -69,12 +69,12 @@ export function SyncProvider({ children }: { readonly children: ReactNode }) {
       // Before anything else: a cursor counted against a different server is worse than no
       // cursor, because the server answers "nothing new" and means it.
       if (await alignSyncOrigin(store, API_BASE)) {
-        if (__DEV__) console.log(`[music-collector] backend changed — pulling everything from ${API_BASE}`);
+        if (__DEV__) console.log(`[rekordo] backend changed — pulling everything from ${API_BASE}`);
       }
       const result = await createSyncEngine(store, clock).sync();
       if (__DEV__) {
         console.log(
-          `[music-collector] sync ok — pulled ${result.pulled}, pushed ${result.pushed}, releases ${result.releases}`,
+          `[rekordo] sync ok — pulled ${result.pulled}, pushed ${result.pushed}, releases ${result.releases}`,
         );
       }
       // Recorded before the screens are told to refetch, so the shelf reads this pass's
@@ -94,7 +94,7 @@ export function SyncProvider({ children }: { readonly children: ReactNode }) {
       // Offline or the server is down. Local changes stay recorded as pending, so the
       // next pass picks them up; nothing is lost — but a developer staring at a list that
       // will not move deserves to be told which of those it is.
-      if (__DEV__) console.log("[music-collector] sync failed —", error);
+      if (__DEV__) console.log("[rekordo] sync failed —", error);
     } finally {
       running.current = false;
     }

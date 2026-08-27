@@ -13,8 +13,8 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import type { Format } from "@janne6565/music-collector-shared";
-import { FORMATS, FORMAT_LABELS } from "@janne6565/music-collector-shared";
+import type { Format } from "@janne6565/rekordo-shared";
+import { FORMATS, FORMAT_LABELS } from "@janne6565/rekordo-shared";
 import { useManualEntryLogic } from "@/features/manual/useManualEntryLogic";
 import { colors } from "@/theme/colors";
 

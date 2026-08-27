@@ -1,6 +1,6 @@
 import { friendsApi, type SharedWish } from "@/api/friends";
 import { lookupAlbumCovers, lookupPressingCovers } from "@/api/releases";
-import { isManualReleaseId } from "@janne6565/music-collector-shared";
+import { isManualReleaseId } from "@janne6565/rekordo-shared";
 import { canStillAskForPush } from "@/features/notifications/push";
 import {
   type RecentCollector,

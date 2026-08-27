@@ -8,7 +8,7 @@ import {
   legalDocument,
   sectionChip,
   sectionLabel,
-} from "@janne6565/music-collector-shared";
+} from "@janne6565/rekordo-shared";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ChevronLeft, Languages } from "lucide-react-native";
 import { useCallback, useRef } from "react";

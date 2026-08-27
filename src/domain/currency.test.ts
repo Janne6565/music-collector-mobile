@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { currencyChipLabel, formatMoney, spendByCurrency } from "@/domain/currency";
-import type { Copy } from "@janne6565/music-collector-shared";
+import type { Copy } from "@janne6565/rekordo-shared";
 
 function copy(pricePaidCents: number | null, currency: string): Copy {
   return { id: "c", pricePaidCents, currency } as unknown as Copy;

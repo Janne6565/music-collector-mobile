@@ -2,7 +2,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import type { ReactNode } from "react";
 import { Animated, StyleSheet, View, type ViewStyle } from "react-native";
 import { usePulse } from "@/components/Skeleton";
-import type { Format } from "@janne6565/music-collector-shared";
+import type { Format } from "@janne6565/rekordo-shared";
 /**
  * Placeholder artwork, ported from FormatThumb.dc.html.
  *

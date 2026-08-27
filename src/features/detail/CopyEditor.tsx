@@ -2,14 +2,14 @@ import { Eye, EyeOff, Star } from "lucide-react-native";
 import { fonts } from "@/theme/colors";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
-import type { Condition, Copy, CopyPatch, DetailChrome, Format } from "@janne6565/music-collector-shared";
+import type { Condition, Copy, CopyPatch, DetailChrome, Format } from "@janne6565/rekordo-shared";
 import {
   CONDITIONS,
   CONDITION_SHORT,
   FORMATS,
   FORMAT_LABELS,
   useCopyEditorLogic,
-} from "@janne6565/music-collector-shared";
+} from "@janne6565/rekordo-shared";
 interface CopyEditorProps {
   readonly copy: Copy;
   /** What the archive says this pressing is, so the chips start where it stands. */

@@ -1,6 +1,6 @@
 const enCommon = {
   app: {
-    name: "Music Collector",
+    name: "Rekordo",
   },
   nav: {
     library: "Library",
@@ -102,7 +102,7 @@ const enCommon = {
     totalSpentIn: "total spent, {{currency}}",
     averageIn: "average, {{currency}}",
     averagePerCopy: "average per copy",
-    exportNote: "Music Collector 1.0 · your collection lives on this device",
+    exportNote: "Rekordo 1.0 · your collection lives on this device",
   },
   copyEditor: {
     hide: "Hide from others",
@@ -748,7 +748,7 @@ type CommonSchema = DeepStringSchema<typeof enCommon>;
 
 const deCommon: CommonSchema = {
   app: {
-    name: "Music Collector",
+    name: "Rekordo",
   },
   nav: {
     library: "Sammlung",
@@ -851,7 +851,7 @@ const deCommon: CommonSchema = {
     totalSpentIn: "insgesamt ausgegeben, {{currency}}",
     averageIn: "im Schnitt, {{currency}}",
     averagePerCopy: "im Schnitt pro Exemplar",
-    exportNote: "Music Collector 1.0 · deine Sammlung liegt auf diesem Gerät",
+    exportNote: "Rekordo 1.0 · deine Sammlung liegt auf diesem Gerät",
   },
   copyEditor: {
     hide: "Vor anderen verbergen",

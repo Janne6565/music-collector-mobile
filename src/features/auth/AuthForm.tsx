@@ -3,7 +3,7 @@ import { Check, Disc3, Eye, EyeOff, HardDrive, Lock, Mail, User } from "lucide-r
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-import { passwordStrength } from "@janne6565/music-collector-shared";
+import { passwordStrength } from "@janne6565/rekordo-shared";
 import type { useAccountLogic } from "@/features/auth/useAccountLogic";
 import { useStore } from "@/local/StoreProvider";
 import { readLocalOnlyNoticeSeen } from "@/local/settings";

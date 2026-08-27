@@ -14,7 +14,7 @@ import { findArtistImage } from "@/api/releases";
  * artist has no picture", both of which are settled facts, and the server has written them
  * down — a retry would cost another pair of upstream calls to be told the same thing.
  *
- * Mirrored from music-collector-frontend/src/features/add/useArtistImage.ts.
+ * Mirrored from rekordo-frontend/src/features/add/useArtistImage.ts.
  */
 export function useArtistImage(mbid: string): string | null {
   const { data } = useQuery({

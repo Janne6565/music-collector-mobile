@@ -1,15 +1,19 @@
 import * as FileSystem from "expo-file-system/legacy";
 import * as SQLite from "expo-sqlite";
 import * as Crypto from "expo-crypto";
-import type { CollectionStats, Copy, Format, Photo, Release, WishlistItem } from "@janne6565/music-collector-shared";
+import type { CollectionStats, Copy, Format, Photo, Release, WishlistItem } from "@janne6565/rekordo-shared";
 import {
   FORMATS,
   isManualReleaseId,
   manualRelease,
   manualReleaseCopyId,
-} from "@janne6565/music-collector-shared";
+} from "@janne6565/rekordo-shared";
 import type { LibraryFilter, LocalStore } from "@/local/LocalStore";
 
+// The on-device SQLite file, deliberately still the pre-Rekordo name. It holds the
+// collection itself, and this app is local-first: without an account there is no copy
+// of it anywhere else. Renaming the file would not move the data, it would open a new
+// empty database next to the full one. Same reasoning as the web app's IndexedDB name.
 const DATABASE = "music-collector.db";
 const PHOTO_DIR = `${FileSystem.documentDirectory}photos/`;
 

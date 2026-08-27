@@ -15,14 +15,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { ReleaseArt } from "@/components/ReleaseArt";
 import { CoverSheet } from "@/features/detail/CoverSheet";
 import { useCopySwipe } from "@/features/detail/useCopySwipe";
-import type { Copy, DetailChrome, Release } from "@janne6565/music-collector-shared";
+import type { Copy, DetailChrome, Release } from "@janne6565/rekordo-shared";
 import {
   CONDITION_LABELS,
   CONDITION_SHORT,
   FORMAT_LABELS,
   copyFormat,
   copyPreviewSrc,
-} from "@janne6565/music-collector-shared";
+} from "@janne6565/rekordo-shared";
 import { CopyEditor } from "@/features/detail/CopyEditor";
 import { useCoverWash } from "@/features/detail/useCoverWash";
 import { useDetailLogic } from "@/features/detail/useDetailLogic";

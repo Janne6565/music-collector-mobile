@@ -1,4 +1,4 @@
-import type { LocalStore } from "@janne6565/music-collector-shared";
+import type { LocalStore } from "@janne6565/rekordo-shared";
 
 /**
  * The phone's half of the archive's byte seam.

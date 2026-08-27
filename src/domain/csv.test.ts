@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { fromCsv, parseCsv, toCsv, wishlistToCsv } from "@/domain/csv";
-import type { Copy, Release, WishlistItem } from "@janne6565/music-collector-shared";
+import type { Copy, Release, WishlistItem } from "@janne6565/rekordo-shared";
 const release: Release = {
   id: "r1",
   albumId: "rg1",

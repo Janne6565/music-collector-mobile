@@ -1,7 +1,7 @@
 import { useUndo } from "@/features/wishlist/UndoBar";
 import { useStore } from "@/local/StoreProvider";
-import type { Copy, Release } from "@janne6565/music-collector-shared";
-import { tombstoneWishlistItem, wishSatisfiedBy } from "@janne6565/music-collector-shared";
+import type { Copy, Release } from "@janne6565/rekordo-shared";
+import { tombstoneWishlistItem, wishSatisfiedBy } from "@janne6565/rekordo-shared";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 

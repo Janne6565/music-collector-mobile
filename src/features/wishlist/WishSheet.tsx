@@ -2,7 +2,7 @@ import { lookupAlbumCovers, lookupPressingCovers } from "@/api/releases";
 import { ReleaseArt } from "@/components/ReleaseArt";
 import { useStore } from "@/local/StoreProvider";
 import { colors, fonts } from "@/theme/colors";
-import type { Release, WishFormat, WishlistItem } from "@janne6565/music-collector-shared";
+import type { Release, WishFormat, WishlistItem } from "@janne6565/rekordo-shared";
 import {
   FORMAT_LABELS,
   applyWishPatch,
@@ -10,7 +10,7 @@ import {
   createWishlistItem,
   isManualReleaseId,
   manualReleaseId,
-} from "@janne6565/music-collector-shared";
+} from "@janne6565/rekordo-shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Crypto from "expo-crypto";
 import { Heart } from "lucide-react-native";

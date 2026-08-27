@@ -3,13 +3,13 @@ import * as Crypto from "expo-crypto";
 import * as FileSystem from "expo-file-system/legacy";
 import * as ImagePicker from "expo-image-picker";
 import { useCallback } from "react";
-import type { CatalogArtChoice, Photo } from "@janne6565/music-collector-shared";
+import type { CatalogArtChoice, Photo } from "@janne6565/rekordo-shared";
 import {
   applyCopyPatch,
   createPhoto,
   reorderPhoto,
   tombstonePhoto,
-} from "@janne6565/music-collector-shared";
+} from "@janne6565/rekordo-shared";
 import { useStore } from "@/local/StoreProvider";
 export type PhotoSource = "CAMERA" | "LIBRARY";
 

@@ -1,6 +1,6 @@
 import { useStore } from "@/local/StoreProvider";
-import type { Photo } from "@janne6565/music-collector-shared";
-import { createPhoto, tombstonePhoto } from "@janne6565/music-collector-shared";
+import type { Photo } from "@janne6565/rekordo-shared";
+import { createPhoto, tombstonePhoto } from "@janne6565/rekordo-shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Crypto from "expo-crypto";
 import * as FileSystem from "expo-file-system/legacy";

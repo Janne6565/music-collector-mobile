@@ -2,8 +2,8 @@ import { downloadPhotoBytes, uploadPhotoBytes } from "@/api/photos";
 import { lookupReleases } from "@/api/releases";
 import { pullChanges, pushChanges } from "@/api/sync";
 import type { NativeLocalStore } from "@/local/LocalStore";
-import type { ClockSource, SyncTransport } from "@janne6565/music-collector-shared";
-import { SyncEngine } from "@janne6565/music-collector-shared";
+import type { ClockSource, SyncTransport } from "@janne6565/rekordo-shared";
+import { SyncEngine } from "@janne6565/rekordo-shared";
 
 /**
  * The device's half of sync.

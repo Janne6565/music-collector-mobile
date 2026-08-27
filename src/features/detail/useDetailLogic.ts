@@ -2,8 +2,8 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import { useRouter } from "expo-router";
 import { lookupRelease } from "@/api/releases";
 import { neighboursOf } from "@/features/library/copyOrder";
-import type { Copy, CopyPatch, Release } from "@janne6565/music-collector-shared";
-import { applyCopyPatch, tombstoneCopy } from "@janne6565/music-collector-shared";
+import type { Copy, CopyPatch, Release } from "@janne6565/rekordo-shared";
+import { applyCopyPatch, tombstoneCopy } from "@janne6565/rekordo-shared";
 import { useEffect } from "react";
 import { useStore } from "@/local/StoreProvider";
 

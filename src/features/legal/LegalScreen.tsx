@@ -1,7 +1,7 @@
 import { accountConsents } from "@/api/auth";
 import { useLegalLanguage } from "@/features/legal/useLegalLanguage";
 import { colors, fonts } from "@/theme/colors";
-import { LEGAL_DOCUMENTS, type LegalDocumentId } from "@janne6565/music-collector-shared";
+import { LEGAL_DOCUMENTS, type LegalDocumentId } from "@janne6565/rekordo-shared";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { ChevronLeft, ChevronRight, Download, Pencil, Trash2 } from "lucide-react-native";

@@ -1,5 +1,5 @@
 import type { CopyOrigin } from "@/local/sqliteStore";
-import type { LocalStore } from "@janne6565/music-collector-shared";
+import type { LocalStore } from "@janne6565/rekordo-shared";
 
 /**
  * The device's storage contract: the shared one, plus the one thing only a phone has.
@@ -28,4 +28,4 @@ export type { CopyOrigin } from "@/local/sqliteStore";
 
 // Re-exported so the rest of the app keeps importing its storage contract from one place,
 // whether the part it needs is shared or native.
-export type { LibraryFilter, LocalStore } from "@janne6565/music-collector-shared";
+export type { LibraryFilter, LocalStore } from "@janne6565/rekordo-shared";

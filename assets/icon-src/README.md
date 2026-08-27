@@ -1,7 +1,7 @@
 # App icon sources
 
 The app icon is the same record-shelf mark the web app uses as its favicon
-(`music-collector-frontend/public/favicon.svg`) — three upright spines plus one leaning,
+(`rekordo-frontend/public/favicon.svg`) — three upright spines plus one leaning,
 in `canvas`/`ink` from the design deck. Change it here and change it there in the same
 commit, the way `src/theme/colors.ts` mirrors `src/styles.css`.
 

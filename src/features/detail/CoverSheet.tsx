@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
-import type { DetailChrome } from "@janne6565/music-collector-shared";
+import type { DetailChrome } from "@janne6565/rekordo-shared";
 
 /**
  * How much of the sleeve survives the crop once the header has closed up — a band across

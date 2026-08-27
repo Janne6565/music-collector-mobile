@@ -1,5 +1,5 @@
 import { request } from "@/api/client";
-import type { Copy, Photo, Release, SyncPage, WishlistItem } from "@janne6565/music-collector-shared";
+import type { Copy, Photo, Release, SyncPage, WishlistItem } from "@janne6565/rekordo-shared";
 
 
 interface SyncPayload {

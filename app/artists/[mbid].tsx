@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from "expo-router";
-import type { Artist } from "@janne6565/music-collector-shared";
+import type { Artist } from "@janne6565/rekordo-shared";
 import { ArtistScreen } from "@/features/artists/ArtistScreen";
 
 /**

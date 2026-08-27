@@ -2,8 +2,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Crypto from "expo-crypto";
 import { useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
-import type { Format, ManualRelease } from "@janne6565/music-collector-shared";
-import { createManualCopy } from "@janne6565/music-collector-shared";
+import type { Format, ManualRelease } from "@janne6565/rekordo-shared";
+import { createManualCopy } from "@janne6565/rekordo-shared";
 import { useStore } from "@/local/StoreProvider";
 import { readDefaultCurrency } from "@/local/settings";
 

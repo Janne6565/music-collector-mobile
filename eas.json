@@ -8,7 +8,7 @@
   },
   "build": {
     // Shared by every profile: the collection domain, the merge and the sync
-    // engine come from @janne6565/music-collector-shared on GitHub Packages,
+    // engine come from @janne6565/rekordo-shared on GitHub Packages,
     // which authenticates reads even though the package is public. `.npmrc`
     // expands ${NODE_AUTH_TOKEN}, so the install step on the EAS worker fails
     // with a 401 unless that variable exists. It is a secret and therefore
@@ -31,7 +31,7 @@
       "extends": "base",
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_BASE": "https://music-staging.jannekeipert.de"
+        "EXPO_PUBLIC_API_BASE": "https://rekordo-staging.jannekeipert.de"
       }
     },
     // Store build: signed for TestFlight / Play, build number auto-incremented.

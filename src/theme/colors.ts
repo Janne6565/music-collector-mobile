@@ -1,7 +1,7 @@
 /**
  * Design tokens from the Claude Design deck (project a1b6280a…).
  *
- * This mirrors `src/styles.css` in music-collector-frontend. The two apps are meant to
+ * This mirrors `src/styles.css` in rekordo-frontend. The two apps are meant to
  * read as one product — change a token here and change it there in the same commit.
  */
 export const colors = {

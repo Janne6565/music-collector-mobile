@@ -3,7 +3,7 @@ import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
 import { Platform } from "react-native";
 import { registerDevice } from "@/api/devices";
-import type { LocalStore } from "@janne6565/music-collector-shared";
+import type { LocalStore } from "@janne6565/rekordo-shared";
 
 /**
  * Everything that touches the OS permission, in one place.

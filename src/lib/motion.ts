@@ -1,4 +1,4 @@
-import { DURATION, EASING, MARK_HOLD } from "@janne6565/music-collector-shared";
+import { DURATION, EASING, MARK_HOLD } from "@janne6565/rekordo-shared";
 import { useEffect, useRef, useState } from "react";
 import { AccessibilityInfo, Animated, Easing } from "react-native";
 

@@ -28,8 +28,8 @@ import { readSyncEnabled, writeSyncEnabled } from "@/local/settings";
 import { accountChanged, firstSyncResolved, signedIn, signedOut } from "@/store/authSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { createSyncEngine } from "@/sync/transport";
-import type { FirstSyncStrategy } from "@janne6565/music-collector-shared";
-import { MC_MIME_TYPE, exportMcArchive, mcFileName, passwordLongEnough } from "@janne6565/music-collector-shared";
+import type { FirstSyncStrategy } from "@janne6565/rekordo-shared";
+import { MC_MIME_TYPE, exportMcArchive, mcFileName, passwordLongEnough } from "@janne6565/rekordo-shared";
 
 export type AuthMode = "SIGN_IN" | "REGISTER";
 export type AuthError =
@@ -228,7 +228,7 @@ export function useAccountLogic() {
   const exportCsv = useCallback(async () => {
     const copies = await store.listCopies();
     const releases = await store.getReleases(copies.map((copy) => copy.releaseId));
-    await shareCsv("music-collector", toCsv(copies, releases));
+    await shareCsv("rekordo", toCsv(copies, releases));
   }, [store, shareCsv]);
 
   /**
@@ -237,7 +237,7 @@ export function useAccountLogic() {
    * the spreadsheet for something that is not on the shelf.
    */
   const exportWishlistCsv = useCallback(async () => {
-    await shareCsv("music-collector-wishlist", wishlistToCsv(await store.listWishlist()));
+    await shareCsv("rekordo-wishlist", wishlistToCsv(await store.listWishlist()));
   }, [store, shareCsv]);
 
   /**
@@ -286,7 +286,7 @@ export function useAccountLogic() {
    */
   const exportJson = useCallback(async () => {
     const body = user === null ? await localExport() : await accountExport();
-    const file = `${FileSystem.cacheDirectory}music-collector-export-${new Date().toISOString().slice(0, 10)}.json`;
+    const file = `${FileSystem.cacheDirectory}rekordo-export-${new Date().toISOString().slice(0, 10)}.json`;
     await FileSystem.writeAsStringAsync(file, JSON.stringify(body, null, 2));
     if (await Sharing.isAvailableAsync()) {
       await Sharing.shareAsync(file, { mimeType: "application/json", UTI: "public.json" });

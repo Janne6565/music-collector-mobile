@@ -1,4 +1,4 @@
-# Releasing Music Collector Mobile
+# Releasing Rekordo Mobile
 
 Builds run on **EAS Build**, store submission on **EAS Submit**. The guiding rule:
 **no account-specific value and no secret is ever committed.** Store credentials are
@@ -18,7 +18,7 @@ Build profiles (`eas.json`):
 |---|---|---|
 | `development` | internal, dev-client | Metro host's LAN address, else staging |
 | `preview` | internal (ad-hoc link) | staging — `EXPO_PUBLIC_API_BASE` |
-| `production` | store, `autoIncrement` | `https://music.jannekeipert.de` |
+| `production` | store, `autoIncrement` | `https://rekordo.jannekeipert.de` |
 
 ---
 
@@ -27,7 +27,7 @@ Build profiles (`eas.json`):
 ### 1. `NODE_AUTH_TOKEN` on EAS — required before the first build
 
 The domain, the merge, the write path and the sync engine come from
-[`@janne6565/music-collector-shared`](https://github.com/Janne6565/music-collector-shared),
+[`@janne6565/rekordo-shared`](https://github.com/Janne6565/rekordo-shared),
 published to **GitHub Packages**, which authenticates reads even though the package is
 public. `.npmrc` expands `${NODE_AUTH_TOKEN}`; without it the install step on the EAS
 worker fails with a 401 and the build never reaches the compile phase.
@@ -56,7 +56,7 @@ What lets CI talk to EAS. Create at
 <https://expo.dev/accounts/janne6565/settings/access-tokens>, then:
 
 ```sh
-gh secret set EXPO_TOKEN -R Janne6565/music-collector-mobile
+gh secret set EXPO_TOKEN -R Janne6565/rekordo-mobile
 ```
 
 ### 3. Google Play
@@ -155,14 +155,14 @@ single command — so a tag took iOS down with Android instead of shipping it. O
 the keystore and the service account exist, Android joins with:
 
 ```sh
-gh variable set EAS_RELEASE_PLATFORMS --body all -R Janne6565/music-collector-mobile
+gh variable set EAS_RELEASE_PLATFORMS --body all -R Janne6565/rekordo-mobile
 ```
 
 Submission is opt-in behind a repo variable, so tags keep building safely until the
 store setup above is actually done:
 
 ```sh
-gh variable set EAS_AUTO_SUBMIT --body true -R Janne6565/music-collector-mobile
+gh variable set EAS_AUTO_SUBMIT --body true -R Janne6565/rekordo-mobile
 ```
 
 With it set, a tag push runs `eas build --auto-submit`: EAS builds, then queues the

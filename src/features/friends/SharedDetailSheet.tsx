@@ -1,8 +1,8 @@
 import { useTranslation } from "react-i18next";
 import { Animated, Modal, PanResponder, StyleSheet, Text, View } from "react-native";
 import { useMemo, useRef } from "react";
-import type { Format } from "@janne6565/music-collector-shared";
-import { CONDITION_SHORT, FORMAT_LABELS, chromeFor } from "@janne6565/music-collector-shared";
+import type { Format } from "@janne6565/rekordo-shared";
+import { CONDITION_SHORT, FORMAT_LABELS, chromeFor } from "@janne6565/rekordo-shared";
 import type { SharedCopy, SharedWish } from "@/api/friends";
 import { ReleaseArt } from "@/components/ReleaseArt";
 import { CoverSheet } from "@/features/detail/CoverSheet";

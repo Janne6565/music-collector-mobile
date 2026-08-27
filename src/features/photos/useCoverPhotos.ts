@@ -12,7 +12,7 @@ import { useStore } from "@/local/StoreProvider";
  * anyway and `ReleaseArt` falls through to the catalogue cover, then the placeholder,
  * when it fails to load — the same thing the strip does.
  *
- * Mirrored from music-collector-frontend/src/features/photos/useCoverPhotos.ts, which has
+ * Mirrored from rekordo-frontend/src/features/photos/useCoverPhotos.ts, which has
  * to build object URLs from IndexedDB blobs instead.
  */
 export function useCoverPhotos(copyIds: readonly string[]): ReadonlyMap<string, string> {

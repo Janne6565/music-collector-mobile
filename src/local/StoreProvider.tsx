@@ -1,6 +1,6 @@
 import { createContext, type ReactNode, useContext, useEffect, useState } from "react";
-import type { ClockSource } from "@janne6565/music-collector-shared";
-import { hlcDecode, hlcEncode, hlcInitial, hlcTick } from "@janne6565/music-collector-shared";
+import type { ClockSource } from "@janne6565/rekordo-shared";
+import { hlcDecode, hlcEncode, hlcInitial, hlcTick } from "@janne6565/rekordo-shared";
 import type { NativeLocalStore } from "@/local/LocalStore";
 import { SqliteLocalStore } from "@/local/sqliteStore";
 

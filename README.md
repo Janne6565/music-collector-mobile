@@ -1,11 +1,11 @@
-# music-collector-mobile
+# rekordo-mobile
 
-Expo app for **Music Collector** — the phone surface: library grid, item detail, wishlist,
+Expo app for **Rekordo** — the phone surface: library grid, item detail, wishlist,
 the scan-first add flow and profile.
 
 The app is **local-first**. The collection lives in a local SQLite database (`expo-sqlite`)
 and is fully usable with no account; signing in only starts syncing it to
-[`music-collector-backend`](https://github.com/Janne6565/music-collector-backend). See that
+[`rekordo-backend`](https://github.com/Janne6565/rekordo-backend). See that
 repo's `docs/PLAN.md` for the architecture.
 
 
@@ -18,8 +18,8 @@ falls back to its format silhouette because the metadata proxy answered nothing.
 | | |
 |---|---|
 | `bun start` / `bun run dev` | a backend on this machine, port 8080 |
-| `bun run start:staging` / `dev:staging` | `music-staging.jannekeipert.de` |
-| `bun run start:prod` / `dev:prod` | `music.jannekeipert.de` |
+| `bun run start:staging` / `dev:staging` | `rekordo-staging.jannekeipert.de` |
+| `bun run start:prod` / `dev:prod` | `rekordo.jannekeipert.de` |
 
 The `dev:*` variants need a dev-client build; the plain ones run in Expo Go. **OAuth needs
 a dev client** — the callback returns to `musiccollector://`, which Expo Go does not own.
@@ -53,7 +53,7 @@ is in [`docs/RELEASING.md`](docs/RELEASING.md).
   inside `expo-router`; a second copy is a different React context object, and layout
   values read through it silently come back as zero.
 - Design tokens live in `src/theme/colors.ts` and mirror `src/styles.css` in
-  `music-collector-frontend`. Change them in both, or the two apps stop reading as one
+  `rekordo-frontend`. Change them in both, or the two apps stop reading as one
   product.
 - Test files must not live inside `app/` — the typed-routes generator scans that directory
   and misreads a co-located test as a route. Put screen tests in `src/`.
@@ -61,7 +61,7 @@ is in [`docs/RELEASING.md`](docs/RELEASING.md).
 ## The shared package
 
 The domain, the merge, the write path and the sync engine live in
-[`music-collector-shared`](https://github.com/Janne6565/music-collector-shared) and are
+[`rekordo-shared`](https://github.com/Janne6565/rekordo-shared) and are
 installed from GitHub Packages, which authenticates reads even for a public package. Before
 `bun install`:
 

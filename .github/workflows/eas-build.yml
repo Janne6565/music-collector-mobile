@@ -50,7 +50,7 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
         env:
-          # @janne6565/music-collector-shared is on GitHub Packages, which authenticates
+          # @janne6565/rekordo-shared is on GitHub Packages, which authenticates
           # reads even for a public package.
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: bun run typecheck
@@ -72,7 +72,7 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           if [ -z "$EXPO_TOKEN" ]; then
-            echo "::error::EXPO_TOKEN secret is missing. Create an access token at https://expo.dev/accounts/janne6565/settings/access-tokens then run: gh secret set EXPO_TOKEN -R Janne6565/music-collector-mobile"
+            echo "::error::EXPO_TOKEN secret is missing. Create an access token at https://expo.dev/accounts/janne6565/settings/access-tokens then run: gh secret set EXPO_TOKEN -R Janne6565/rekordo-mobile"
             exit 1
           fi
 
@@ -85,7 +85,7 @@ jobs:
       # and `--platform all --non-interactive` fails as one command — so the platform
       # that *is* ready never reached the queue. Android joins by flipping the variable
       # once its keystore and service account exist:
-      #   gh variable set EAS_RELEASE_PLATFORMS --body all -R Janne6565/music-collector-mobile
+      #   gh variable set EAS_RELEASE_PLATFORMS --body all -R Janne6565/rekordo-mobile
       - name: Resolve build parameters
         id: params
         run: |
@@ -134,7 +134,7 @@ jobs:
       # Kept as a separate, opt-in step because submit.production in eas.json ships
       # without an ascAppId — until the store records exist, a tag must still build
       # without failing on a submit. Enable with:
-      #   gh variable set EAS_AUTO_SUBMIT --body true -R Janne6565/music-collector-mobile
+      #   gh variable set EAS_AUTO_SUBMIT --body true -R Janne6565/rekordo-mobile
       # --auto-submit queues the store submission on EAS after the build finishes,
       # so it composes with --no-wait (the submit happens server-side).
       - name: EAS build + auto-submit

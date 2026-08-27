@@ -57,7 +57,7 @@ export function ConfirmEmailScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.body}>
-        <Text style={styles.wordmark}>Music Collector</Text>
+        <Text style={styles.wordmark}>Rekordo</Text>
         <View style={styles.rule} />
 
         <Text style={styles.title}>{t(`auth.confirmPage.${state}.title`)}</Text>

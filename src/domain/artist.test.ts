@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { artistSubtitle } from "@/domain/artist";
-import type { Artist } from "@janne6565/music-collector-shared";
+import type { Artist } from "@janne6565/rekordo-shared";
 function artist(overrides: Partial<Artist> = {}): Artist {
   return {
     mbid: "a1ced3e5-476c-4046-bd74-d428f419989b",

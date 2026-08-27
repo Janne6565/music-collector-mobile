@@ -1,15 +1,15 @@
 {
-  "name": "music-collector-mobile",
+  "name": "rekordo-mobile",
   "version": "1.0.0",
   "main": "expo-router/entry",
   "private": true,
   "scripts": {
     "start": "expo start",
     "dev": "expo start --dev-client",
-    "start:staging": "EXPO_PUBLIC_API_BASE=https://music-staging.jannekeipert.de expo start",
-    "start:prod": "EXPO_PUBLIC_API_BASE=https://music.jannekeipert.de expo start",
-    "dev:staging": "EXPO_PUBLIC_API_BASE=https://music-staging.jannekeipert.de expo start --dev-client",
-    "dev:prod": "EXPO_PUBLIC_API_BASE=https://music.jannekeipert.de expo start --dev-client",
+    "start:staging": "EXPO_PUBLIC_API_BASE=https://rekordo-staging.jannekeipert.de expo start",
+    "start:prod": "EXPO_PUBLIC_API_BASE=https://rekordo.jannekeipert.de expo start",
+    "dev:staging": "EXPO_PUBLIC_API_BASE=https://rekordo-staging.jannekeipert.de expo start --dev-client",
+    "dev:prod": "EXPO_PUBLIC_API_BASE=https://rekordo.jannekeipert.de expo start --dev-client",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
@@ -17,7 +17,7 @@
     "test": "bun test src"
   },
   "dependencies": {
-    "@janne6565/music-collector-shared": "0.20.0",
+    "@janne6565/rekordo-shared": "0.21.0",
     "@reduxjs/toolkit": "^2.5.0",
     "@tanstack/react-query": "^5.62.0",
     "expo": "~57.0.16",

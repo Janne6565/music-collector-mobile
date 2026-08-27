@@ -1,6 +1,6 @@
 import { useStore } from "@/local/StoreProvider";
 import { colors, fonts } from "@/theme/colors";
-import { UNDO_HOLD, restoreWishlistItem } from "@janne6565/music-collector-shared";
+import { UNDO_HOLD, restoreWishlistItem } from "@janne6565/rekordo-shared";
 import { useQueryClient } from "@tanstack/react-query";
 import { HeartOff } from "lucide-react-native";
 import {

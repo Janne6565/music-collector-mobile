@@ -5,7 +5,7 @@ import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import Svg, { Defs, Line, Pattern, Rect } from "react-native-svg";
 import { artistSubtitle } from "@/domain/artist";
 import { Skeleton } from "@/components/Skeleton";
-import type { Artist } from "@janne6565/music-collector-shared";
+import type { Artist } from "@janne6565/rekordo-shared";
 import { useArtistImage } from "@/features/add/useArtistImage";
 import type { useArtistSearchLogic } from "@/features/add/useArtistSearchLogic";
 

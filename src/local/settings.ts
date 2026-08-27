@@ -1,7 +1,7 @@
 import { type CurrencyCode, DEFAULT_CURRENCY, isCurrencyCode } from "@/domain/currency";
 import type { LocalStore } from "@/local/LocalStore";
-import type { LegalLanguage, WishSort } from "@janne6565/music-collector-shared";
-import { parseWishSort } from "@janne6565/music-collector-shared";
+import type { LegalLanguage, WishSort } from "@janne6565/rekordo-shared";
+import { parseWishSort } from "@janne6565/rekordo-shared";
 
 /**
  * The handful of device-local preferences the account screen exposes.

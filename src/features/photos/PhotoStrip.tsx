@@ -2,10 +2,10 @@ import { Camera, EyeOff, ImagePlus, Star, Trash2 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Animated, Pressable, StyleSheet, Text, View } from "react-native";
-import type { DetailChrome } from "@janne6565/music-collector-shared";
+import type { DetailChrome } from "@janne6565/rekordo-shared";
 import type { PhotoStripLogic } from "@/features/photos/usePhotoStripLogic";
 import { curve, useReducedMotion } from "@/lib/motion";
-import { DURATION } from "@janne6565/music-collector-shared";
+import { DURATION } from "@janne6565/rekordo-shared";
 
 /**
  * One thumbnail, over a tile that holds its place until the file has decoded.

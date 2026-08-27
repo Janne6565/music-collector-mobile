@@ -1,4 +1,4 @@
-import type { Copy } from "@janne6565/music-collector-shared";
+import type { Copy } from "@janne6565/rekordo-shared";
 
 /**
  * Currency, which the app has always had and never let anybody choose.
@@ -8,7 +8,7 @@ import type { Copy } from "@janne6565/music-collector-shared";
  * the thing that picker has to be honest about is its own scope: it seeds *new* copies and
  * cannot touch a saved one, because a saved copy's currency is a fact about that purchase.
  *
- * Mirrored verbatim in music-collector-frontend/src/domain/currency.ts; keep the two in
+ * Mirrored verbatim in rekordo-frontend/src/domain/currency.ts; keep the two in
  * step, for the same reason csv.ts is mirrored — this is rendering and per-app plumbing
  * rather than something the two clients have to agree on to converge.
  */
