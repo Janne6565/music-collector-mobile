@@ -233,6 +233,7 @@ function FormatChips({ logic }: { readonly logic: Logic }) {
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
+      style={styles.formatChipsRow}
       contentContainerStyle={styles.formatChips}
       keyboardShouldPersistTaps="handled"
     >
@@ -596,7 +597,17 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 8,
   },
-  formatChips: { gap: 7, paddingHorizontal: 18, paddingTop: 14 },
+  /*
+   * The row is exactly as tall as a chip, and never taller.
+   *
+   * It is a sibling of the results, so in a column that has room going spare -- a search
+   * still running, a query with nothing behind it -- the scroll view was handed the slack
+   * and the chips, being stretch-aligned by default like any flex row, grew with it. That
+   * is how a row of pills turned into columns the height of the screen, and why it only
+   * did so sometimes: it depended on what was underneath.
+   */
+  formatChipsRow: { flexGrow: 0, flexShrink: 0 },
+  formatChips: { gap: 7, paddingHorizontal: 18, paddingTop: 14, alignItems: "center" },
   formatChip: {
     borderRadius: 999,
     paddingHorizontal: 12,
