@@ -159,6 +159,7 @@ function GridItem({
           ? ""
           : `${row.release.artistName}${row.release.year === null ? "" : ` · ${row.release.year}`}`
       }
+      rating={row.copy.rating}
     />
   );
 }

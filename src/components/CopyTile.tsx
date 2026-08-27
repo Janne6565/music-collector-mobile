@@ -19,12 +19,21 @@ export function CopyTile({
   art,
   title,
   subtitle,
+  rating,
   onPress,
   style,
 }: {
   readonly art: ReactNode;
   readonly title: string;
   readonly subtitle: string;
+  /**
+   * Screen 25a — the rating as a third line under the meta.
+   *
+   * Null or absent draws nothing at all, which is the rule rather than a shortcut: most
+   * shelves are rated in patches, and a grid where every third tile carries five hollow
+   * stars reads as a list of things you have not got round to.
+   */
+  readonly rating?: number | null;
   readonly onPress?: () => void;
   readonly style?: ViewStyle;
 }) {
@@ -37,6 +46,7 @@ export function CopyTile({
       <Text style={styles.subtitle} numberOfLines={1}>
         {subtitle}
       </Text>
+      <TileRating rating={rating ?? null} />
     </>
   );
 
@@ -51,7 +61,27 @@ export function CopyTile({
   );
 }
 
+/**
+ * Glyphs rather than five icons: at 10px a stroked star is a shape with a weight to it,
+ * and fifteen of them per row of tiles is a lot of drawing for something the eye takes in
+ * as a bar. Whole stars only — a half at this size is a smudge.
+ */
+function TileRating({ rating }: { readonly rating: number | null }) {
+  if (rating === null || rating <= 0) return null;
+  const filled = Math.min(5, Math.round(rating));
+
+  return (
+    <Text style={styles.rating} numberOfLines={1}>
+      <Text style={styles.ratingOn}>{"\u2605".repeat(filled)}</Text>
+      <Text style={styles.ratingOff}>{"\u2606".repeat(5 - filled)}</Text>
+    </Text>
+  );
+}
+
 const styles = StyleSheet.create({
   title: { fontSize: 11.5, fontWeight: "600", marginTop: 6, color: colors.ink },
   subtitle: { fontSize: 10.5, color: colors.inkMuted },
+  rating: { fontSize: 10, lineHeight: 13, letterSpacing: 1.5, marginTop: 3 },
+  ratingOn: { color: colors.accent },
+  ratingOff: { color: "rgba(25,23,19,0.2)" },
 });
