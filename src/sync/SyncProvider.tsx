@@ -41,16 +41,36 @@ export function SyncProvider({ children }: { readonly children: ReactNode }) {
   const running = useRef(false);
 
   const runSync = useCallback(async () => {
-    if (user === null || firstSyncPending) return;
+    /*
+     * Every one of these is a silent no-op, and between them they are most of the reasons
+     * somebody stares at a stale list wondering why pulling it does nothing. Saying which
+     * one, in development, turns that into an answer in one pull.
+     */
+    if (user === null) {
+      if (__DEV__) console.log("[music-collector] sync skipped — no account");
+      return;
+    }
+    if (firstSyncPending) {
+      if (__DEV__) console.log("[music-collector] sync skipped — first sync not answered yet (You tab)");
+      return;
+    }
     // A slow sync must not stack up behind itself on a flaky connection, and a pull-to-
     // refresh landing mid-tick must not start a second one.
     if (running.current) return;
     // Read every time rather than once: the account screen can switch this off while the
     // interval is already running, and it should take effect on the next pass.
-    if (!(await readSyncEnabled(store))) return;
+    if (!(await readSyncEnabled(store))) {
+      if (__DEV__) console.log("[music-collector] sync skipped — switched off on this device");
+      return;
+    }
     running.current = true;
     try {
       const result = await createSyncEngine(store, clock).sync();
+      if (__DEV__) {
+        console.log(
+          `[music-collector] sync ok — pulled ${result.pulled}, pushed ${result.pushed}, releases ${result.releases}`,
+        );
+      }
       // Recorded before the screens are told to refetch, so the shelf reads this pass's
       // answer rather than the one before it.
       await writeCatalogueGap(store, {
@@ -64,9 +84,11 @@ export function SyncProvider({ children }: { readonly children: ReactNode }) {
       // and React Native has no window focus to refetch on. Signing in on a new device
       // looked like the sync had pulled nothing at all.
       await queryClient.invalidateQueries();
-    } catch {
+    } catch (error) {
       // Offline or the server is down. Local changes stay recorded as pending, so the
-      // next pass picks them up; nothing is lost.
+      // next pass picks them up; nothing is lost — but a developer staring at a list that
+      // will not move deserves to be told which of those it is.
+      if (__DEV__) console.log("[music-collector] sync failed —", error);
     } finally {
       running.current = false;
     }
