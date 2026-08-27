@@ -85,7 +85,9 @@ export function FriendsScreen() {
       {showRecent && (
         <View style={styles.recent}>
           <View style={styles.recentHead}>
-            <Text style={styles.sectionLabel}>{t("friends.recent")}</Text>
+            {/* The shared label carries a top margin for separating sections inside the
+                body; here it sits directly under the field it belongs to. */}
+            <Text style={[styles.sectionLabel, styles.recentLabel]}>{t("friends.recent")}</Text>
             <Pressable
               accessibilityRole="button"
               onPress={() => void logic.forget()}
@@ -310,7 +312,8 @@ const styles = StyleSheet.create({
     borderColor: colors.line,
   },
   searchInput: { flex: 1, fontFamily: fonts.sans, fontSize: 14, color: colors.ink, padding: 0 },
-  recent: { paddingHorizontal: 18, paddingTop: 12 },
+  recent: { paddingHorizontal: 20 },
+  recentLabel: { marginTop: 0 },
   recentHead: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" },
   recentClear: { fontSize: 11.5, color: colors.accent },
   recentRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 8 },
