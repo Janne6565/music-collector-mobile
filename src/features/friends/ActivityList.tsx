@@ -6,10 +6,11 @@ import { Avatar } from "@/features/friends/Avatar";
 import { colors, fonts } from "@/theme/colors";
 import type { Format } from "@janne6565/rekordo-shared";
 import { FORMAT_LABELS } from "@janne6565/rekordo-shared";
+import { useRouter } from "expo-router";
 import i18n from "i18next";
 import { Trans, useTranslation } from "react-i18next";
 import { EmptyPanel } from "@/features/friends/EmptyPanel";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 /**
  * The activity panel of 15a.
@@ -55,8 +56,10 @@ export function ActivityList({
 
 function Entry({ entry }: { readonly entry: ActivityEntry }) {
   const { t, i18n } = useTranslation();
+  const router = useRouter();
   const name = entry.actor?.displayName ?? entry.actor?.handle ?? "";
   const count = entry.copyCount ?? 1;
+  const handle = entry.actor?.handle ?? null;
 
   return (
     <View style={styles.entry}>
@@ -83,7 +86,22 @@ function Entry({ entry }: { readonly entry: ActivityEntry }) {
             .filter(Boolean)
             .join(" · ")}
         </Text>
-        {count > 1 && <Text style={styles.seeAll}>{t("friends.seeAll", { count })}</Text>}
+        {/*
+         * The burst's way in. The feed carries a few sleeves from a collapsed line and no
+         * copy ids, so there is nothing to open that is exactly these eight — but their
+         * shelf is sorted newest first, which puts them at the top of it. Only where there
+         * is a handle to go to: a line whose actor has not claimed one has no destination,
+         * and accent-coloured text that does nothing is what this is fixing.
+         */}
+        {count > 1 && handle !== null && (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push({ pathname: "/profiles/[handle]", params: { handle } })}
+            hitSlop={6}
+          >
+            <Text style={styles.seeAll}>{t("friends.seeAll", { count })}</Text>
+          </Pressable>
+        )}
       </View>
     </View>
   );
