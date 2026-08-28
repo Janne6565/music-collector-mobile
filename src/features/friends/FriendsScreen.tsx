@@ -133,7 +133,7 @@ export function FriendsScreen() {
       <View style={styles.header}>
         {searching ? (
           <View style={styles.searchRow}>
-            <View style={styles.handleField}>
+            <View style={[styles.handleField, styles.handleFieldFill]}>
               <AtSign size={16} color={colors.inkMuted} strokeWidth={1.75} />
               <TextInput
                 ref={field}
@@ -569,7 +569,6 @@ const styles = StyleSheet.create({
    * so this one is not a box among other things — it is the screen, and says so.
    */
   handleField: {
-    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     gap: 9,
@@ -580,6 +579,13 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: colors.ink,
   },
+  /*
+   * Filling the row is the *caller's* business, not the field's. It used to be `flex: 1`
+   * here, which is right beside Cancel and collapses the capsule to a black line on the
+   * guest screen, where the field is a child of a column: `flex: 1` there means grow
+   * downwards from a basis of zero, and the fixed 44 height loses to it.
+   */
+  handleFieldFill: { flex: 1 },
   handleInput: { flex: 1, fontFamily: fonts.sans, fontSize: 14, color: colors.ink, padding: 0 },
   cancel: { fontFamily: fonts.sans, fontSize: 13.5, fontWeight: "500", color: colors.inkMuted },
 
