@@ -158,6 +158,12 @@ export function useFriendsLogic() {
 export function useFriendProfileLogic(handle: string) {
   const queryClient = useQueryClient();
   const clean = handle.replace(/^@/, "");
+  /*
+   * A shelf can be looked at without an account, but a friendship cannot be asked for
+   * without one — there is nobody for the request to come from. The screen says so rather
+   * than letting the button run into a 401.
+   */
+  const signedIn = useAppSelector((state) => state.auth.status === "signedIn");
 
   const person = useQuery({
     queryKey: ["profile", clean],
@@ -245,6 +251,7 @@ export function useFriendProfileLogic(handle: string) {
 
   return {
     handle: clean,
+    signedIn,
     person: person.data,
     loading: person.isLoading,
     failed: person.isError,

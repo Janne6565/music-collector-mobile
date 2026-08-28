@@ -274,6 +274,7 @@ const enCommon = {
   },
   friendProfile: {
     ask: "Ask to be friends",
+    askSignedOut: "Sign in to ask \u2014 a request has to come from somebody.",
     collectingSince: "collecting since {{year}}",
     emptyShelf: "Nothing on this shelf yet.",
     emptyWishlist: "Nothing on this wishlist yet.",
@@ -1053,6 +1054,7 @@ const deCommon: CommonSchema = {
   },
   friendProfile: {
     ask: "Freundschaft anfragen",
+    askSignedOut: "Melde dich an \u2014 eine Anfrage muss von jemandem kommen.",
     collectingSince: "sammelt seit {{year}}",
     emptyShelf: "Auf diesem Regal steht noch nichts.",
     emptyWishlist: "Auf dieser Wunschliste steht noch nichts.",

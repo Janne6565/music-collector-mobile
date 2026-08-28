@@ -1,7 +1,7 @@
 import { X } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { Image, Modal, Pressable, StyleSheet, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 
 /**
@@ -17,7 +17,8 @@ import { StatusBar } from "expo-status-bar";
  * thing this must not do.
  *
  * Tapping anywhere closes it. The X is there because a picture that fills the screen gives
- * no hint that it is dismissible, not because the backdrop needs help.
+ * no hint that it is dismissible, not because the backdrop needs help — top left, where
+ * the way back out of every other screen in the app already is.
  */
 export function CoverLightbox({
   uri,
@@ -27,6 +28,13 @@ export function CoverLightbox({
   readonly onClose: () => void;
 }) {
   const { t } = useTranslation();
+  /*
+   * The inset read from the provider around the app rather than from a `SafeAreaView`
+   * inside the modal. A safe-area view mounted in a modal gets its frame measured after
+   * the modal has already appeared, and until it does the inset is zero — which put the
+   * close button in the same row as the clock.
+   */
+  const insets = useSafeAreaInsets();
 
   return (
     <Modal visible transparent={false} animationType="fade" onRequestClose={onClose}>
@@ -34,8 +42,8 @@ export function CoverLightbox({
       <Pressable accessibilityRole="button" accessibilityLabel={t("common.close")} onPress={onClose} style={styles.root}>
         <Image source={{ uri }} style={styles.image} resizeMode="contain" />
       </Pressable>
-      <SafeAreaView style={styles.chrome} edges={["top"]} pointerEvents="box-none">
-        <View style={styles.chromeRow}>
+      <View style={styles.chrome} pointerEvents="box-none">
+        <View style={[styles.chromeRow, { paddingTop: insets.top + 10 }]}>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t("common.close")}
@@ -46,7 +54,7 @@ export function CoverLightbox({
             <X size={18} color="#fff" strokeWidth={2} />
           </Pressable>
         </View>
-      </SafeAreaView>
+      </View>
     </Modal>
   );
 }
@@ -55,7 +63,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#000", alignItems: "center", justifyContent: "center" },
   image: { width: "100%", height: "100%" },
   chrome: { position: "absolute", top: 0, left: 0, right: 0 },
-  chromeRow: { flexDirection: "row", justifyContent: "flex-end", padding: 14 },
+  chromeRow: { flexDirection: "row", justifyContent: "flex-start", paddingHorizontal: 14, paddingBottom: 14 },
   close: {
     width: 34,
     height: 34,

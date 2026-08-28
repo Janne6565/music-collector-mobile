@@ -198,6 +198,37 @@ function Tab({
 
 function RelationshipAction({ logic }: { readonly logic: Logic }) {
   const { t } = useTranslation();
+  const router = useRouter();
+
+  /*
+   * Signed out there is no verdict to act on: the server answers the same for everybody
+   * when nobody is asking, so the switch below would fall through to a live Ask button
+   * that can only ever come back a 401. Shown and disabled rather than hidden — the button
+   * is what the screen is for, and a stranger who cannot see it learns nothing about why.
+   * The friends list makes the same point once, under the list.
+   */
+  if (!logic.signedIn) {
+    return (
+      <View style={styles.askSignedOut}>
+        <View
+          accessibilityRole="button"
+          accessibilityState={{ disabled: true }}
+          style={[styles.askButton, styles.askButtonOff]}
+        >
+          <UserPlus size={16} color={colors.paper} strokeWidth={1.9} />
+          <Text style={styles.askLabel}>{t("friendProfile.ask")}</Text>
+        </View>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push("/(tabs)/you")}
+          hitSlop={6}
+        >
+          <Text style={styles.askHint}>{t("friendProfile.askSignedOut")}</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
   switch (logic.person?.relationship) {
     case "SELF":
       return null;
@@ -417,6 +448,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.ink,
   },
   askLabel: { fontFamily: fonts.sans, fontSize: 13, fontWeight: "600", color: colors.paper },
+  askSignedOut: { alignSelf: "flex-start", gap: 7 },
+  /** Legible, and plainly not pressable. Opacity rather than a second grey palette. */
+  askButtonOff: { opacity: 0.35 },
+  askHint: { fontFamily: fonts.sans, fontSize: 11.5, lineHeight: 16, color: colors.inkMuted },
   /*
    * A track, and the halves live inside it. Two pills with a rule underneath drew the same
    * choice as two separate buttons that happened to sit together; this says they are one
