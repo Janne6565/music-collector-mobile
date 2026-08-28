@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
-import { Animated, Modal, PanResponder, StyleSheet, Text, View } from "react-native";
-import { useMemo, useRef } from "react";
+import { Modal, StyleSheet, Text, View } from "react-native";
+import { usePageFlip } from "@/features/detail/usePageFlip";
 import type { Format } from "@janne6565/rekordo-shared";
 import { CONDITION_SHORT, FORMAT_LABELS, chromeFor } from "@janne6565/rekordo-shared";
 import type { SharedCopy, SharedWish } from "@/api/friends";
@@ -59,38 +59,16 @@ export function SharedDetailSheet({
   const { t, i18n } = useTranslation();
   const subject = copy ?? wish;
 
-  const moves = useRef({ onPrev, onNext });
-  moves.current = { onPrev, onNext };
-
   /*
-   * Only clearly horizontal gestures, and the same cross-fade the library's sheet uses.
+   * The same gesture the library's own sheet leafs with, and the same cross-fade.
    *
-   * The first version also claimed anything dragged more than 48 points downwards, to close
-   * — which took every scroll away from the list underneath it. Closing that way is the
-   * modal's own gesture and always was; claiming it here only broke reading.
+   * It never fired here. The responder was offered the touch only after the body's scroll
+   * view had declined it, and a scroll view never declines — so the drag went to the
+   * scroller and the sheet heard nothing. `usePageFlip` claims a clearly sideways drag in
+   * the capture phase instead, which is also why it now works over the facts and the
+   * tracklist rather than only over the sleeve.
    */
-  const fade = useRef(new Animated.Value(1)).current;
-  const responder = useMemo(
-    () =>
-      PanResponder.create({
-        onMoveShouldSetPanResponder: (_event, gesture) =>
-          Math.abs(gesture.dx) > 24 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 2,
-        onPanResponderRelease: (_event, gesture) => {
-          const committed = Math.abs(gesture.dx) > 80 || Math.abs(gesture.vx) > 0.4;
-          const go = gesture.dx < 0 ? moves.current.onNext : moves.current.onPrev;
-          // At the ends nothing happens. A shelf that wraps has no last record.
-          if (!committed || go === undefined) return;
-          Animated.timing(fade, { toValue: 0, duration: 110, useNativeDriver: true }).start(
-            ({ finished }) => {
-              if (!finished) return;
-              go();
-              Animated.timing(fade, { toValue: 1, duration: 190, useNativeDriver: true }).start();
-            },
-          );
-        },
-      }),
-    [fade],
-  );
+  const { handlers, fade } = usePageFlip({ onPrev, onNext });
 
   const format = copy?.format ?? wish?.desiredFormat;
   const facts: Fact[] = [];
@@ -127,7 +105,7 @@ export function SharedDetailSheet({
           chrome={CHROME}
           onClose={onClose}
           fade={fade}
-          handlers={responder.panHandlers}
+          handlers={handlers}
           art={
             <ReleaseArt
               release={{ coverArtUrl }}
