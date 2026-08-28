@@ -128,6 +128,21 @@ export function useCoverWash(given: CoverTheme | null): CoverWash {
     const from = chromeFor(was);
     const to = chromeFor(theme);
     if (from.dark === to.dark && from.background === to.background) {
+      /*
+       * Nothing to cross -- but the destination still has to be *on*. The screen is two
+       * stacked layers, `settled` underneath and the destination above it at `paper`'s
+       * opacity, and this branch used to return with `paper` still at zero: correct when
+       * it fires mid-life (the layer is already up from the wash that got us here), wrong
+       * on the very first run, because `previous` starts out holding this same theme.
+       *
+       * That is the case where the palette is already known at mount -- a record opened a
+       * second time, or one of the neighbours warmed by `useNeighbourPalettes` -- and the
+       * screen came up drawn entirely in the sleeve's chrome over a background still on
+       * paper: white text on cream, unreadable, and only "sometimes" because it needed the
+       * theme to be there before the first frame.
+       */
+      paper.setValue(1);
+      setSettled(to.background);
       setBarStyle(to.dark ? "light" : "dark");
       return;
     }

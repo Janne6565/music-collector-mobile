@@ -41,11 +41,23 @@ export function FormatThumb({
   const pulse = usePulse(waiting === true);
 
   return (
-    <View style={[styles.root, style]}>
+    /*
+     * The whole tile breathes while it waits, not just the sleeve panel.
+     *
+     * The pulse used to sit on the paper alone, which left the record, the disc and the
+     * cassette shell standing perfectly still beside a breathing square -- the one part of
+     * the placeholder that is unmistakably a placeholder looked static, so the tile read as
+     * finished artwork rather than as something on its way. Opacity on the root moves the
+     * silhouette and its furniture as one object, which is what it is.
+     *
+     * Safe over the cover, which lives inside the sleeve: a tile is only ever waiting while
+     * its cover is still at zero opacity, and `usePulse` parks at 1 the moment it stops.
+     */
+    <Animated.View style={[styles.root, style, { opacity: pulse }]}>
       {/* Vinyl draws its record first so the sleeve overlaps it; the rest wear their
           furniture on top of the sleeve. */}
       {format === "VINYL" && <Record />}
-      <Sleeve pulse={pulse} cover={cover} elevated={format === "VINYL"} />
+      <Sleeve cover={cover} elevated={format === "VINYL"} />
       {format === "CD" && <Disc />}
       {format === "CASSETTE" && <Cassette />}
       {/* `OTHER` wears nothing. It is not a format but the absence of one — the answer for
@@ -54,24 +66,23 @@ export function FormatThumb({
           never claimed and stamps nine bars across whatever cover or photo the copy does
           have. A bare sleeve is what "not known" actually looks like. */}
       {format === "DIGITAL" && <Waveform />}
-    </View>
+    </Animated.View>
   );
 }
 
 /**
  * The sleeve panel — the same box in all four formats, and the one the cover fills.
  *
- * The paper is a sibling of the cover rather than the panel's own background, so it can
- * breathe while the cover is still arriving without taking the cover with it. The edge is
- * a sibling too, and drawn last: a border on the clipping view paints under its children,
- * and the cover would swallow it.
+ * The paper is a sibling of the cover rather than the panel's own background, so the cover
+ * lands on paper rather than on whatever is behind the tile. The edge is a sibling too, and
+ * drawn last: a border on the clipping view paints under its children, and the cover would
+ * swallow it. The waiting pulse is not here but on the root, so the paper and the format
+ * furniture breathe together.
  */
 function Sleeve({
-  pulse,
   cover,
   elevated,
 }: {
-  readonly pulse: Animated.Value;
   readonly cover?: ReactNode;
   /** Vinyl only: the sleeve stands off the record it is covering. */
   readonly elevated: boolean;
@@ -81,9 +92,7 @@ function Sleeve({
       {/* The clip is a child of the shadow-caster rather than the same view: iOS draws no
           shadow on a view that clips its own contents. */}
       <View style={styles.sleeveClip}>
-        <Animated.View
-          style={[StyleSheet.absoluteFill, { backgroundColor: SLEEVE, opacity: pulse }]}
-        />
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: SLEEVE }]} />
         {cover}
         <View pointerEvents="none" style={styles.sleeveEdge} />
       </View>

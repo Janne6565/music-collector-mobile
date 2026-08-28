@@ -111,20 +111,47 @@ export function ReleaseArt({
   const gone = url === null;
   const shown = !gone && loadedUrl === url;
   /**
-   * Whether the thing being waited for is a fetch.
+   * Whether the subject itself has not been read yet.
    *
-   * The breathing sleeve belongs to catalogue art and nothing else: a photo taken on this
-   * phone is already on it, so it paints on the frame it is asked for rather than
-   * inventing a wait for something that was never away.
+   * `undefined` and a null `coverArtUrl` are two different answers and were being drawn as
+   * one: the second says this release has no art and the placeholder is the final picture,
+   * the first says nobody has looked yet — the catalogue row has not arrived from the
+   * store or from sync, and a cover may well appear a moment later. Drawn as "no art" it
+   * came out as a still placeholder that then popped into a sleeve, which is the "blank
+   * beige, no skeleton" this fixes.
    */
-  const fetched = !gone && url !== previewUri;
+  const unresolved = release === undefined;
+  /**
+   * How long an unresolved row is given before its placeholder settles.
+   *
+   * A release row does not always arrive: the catalogue does not travel with sync, so a
+   * copy on a second device can sit without one indefinitely. Breathing on `undefined`
+   * alone would leave those tiles pulsing for good, promising a picture nothing is going
+   * to bring — so the wait is bounded, and what is left afterwards is the still
+   * placeholder, which by then is the honest answer.
+   */
+  const [waitedOut, setWaitedOut] = useState(false);
+  useEffect(() => {
+    if (!unresolved) {
+      setWaitedOut(false);
+      return;
+    }
+    const timer = setTimeout(() => setWaitedOut(true), UNRESOLVED_GRACE_MS);
+    return () => clearTimeout(timer);
+  }, [unresolved]);
   /**
    * The cover crosses over the sleeve rather than replacing it in one frame, which is
    * what stops a grid of covers arriving as a series of snaps.
    */
   const reveal = useRef(new Animated.Value(0)).current;
-  /** Only a fetch is worth breathing about; a photo already on this phone is not away. */
-  const waiting = fetched && !shown;
+  /**
+   * Anything still on its way breathes — a fetched cover, a photo being read off this
+   * phone, or a release whose row is not here yet. It used to be catalogue art alone, on
+   * the argument that a local file is never away; a large photo decoded off disk is away
+   * long enough to look broken, and a placeholder that only sometimes breathes reads as a
+   * bug rather than as a distinction.
+   */
+  const waiting = gone ? unresolved && !waitedOut : !shown;
   const pulse = usePulse(waiting);
 
   /*
@@ -168,9 +195,14 @@ export function ReleaseArt({
        * its own or the whole thing quietly disappears.
        */
       <View style={[styles.frame, styles.bleed, style]}>
-        {gone && placeholder === "format" ? (
+        {gone && !waiting && placeholder === "format" ? (
           /*
-           * Nothing is coming: the silhouette is the answer, not a wait. This is the one
+           * Nothing is coming — and known to be, which is why the release has to be
+           * resolved for this branch: a silhouette is a statement about what is on the
+           * shelf, and stating it before the row has arrived means saying "vinyl, no
+           * picture" about a record whose picture is one read away.
+           *
+           * The silhouette is the answer, not a wait. This is the one
            * place it still belongs in the hero -- it says what is on the shelf when there
            * is no picture of it. A caller whose layout already says the format in words
            * asks for "plain" instead and gets the ground below.
@@ -201,6 +233,10 @@ export function ReleaseArt({
     />
   );
 }
+
+/** See `waitedOut`. Long enough to cover a store read and a sync round, short enough that
+ *  a tile which is never getting a cover stops promising one. */
+const UNRESOLVED_GRACE_MS = 4000;
 
 const styles = StyleSheet.create({
   /*
