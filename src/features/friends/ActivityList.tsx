@@ -64,7 +64,7 @@ function Entry({ entry }: { readonly entry: ActivityEntry }) {
           back to the format silhouette like every other tile in the app. */}
       <ReleaseArt
         release={{ coverArtUrl: entry.coverArtUrl ?? null, format: entry.format as Format }}
-        style={{ width: 40, height: 40, borderRadius: 6 }}
+        style={{ width: 48, height: 40, borderRadius: 6 }}
       />
       <Avatar name={name} size={24} />
       <View style={styles.entryText}>

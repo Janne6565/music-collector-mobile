@@ -3,21 +3,25 @@ import type { ReactNode } from "react";
 import { Animated, StyleSheet, View, type ViewStyle } from "react-native";
 import { usePulse } from "@/components/Skeleton";
 import type { Format } from "@janne6565/rekordo-shared";
+
 /**
- * Placeholder artwork, ported from FormatThumb.dc.html.
+ * The format mark, ported from Format Marks.dc.html.
  *
- * Stands in wherever a release has no cover art, which is common on MusicBrainz. It
- * carries information rather than just filling space: the silhouette tells you the format
- * at a glance in a dense grid, before any text is legible.
+ * One rule for all four formats: the cover stays whole and unobscured, and the thing you
+ * own leans out from behind it on the right. The format is read from the shape of the
+ * sliver rather than from a badge, which is what lets it work at 44px in a dense grid,
+ * before any text is legible — vinyl and CD separate on value alone at that size, dark
+ * against cream, and the cassette and the plug hold because their edges are straight.
  *
- * The tile itself is transparent. There is exactly one panel with paper on it — the sleeve
- * — and it is the same box in all four formats, so what sits around it is the page. This
- * port used to paint a second, full-bleed sheet of paper behind everything, which put a
- * warm grey border down the right and along the top and bottom of every cover in the
- * shelf and left the record looking like it was cut out of a card.
+ * It replaced four unrelated compositions: a jewel case, a cassette lying on its case and
+ * nine waveform bars, two of which were drawn *over* the artwork.
  *
- * React Native has no conic or repeating gradients, so the deck's textures are
- * approximated with layered views and a linear gradient sheen.
+ * Only the right edge of each object is ever visible — the cover ends at 83.33% and the
+ * objects are laid out in the deck's full coordinates — so what this port has to get right
+ * is the rim. The vinyl's label and the CD's centre hole are behind the cover and are not
+ * drawn at all rather than drawn where nothing can see them. React Native has no radial or
+ * conic gradients, so the two discs are layered views with a linear sheen; every other
+ * part of the mark is a rectangle and is exact.
  */
 export function FormatThumb({
   format,
@@ -28,257 +32,262 @@ export function FormatThumb({
   readonly format: Format;
   readonly style?: ViewStyle;
   /**
-   * The real cover, drawn into the sleeve.
+   * The real cover, drawn into the cover panel.
    *
-   * Artwork belongs on the sleeve, not over the whole tile: a record sticks out past its
-   * cover, a CD sits in front of one. It is the same panel in every format — the furniture
-   * that says which format this is goes over or beside it, never under it.
+   * Artwork fills the cover and nothing is drawn over it. The object leans out beside it
+   * instead, which is the whole point of the mark: a cover you can read, and a format you
+   * can read next to it.
    */
   readonly cover?: ReactNode;
-  /** Breathes the sleeve while the cover it will hold is still on its way. */
+  /** Breathes the mark while the cover it will hold is still on its way. */
   readonly waiting?: boolean;
 }) {
   const pulse = usePulse(waiting === true);
 
   return (
     /*
-     * The whole tile breathes while it waits, not just the sleeve panel.
-     *
-     * The pulse used to sit on the paper alone, which left the record, the disc and the
-     * cassette shell standing perfectly still beside a breathing square -- the one part of
-     * the placeholder that is unmistakably a placeholder looked static, so the tile read as
-     * finished artwork rather than as something on its way. Opacity on the root moves the
-     * silhouette and its furniture as one object, which is what it is.
-     *
-     * Safe over the cover, which lives inside the sleeve: a tile is only ever waiting while
-     * its cover is still at zero opacity, and `usePulse` parks at 1 the moment it stops.
+     * The whole mark breathes while it waits, not just the cover panel — the object beside
+     * it is as much a placeholder as the paper is, and one of the two standing still while
+     * the other moves reads as a bug rather than as a distinction.
      */
     <Animated.View style={[styles.root, style, { opacity: pulse }]}>
-      {/* Vinyl draws its record first so the sleeve overlaps it; the rest wear their
-          furniture on top of the sleeve. */}
       {format === "VINYL" && <Record />}
-      <Sleeve cover={cover} elevated={format === "VINYL"} />
       {format === "CD" && <Disc />}
       {format === "CASSETTE" && <Cassette />}
-      {/* `OTHER` wears nothing. It is not a format but the absence of one — the answer for
-          a copy whose release this device cannot describe yet — and the waveform is the
-          furniture of a specific format, so drawing it here both claims a file that was
-          never claimed and stamps nine bars across whatever cover or photo the copy does
-          have. A bare sleeve is what "not known" actually looks like. */}
-      {format === "DIGITAL" && <Waveform />}
+      {format === "DIGITAL" && <Plug />}
+      {/* `OTHER` leans nothing out. It is not a format but the absence of one — the answer
+          for a copy whose release this device cannot describe yet — so there is no object
+          to draw. A bare cover is what "not known" actually looks like. */}
+      <Cover cover={cover} />
     </Animated.View>
   );
 }
 
 /**
- * The sleeve panel — the same box in all four formats, and the one the cover fills.
+ * The cover panel — a square, the same in every format, and the one the artwork fills.
  *
- * The paper is a sibling of the cover rather than the panel's own background, so the cover
- * lands on paper rather than on whatever is behind the tile. The edge is a sibling too, and
- * drawn last: a border on the clipping view paints under its children, and the cover would
- * swallow it. The waiting pulse is not here but on the root, so the paper and the format
- * furniture breathe together.
+ * The paper is a sibling of the artwork rather than the panel's own background, so the
+ * cover lands on paper rather than on whatever is behind the mark. The edge is a sibling
+ * too, and drawn last: a border on the clipping view paints under its children, and the
+ * artwork would swallow it. The clip is a child of the shadow-caster rather than the same
+ * view, because iOS draws no shadow on a view that clips its own contents.
  */
-function Sleeve({
-  cover,
-  elevated,
-}: {
-  readonly cover?: ReactNode;
-  /** Vinyl only: the sleeve stands off the record it is covering. */
-  readonly elevated: boolean;
-}) {
+function Cover({ cover }: { readonly cover?: ReactNode }) {
   return (
-    <View style={[styles.sleeve, elevated && styles.sleeveShadow]}>
-      {/* The clip is a child of the shadow-caster rather than the same view: iOS draws no
-          shadow on a view that clips its own contents. */}
-      <View style={styles.sleeveClip}>
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: SLEEVE }]} />
+    <View style={styles.cover}>
+      <View style={styles.coverClip}>
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: PAPER }]} />
         {cover}
-        <View pointerEvents="none" style={styles.sleeveEdge} />
+        <View pointerEvents="none" style={styles.coverEdge} />
       </View>
     </View>
   );
 }
 
-/** The record, peeking out to the right of the sleeve. */
+/** The record, leaning out on the right: dark, with the groove ring that reaches the rim. */
 function Record() {
   return (
-    <View style={styles.record}>
+    <View style={styles.disc}>
       <View style={styles.recordGroove} />
-      <View style={styles.recordLabel} />
     </View>
   );
 }
 
+/** The same silhouette as the record, and that is the point: at 44px what separates them
+ *  is value, not outline. White, with a sheen standing in for the deck's iridescence. */
 function Disc() {
   return (
-    /*
-     * The disc and its case sit in front of the cover, unlike the vinyl, which peeks out
-     * beside it. Drawn opaque they hide most of the artwork, so the whole assembly is eased
-     * back a little: enough that a CD still reads as a CD, little enough that the cover
-     * behind it is still the thing you see first.
-     */
-    <View pointerEvents="none" style={styles.discAssembly}>
-      <View style={styles.disc}>
-        <View style={styles.discHole} />
-      </View>
+    <View style={[styles.disc, styles.discCd]}>
       <LinearGradient
-        colors={["rgba(255,255,255,0.5)", "rgba(255,255,255,0.06)"]}
-        locations={[0.3, 0.3]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.case}
+        colors={["rgba(255,255,255,0.95)", "rgba(238,240,242,0.55)", "rgba(255,255,255,0.9)"]}
+        start={{ x: 0.15, y: 0 }}
+        end={{ x: 0.85, y: 1 }}
+        style={styles.discSheen}
       />
-      <View style={styles.caseSpine} />
     </View>
   );
 }
 
+/** The shell seen end-on. Straight edges, which is what holds it together at 44px. */
 function Cassette() {
   return (
     <>
-      <LinearGradient
-        colors={["rgba(255,255,255,0.42)", "rgba(255,255,255,0.06)"]}
-        locations={[0.34, 0.34]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.case}
-      />
-      <View style={styles.tapeLine} />
-      <View style={styles.tapeWindow}>
-        <View style={styles.spool} />
-        <View style={styles.spool} />
-      </View>
+      <View style={styles.shell} />
+      <View style={styles.shellWindow} />
+      <View style={[styles.hub, styles.hubTop]} />
+      <View style={[styles.hub, styles.hubBottom]} />
     </>
   );
 }
 
-/** Bar heights, from the deck, as a percentage of the tile. */
-const BARS = [10, 18, 28, 20, 34, 24, 14, 22, 12] as const;
-
-function Waveform() {
+/**
+ * A USB-A plug leaning out, which is what "digital" is when you actually own a copy of it.
+ *
+ * It replaced a waveform, which drew a sound rather than a thing — the other three marks
+ * are all objects you can hold, and a file on a stick is the honest member of that set.
+ */
+function Plug() {
   return (
     <>
-      {BARS.map((height, index) => (
-        <View
-          // Bars are positional; the index is their only identity.
-          key={`${height}-${index}`}
-          style={[
-            styles.bar,
-            {
-              left: `${13 + index * 7.25}%`,
-              top: `${50 - height / 2}%`,
-              height: `${height}%`,
-              opacity: 0.38 + height / 100,
-            },
-          ]}
-        />
-      ))}
+      <View style={styles.plugBody} />
+      <View style={styles.plugLed} />
+      <View style={styles.plugShell} />
+      <View style={[styles.plugStamp, styles.plugStampTop]} />
+      <View style={[styles.plugStamp, styles.plugStampBottom]} />
+      <View style={styles.plugSeam} />
     </>
   );
 }
 
-const SLEEVE = "#e7e2d9";
+/** The deck's paper, flattened: React Native has no repeating gradient to stripe it with. */
+const PAPER = "#e7e2d9";
 
 const styles = StyleSheet.create({
-  root: { width: "100%", aspectRatio: 1, position: "relative" },
-  sleeve: { position: "absolute", left: 0, top: "6%", width: "88%", height: "88%" },
-  sleeveShadow: {
+  /*
+   * A square cover plus the object beside it, which is 6:5. Stated here rather than
+   * assumed of the caller, so a mark handed a square box still draws its record round.
+   */
+  root: { width: "100%", aspectRatio: 6 / 5, position: "relative" },
+
+  cover: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    width: "83.333%",
+    height: "100%",
     shadowColor: "#191713",
-    shadowOpacity: 0.14,
-    shadowRadius: 7,
-    shadowOffset: { width: 3, height: 0 },
+    shadowOpacity: 0.16,
+    shadowRadius: 8,
+    shadowOffset: { width: 3, height: 1 },
     elevation: 3,
   },
-  sleeveClip: { ...StyleSheet.absoluteFill, borderRadius: 3, overflow: "hidden" },
-  sleeveEdge: {
+  coverClip: { ...StyleSheet.absoluteFill, borderRadius: 2, overflow: "hidden" },
+  coverEdge: {
     ...StyleSheet.absoluteFill,
-    borderRadius: 3,
+    borderRadius: 2,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(25,23,19,0.1)",
+    borderColor: "rgba(25,23,19,0.12)",
   },
-  record: {
-    position: "absolute",
-    right: 0,
-    top: "10%",
-    width: "80%",
-    height: "80%",
-    borderRadius: 999,
-    backgroundColor: "#26231d",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  // The deck's single groove sits near the rim, not halfway in.
-  recordGroove: { width: "94%", height: "94%", borderRadius: 999, borderWidth: 1, borderColor: "#1c1a16" },
-  recordLabel: {
-    position: "absolute",
-    width: "16%",
-    height: "16%",
-    borderRadius: 999,
-    backgroundColor: "#a2573a",
-    borderWidth: 1,
-    borderColor: "#15130f",
-  },
-  discAssembly: { ...StyleSheet.absoluteFill, opacity: 0.8 },
+
   disc: {
     position: "absolute",
-    left: "13%",
-    top: "19%",
-    width: "62%",
-    height: "62%",
+    right: 0,
+    top: "8%",
+    width: "70%",
+    height: "84%",
     borderRadius: 999,
-    backgroundColor: "#eeeae3",
+    backgroundColor: "#2a2620",
     alignItems: "center",
     justifyContent: "center",
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(25,23,19,0.16)",
+    borderColor: "rgba(0,0,0,0.35)",
+    /*
+     * The deck's drop shadow, and on the CD it is not decoration but the whole reason the
+     * disc is visible: a near-white disc leaning out over near-white paper has nothing but
+     * this to separate it from the page. Which is also why nothing here clips — iOS draws
+     * no shadow on a view that clips its own contents, and the sheen is round on its own.
+     */
+    shadowColor: "#191713",
+    shadowOpacity: 0.28,
+    shadowRadius: 7,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
   },
-  discHole: { width: "22%", height: "22%", borderRadius: 999, backgroundColor: "#faf8f5" },
-  case: {
-    position: "absolute",
-    left: "4%",
-    top: "10%",
-    width: "80%",
-    height: "80%",
-    borderRadius: 4,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(25,23,19,0.3)",
+  discCd: {
+    backgroundColor: "#fbfaf8",
+    borderColor: "rgba(25,23,19,0.22)",
+    shadowOpacity: 0.22,
   },
-  caseSpine: {
-    position: "absolute",
-    left: "4%",
-    top: "16%",
-    width: "4%",
+  /** The one groove the rim actually shows; the rest of the deck's rings are behind the cover. */
+  recordGroove: {
+    width: "68%",
     height: "68%",
-    backgroundColor: "rgba(25,23,19,0.18)",
-  },
-  tapeLine: {
-    position: "absolute",
-    left: "11%",
-    top: "47%",
-    width: "66%",
-    height: "3%",
-    backgroundColor: "rgba(25,23,19,0.22)",
-  },
-  tapeWindow: {
-    position: "absolute",
-    left: "11%",
-    top: "52%",
-    width: "66%",
-    height: "32%",
-    borderRadius: 3,
-    backgroundColor: "rgba(25,23,19,0.34)",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-evenly",
-  },
-  spool: {
-    width: "22%",
-    aspectRatio: 1,
     borderRadius: 999,
-    backgroundColor: "rgba(250,248,245,0.55)",
-    borderWidth: 2,
-    borderColor: "rgba(25,23,19,0.35)",
+    borderWidth: 1.5,
+    borderColor: "#191713",
+    backgroundColor: "#26231d",
   },
-  bar: { position: "absolute", width: "4%", borderRadius: 2, backgroundColor: "#191713" },
+  discSheen: { ...StyleSheet.absoluteFill, borderRadius: 999 },
+
+  shell: {
+    position: "absolute",
+    right: 0,
+    top: "13%",
+    width: "33%",
+    height: "74%",
+    borderRadius: 3,
+    backgroundColor: "#26231d",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(0,0,0,0.4)",
+  },
+  shellWindow: {
+    position: "absolute",
+    right: "8%",
+    top: "22%",
+    width: "17%",
+    height: "56%",
+    borderRadius: 2,
+    backgroundColor: "rgba(250,248,245,0.34)",
+  },
+  hub: {
+    position: "absolute",
+    right: "11.5%",
+    width: "10%",
+    height: "14%",
+    borderRadius: 999,
+    backgroundColor: "#191713",
+    borderWidth: 1.5,
+    borderColor: "rgba(250,248,245,0.55)",
+  },
+  hubTop: { top: "28%" },
+  hubBottom: { top: "58%" },
+
+  plugBody: {
+    position: "absolute",
+    right: "13.5%",
+    top: "37%",
+    width: "30%",
+    height: "26%",
+    borderRadius: 3,
+    backgroundColor: "#2a2620",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(0,0,0,0.45)",
+  },
+  plugLed: {
+    position: "absolute",
+    right: "15.5%",
+    top: "41.5%",
+    width: "3.5%",
+    height: "5%",
+    borderRadius: 999,
+    backgroundColor: "#a2573a",
+  },
+  plugShell: {
+    position: "absolute",
+    right: 0,
+    top: "40.5%",
+    width: "15.5%",
+    height: "19%",
+    borderRadius: 2,
+    backgroundColor: "#c6c1b7",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(25,23,19,0.4)",
+  },
+  plugStamp: {
+    position: "absolute",
+    right: "4.5%",
+    width: "3.8%",
+    height: "4.6%",
+    backgroundColor: "#6b665e",
+  },
+  plugStampTop: { top: "44%" },
+  plugStampBottom: { top: "51.4%" },
+  plugSeam: {
+    position: "absolute",
+    right: "15.5%",
+    top: "39.5%",
+    width: "0.8%",
+    height: "21%",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
 });

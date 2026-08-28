@@ -586,7 +586,7 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: HAIRLINE,
   },
-  thumb: { width: 48, height: 48 },
+  thumb: { width: 58, height: 48 },
   thumbSkeleton: { borderRadius: 5 },
   rowAddSkeleton: { width: 30, height: 30, borderRadius: 999 },
   searchingCaption: { marginTop: 6, marginBottom: 10 },
