@@ -27,7 +27,16 @@
       ],
       "expo-sharing",
       "expo-web-browser",
-      "expo-notifications"
+      "expo-notifications",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 180,
+          "resizeMode": "contain",
+          "backgroundColor": "#faf8f5"
+        }
+      ]
     ],
     "ios": {
       "supportsTablet": true,

@@ -17,5 +17,9 @@ and `android-icon-background` 512, `android-icon-monochrome` 432, `splash-icon` 
 The Android foreground and monochrome art is scaled to stay inside the 66/108 safe-zone
 circle, so nothing is clipped under a round mask.
 
-`splash-icon.png` is not wired up — there is no `splash` key and no `expo-splash-screen`
-plugin in `app.json`. It is kept in sync so it is correct if it ever is.
+`splash-icon.png` **is** wired up, through the `expo-splash-screen` plugin in `app.json`.
+It differs from `icon.png` in one way that matters: the mark sits on a rounded ink tile
+with transparency around it, because it is drawn *on* the launch background (`paper`,
+`#faf8f5`) rather than filling the screen. `imageWidth` is the tile's width in points, not
+the file's pixels. Changing it needs a native build — a splash is compiled into the
+launch storyboard, so an over-the-air update cannot carry it.
