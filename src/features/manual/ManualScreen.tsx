@@ -1,8 +1,9 @@
 import { useRouter } from "expo-router";
-import { LibraryBig, ScanBarcode } from "lucide-react-native";
+import { Camera, ImagePlus, LibraryBig, ScanBarcode, X } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -63,12 +64,56 @@ export function ManualScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.topRow}>
-            {/* The deck's cover well. A picture of the copy is added on the copy itself,
-                where the whole photo strip lives — one place to manage images rather than
-                two that can disagree about which one is the preview. */}
-            <View style={styles.coverWell}>
-              <Text style={styles.coverLabel}>{t("manual.cover")}</Text>
-            </View>
+            {/*
+             * The deck's cover well, and the one picture this form takes.
+             *
+             * A record no catalogue has starts life with nothing to show of it, so the
+             * well is the picker rather than a label: the frame itself chooses from the
+             * library, the badge takes a photo. Everything after this one — a strip of
+             * them, which is the preview, whether to prefer catalogue art — stays on the
+             * copy detail, where the whole strip lives.
+             */}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t("manual.coverChoose")}
+              onPress={() => logic.chooseCover("LIBRARY")}
+              disabled={logic.choosingCover}
+              style={[styles.coverWell, logic.coverUri !== null && styles.coverWellFilled]}
+            >
+              {logic.coverUri === null ? (
+                <>
+                  <ImagePlus size={17} color="rgba(255,255,255,0.4)" strokeWidth={1.6} />
+                  <Text style={styles.coverLabel}>{t("manual.cover")}</Text>
+                </>
+              ) : (
+                <Image source={{ uri: logic.coverUri }} style={styles.coverImage} />
+              )}
+
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t("manual.coverPhoto")}
+                onPress={() => logic.chooseCover("CAMERA")}
+                disabled={logic.choosingCover}
+                hitSlop={6}
+                style={styles.coverBadge}
+              >
+                <Camera size={12} color={colors.night} strokeWidth={2} />
+              </Pressable>
+
+              {/* Only once there is one to take off, and never as a confirm step: nothing
+                  is written until the form is saved, so leaving it is the undo. */}
+              {logic.coverUri !== null && (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t("manual.coverRemove")}
+                  onPress={logic.dropCover}
+                  hitSlop={6}
+                  style={[styles.coverBadge, styles.coverBadgeRemove]}
+                >
+                  <X size={12} color={colors.night} strokeWidth={2} />
+                </Pressable>
+              )}
+            </Pressable>
 
             <View style={styles.fill}>
               <Text style={styles.eyebrow}>{t("manual.artist")}</Text>
@@ -213,7 +258,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  /** The dashed frame is an invitation; once there is a picture in it, it is furniture. */
+  coverWellFilled: { borderStyle: "solid", borderColor: "rgba(255,255,255,0.14)" },
+  coverImage: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, borderRadius: 8.5 },
+  coverBadge: {
+    position: "absolute",
+    bottom: -6,
+    right: -6,
+    width: 24,
+    height: 24,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.92)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  coverBadgeRemove: { bottom: undefined, right: -6, top: -6 },
   coverLabel: {
+    marginTop: 4,
     fontSize: 8.5,
     letterSpacing: 0.5,
     textTransform: "uppercase",

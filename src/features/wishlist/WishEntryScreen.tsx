@@ -1,3 +1,4 @@
+import { CoverLightbox } from "@/components/CoverLightbox";
 import { ReleaseArt } from "@/components/ReleaseArt";
 import { Tracklist } from "@/features/tracklist/Tracklist";
 import { WishSheet } from "@/features/wishlist/WishSheet";
@@ -29,6 +30,7 @@ export function WishEntryScreen({ wishId }: { readonly wishId: string }) {
   const logic = useWishEntryLogic(wishId);
   const cover = useWishCoverLogic(wishId);
   const [editing, setEditing] = useState(false);
+  const [enlarged, setEnlarged] = useState(false);
 
   const entry = logic.entry;
 
@@ -41,6 +43,14 @@ export function WishEntryScreen({ wishId }: { readonly wishId: string }) {
       </SafeAreaView>
     );
   }
+
+  /**
+   * The picture the hero is actually drawing, in the order `ReleaseArt` picks it.
+   *
+   * Your own picture first, the catalogue's second — the same precedence the tile uses, so
+   * a tap enlarges what is on screen rather than whatever the catalogue happens to hold.
+   */
+  const heroUri = cover.uri ?? logic.pictureOf(entry) ?? logic.coverOf(entry);
 
   const since = new Intl.DateTimeFormat(i18n.language, {
     day: "numeric",
@@ -63,12 +73,21 @@ export function WishEntryScreen({ wishId }: { readonly wishId: string }) {
            * It also gives the frame its own aspect ratio, so the box is definite without
            * depending on the silhouette underneath to give it a height.
            */}
-          <ReleaseArt
-            release={{ coverArtUrl: logic.coverOf(entry) }}
-            previewUri={cover.uri ?? logic.pictureOf(entry)}
-            format={entry.desiredFormat ?? "OTHER"}
-            variant="bleed"
-          />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t("wishlist.viewCover")}
+            // Not a button when there is nothing behind it: the silhouette is a statement
+            // about the format, and opening it full-screen would be enlarging a placeholder.
+            disabled={heroUri === null}
+            onPress={() => setEnlarged(true)}
+          >
+            <ReleaseArt
+              release={{ coverArtUrl: logic.coverOf(entry) }}
+              previewUri={cover.uri ?? logic.pictureOf(entry)}
+              format={entry.desiredFormat ?? "OTHER"}
+              variant="bleed"
+            />
+          </Pressable>
         </View>
 
         {/*
@@ -216,6 +235,9 @@ export function WishEntryScreen({ wishId }: { readonly wishId: string }) {
       </ScrollView>
 
       {editing && <WishSheet onClose={() => setEditing(false)} entry={entry} />}
+      {enlarged && heroUri !== null && (
+        <CoverLightbox uri={heroUri} onClose={() => setEnlarged(false)} />
+      )}
     </SafeAreaView>
   );
 }

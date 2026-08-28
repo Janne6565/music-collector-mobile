@@ -3,12 +3,11 @@ import type { Photo } from "@janne6565/rekordo-shared";
 import { createPhoto, tombstonePhoto } from "@janne6565/rekordo-shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Crypto from "expo-crypto";
-import * as FileSystem from "expo-file-system/legacy";
-import * as ImagePicker from "expo-image-picker";
+import { type PhotoSource, pickImage, storePhotoBytes } from "@/features/photos/pickImage";
 
 /** Where a wish's picture comes from on a phone. The camera is first for the same reason
  * it is on a copy: you are often standing in front of the record. */
-export type CoverSource = "CAMERA" | "LIBRARY";
+export type CoverSource = PhotoSource;
 
 /**
  * The one picture a wishlist entry wears instead of the catalogue's answer (19b).
@@ -36,32 +35,19 @@ export function useWishCoverLogic(wishId: string) {
 
   const choose = useMutation({
     mutationFn: async (source: CoverSource) => {
-      const result =
-        source === "CAMERA"
-          ? await ImagePicker.launchCameraAsync({ quality: 0.8, mediaTypes: ["images"] })
-          : await ImagePicker.launchImageLibraryAsync({ quality: 0.8, mediaTypes: ["images"] });
-      if (result.canceled) return;
-
-      const asset = result.assets[0];
-      if (asset === undefined) return;
+      const picked = await pickImage(source);
+      if (picked === null) return;
 
       const previous = photo.data ?? null;
       const id = Crypto.randomUUID();
-      // Copied into the app's own storage rather than referenced where the picker left it:
-      // a cache URI can be cleared by the OS at any time, taking the picture with it.
-      await FileSystem.copyAsync({ from: asset.uri, to: store.photoUri(id) }).catch(async () => {
-        await FileSystem.makeDirectoryAsync(store.photoUri("").replace(/[^/]*$/, ""), {
-          intermediates: true,
-        });
-        await FileSystem.copyAsync({ from: asset.uri, to: store.photoUri(id) });
-      });
+      await storePhotoBytes(store, id, picked.uri);
 
       await store.putPhoto(
         createPhoto(
           {
             wishId,
-            contentType: asset.mimeType ?? "image/jpeg",
-            byteSize: asset.fileSize ?? 0,
+            contentType: picked.contentType,
+            byteSize: picked.byteSize,
             sortIndex: 0,
           },
           clock,

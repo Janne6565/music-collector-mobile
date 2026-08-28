@@ -3,7 +3,13 @@ import * as Crypto from "expo-crypto";
 import { useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import type { Format, ManualRelease } from "@janne6565/rekordo-shared";
-import { createManualCopy } from "@janne6565/rekordo-shared";
+import { createManualCopy, createPhoto } from "@janne6565/rekordo-shared";
+import {
+  type PhotoSource,
+  type PickedImage,
+  pickImage,
+  storePhotoBytes,
+} from "@/features/photos/pickImage";
 import { useStore } from "@/local/StoreProvider";
 import { readDefaultCurrency } from "@/local/settings";
 
@@ -49,6 +55,14 @@ export function useManualEntryLogic() {
   const router = useRouter();
 
   const [fields, setFields] = useState<ManualFields>(EMPTY);
+  /**
+   * The picture for the well, held rather than written.
+   *
+   * Nothing is on disk until the form is saved: a photo attached to a copy somebody then
+   * abandoned would be bytes nothing ever references. Closing the screen is the undo,
+   * which is also how the web dialog behaves.
+   */
+  const [cover, setCover] = useState<PickedImage | null>(null);
 
   const set = useCallback(<K extends keyof ManualFields>(key: K, value: ManualFields[K]) => {
     setFields((current) => ({ ...current, [key]: value }));
@@ -90,6 +104,19 @@ export function useManualEntryLogic() {
     return null;
   }, [shelf.data, typed]);
 
+  /**
+   * The camera or the library, straight into the well.
+   *
+   * Two buttons rather than one that asks which — the phone already has a photo strip on
+   * the copy detail, and this is the same pair of tap targets in a smaller frame.
+   */
+  const chooseCover = useMutation({
+    mutationFn: (source: PhotoSource) => pickImage(source),
+    onSuccess: (picked) => {
+      if (picked !== null) setCover(picked);
+    },
+  });
+
   const save = useMutation({
     mutationFn: async () => {
       const year = Number.parseInt(fields.year.trim(), 10);
@@ -121,6 +148,27 @@ export function useManualEntryLogic() {
       await store.putCopy(copy);
       // One record, added by a person: the only origin that reaches anybody's feed.
       await store.rememberOrigins([copy.id], "MANUAL");
+
+      // The cover is an ordinary photo of the copy — a manual pressing has no catalogue
+      // artwork to prefer, so the photo order alone decides the preview. Bytes first: a
+      // photo record with no bytes renders as a permanent placeholder.
+      if (cover !== null) {
+        const photoId = Crypto.randomUUID();
+        await storePhotoBytes(store, photoId, cover.uri);
+        await store.putPhoto(
+          createPhoto(
+            {
+              copyId: copy.id,
+              contentType: cover.contentType,
+              byteSize: cover.byteSize,
+              sortIndex: 0,
+            },
+            clock,
+            Date.now(),
+            photoId,
+          ),
+        );
+      }
       return copy;
     },
     onSuccess: async (copy) => {
@@ -136,6 +184,11 @@ export function useManualEntryLogic() {
     fields,
     set,
     artistHint,
+    /** The picture the well is showing, or null while it is still an empty frame. */
+    coverUri: cover?.uri ?? null,
+    chooseCover: (source: PhotoSource) => chooseCover.mutate(source),
+    dropCover: () => setCover(null),
+    choosingCover: chooseCover.isPending,
     /** The two things that name a record on a shelf. */
     canSave: fields.artist.trim() !== "" && fields.title.trim() !== "",
     save: () => save.mutate(),

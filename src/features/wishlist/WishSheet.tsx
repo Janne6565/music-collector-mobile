@@ -1,5 +1,11 @@
 import { lookupAlbumCovers, lookupPressingCovers } from "@/api/releases";
 import { ReleaseArt } from "@/components/ReleaseArt";
+import {
+  type PhotoSource,
+  type PickedImage,
+  pickImage,
+  storePhotoBytes,
+} from "@/features/photos/pickImage";
 import { useStore } from "@/local/StoreProvider";
 import { colors, fonts } from "@/theme/colors";
 import type { Release, WishFormat, WishlistItem } from "@janne6565/rekordo-shared";
@@ -7,16 +13,19 @@ import {
   FORMAT_LABELS,
   applyWishPatch,
   asWishFormat,
+  createPhoto,
   createWishlistItem,
   isManualReleaseId,
   manualReleaseId,
+  tombstonePhoto,
 } from "@janne6565/rekordo-shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Crypto from "expo-crypto";
-import { Heart } from "lucide-react-native";
+import { Camera, Heart, ImagePlus, X } from "lucide-react-native";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -60,6 +69,16 @@ export function WishSheet({ onClose, release = null, entry = null }: WishSheetPr
     entry !== null ? asWishFormat(entry.desiredFormat) : asWishFormat(release?.format ?? null),
   );
   const [note, setNote] = useState(entry?.note ?? "");
+  /**
+   * The picture this entry should wear, held rather than written.
+   *
+   * Nothing reaches the disk until the sheet is saved: an image attached to an entry
+   * somebody then abandoned would be bytes nothing ever references. Closing the sheet is
+   * the undo, which is what the web dialog does too.
+   */
+  const [picked, setPicked] = useState<PickedImage | null>(null);
+  /** Whether the picture already on the entry has been taken back off. */
+  const [dropped, setDropped] = useState(false);
   const [typed, setTyped] = useState({
     title: entry?.title ?? "",
     artistName: entry?.artistName ?? "",
@@ -110,6 +129,71 @@ export function WishSheet({ onClose, release = null, entry = null }: WishSheetPr
     pinnedCover ??
     (entry === null ? null : (albumCover.data?.get(entry.albumId) ?? null));
 
+  /**
+   * The picture this entry already wears, for a sheet reopened on one.
+   *
+   * The same key `useWishCoverLogic` reads, so the entry screen and this sheet cannot end
+   * up disagreeing about which picture is on the entry.
+   */
+  const ownPhoto = useQuery({
+    queryKey: ["wish-photo", entry?.id ?? ""],
+    enabled: entry !== null,
+    queryFn: async () => (await store.listWishPhotos([entry?.id ?? ""])).get(entry?.id ?? "") ?? null,
+  });
+
+  /**
+   * What the tile shows: the file being chosen right now, else the one already saved.
+   *
+   * The unsaved choice outranks the saved one on purpose — picking a picture and watching
+   * the tile keep the old one is the app telling you it did not hear you — and both
+   * outrank the catalogue, whose answer is one pressing's sleeve among several.
+   */
+  const previewUri =
+    picked?.uri ??
+    (dropped || ownPhoto.data == null ? null : store.photoUri(ownPhoto.data.id));
+  const hasPicture = previewUri !== null;
+
+  const choose = useMutation({
+    mutationFn: (source: PhotoSource) => pickImage(source),
+    onSuccess: (result) => {
+      if (result === null) return;
+      setDropped(false);
+      setPicked(result);
+    },
+  });
+
+  /**
+   * Writes the chosen picture against a wish that now exists.
+   *
+   * Bytes first, like every other photo: a record whose image is missing renders as a
+   * permanent placeholder, whereas bytes with no record are merely unreferenced. The
+   * previous picture is tombstoned rather than overwritten — a photo id points at one
+   * image forever, and the upload of the new one has not happened yet.
+   */
+  const attachPicture = async (wishId: string) => {
+    if (picked === null && !dropped) return;
+    const previous = (await store.listWishPhotos([wishId])).get(wishId);
+
+    if (picked === null) {
+      // Taken back off: the catalogue's cover — the pressing's, then the album's — is
+      // what the entry falls back to.
+      if (previous !== undefined) await store.putPhoto(tombstonePhoto(previous, clock, Date.now()));
+      return;
+    }
+
+    const id = Crypto.randomUUID();
+    await storePhotoBytes(store, id, picked.uri);
+    await store.putPhoto(
+      createPhoto(
+        { wishId, contentType: picked.contentType, byteSize: picked.byteSize, sortIndex: 0 },
+        clock,
+        Date.now(),
+        id,
+      ),
+    );
+    if (previous !== undefined) await store.putPhoto(tombstonePhoto(previous, clock, Date.now()));
+  };
+
   const save = useMutation({
     mutationFn: async () => {
       const trimmed = note.trim();
@@ -119,6 +203,7 @@ export function WishSheet({ onClose, release = null, entry = null }: WishSheetPr
         await store.putWishlistItem(
           applyWishPatch(entry, { desiredFormat: format, note: cleaned }, clock),
         );
+        await attachPicture(entry.id);
         return;
       }
 
@@ -156,20 +241,25 @@ export function WishSheet({ onClose, release = null, entry = null }: WishSheetPr
         await store.putWishlistItem(
           applyWishPatch(already, { desiredFormat: format, note: cleaned }, clock),
         );
+        await attachPicture(already.id);
         return;
       }
 
+      const wishId = Crypto.randomUUID();
       await store.putWishlistItem(
         createWishlistItem(
           { ...subject, desiredFormat: format, note: cleaned },
           clock,
           Date.now(),
-          Crypto.randomUUID(),
+          wishId,
         ),
       );
+      await attachPicture(wishId);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["wishlist"] });
+      await queryClient.invalidateQueries({ queryKey: ["wish-photos"] });
+      await queryClient.invalidateQueries({ queryKey: ["wish-photo"] });
       onClose();
     },
   });
@@ -195,7 +285,11 @@ export function WishSheet({ onClose, release = null, entry = null }: WishSheetPr
                 <View style={styles.subjectThumb}>
                   {/* The format is the one the chips below are choosing, not the pressing's:
                       the tile should follow what is being asked for as it is asked for. */}
-                  <ReleaseArt release={{ coverArtUrl }} format={format ?? "OTHER"} />
+                  <ReleaseArt
+                    release={{ coverArtUrl }}
+                    previewUri={previewUri}
+                    format={format ?? "OTHER"}
+                  />
                 </View>
                 <View style={styles.subjectText}>
                   <Text style={styles.subjectTitle} numberOfLines={1}>
@@ -229,6 +323,58 @@ export function WishSheet({ onClose, release = null, entry = null }: WishSheetPr
                 />
               </View>
             )}
+
+            {/*
+             * The one picture a wish can own.
+             *
+             * Every entry may carry one, not only a record no catalogue has: the mirror's
+             * answer is one pressing's sleeve among several and often not the one being
+             * hunted for, and a wish is a note to yourself — the picture on it should be
+             * the one you recognise the record by. Offered here as well as on the entry
+             * screen because a record nobody has a row for has nothing else to show, and
+             * the sheet is where it is written down.
+             */}
+            <Text style={[styles.label, styles.spaced]}>{t("wishlist.coverImage")}</Text>
+            <View style={styles.coverRow}>
+              {heading === null && previewUri !== null && (
+                <Image source={{ uri: previewUri }} style={styles.coverThumb} />
+              )}
+              <Pressable
+                accessibilityRole="button"
+                disabled={choose.isPending}
+                onPress={() => choose.mutate("CAMERA")}
+                style={styles.coverAction}
+              >
+                <Camera size={14} color={colors.inkMuted} strokeWidth={1.75} />
+                <Text style={styles.coverActionText}>{t("wishlist.coverPhoto")}</Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                disabled={choose.isPending}
+                onPress={() => choose.mutate("LIBRARY")}
+                style={styles.coverAction}
+              >
+                <ImagePlus size={14} color={colors.inkMuted} strokeWidth={1.75} />
+                <Text style={styles.coverActionText}>
+                  {t(hasPicture ? "wishlist.coverImageReplace" : "wishlist.coverImageAction")}
+                </Text>
+              </Pressable>
+              {/* Only once there is one to take off, and never as a confirm step: nothing
+                  is written until the sheet is saved, so closing it is the undo. */}
+              {hasPicture && (
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => {
+                    setPicked(null);
+                    setDropped(true);
+                  }}
+                  style={styles.coverAction}
+                >
+                  <X size={14} color={colors.inkMuted} strokeWidth={1.75} />
+                  <Text style={styles.coverActionText}>{t("wishlist.coverImageRemove")}</Text>
+                </Pressable>
+              )}
+            </View>
 
             <Text style={[styles.label, styles.spaced]}>{t("wishlist.wantedFormat")}</Text>
             <View style={styles.chips}>
@@ -317,6 +463,10 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   spaced: { marginTop: 18 },
+  coverRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 14, marginTop: 10 },
+  coverThumb: { width: 44, height: 44, borderRadius: 8, backgroundColor: colors.surface },
+  coverAction: { flexDirection: "row", alignItems: "center", gap: 6 },
+  coverActionText: { fontSize: 12, color: colors.inkMuted, fontWeight: "500" },
   input: {
     height: 44,
     borderRadius: 10,

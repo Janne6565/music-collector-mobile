@@ -1,7 +1,5 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Crypto from "expo-crypto";
-import * as FileSystem from "expo-file-system/legacy";
-import * as ImagePicker from "expo-image-picker";
 import { useCallback } from "react";
 import type { CatalogArtChoice, Photo } from "@janne6565/rekordo-shared";
 import {
@@ -11,7 +9,9 @@ import {
   tombstonePhoto,
 } from "@janne6565/rekordo-shared";
 import { useStore } from "@/local/StoreProvider";
-export type PhotoSource = "CAMERA" | "LIBRARY";
+import { type PhotoSource, pickImage, storePhotoBytes } from "@/features/photos/pickImage";
+
+export type { PhotoSource };
 
 /**
  * Photos of your own copy.
@@ -35,31 +35,18 @@ export function usePhotoStripLogic(copyId: string) {
 
   const add = useMutation({
     mutationFn: async (source: PhotoSource) => {
-      const result =
-        source === "CAMERA"
-          ? await ImagePicker.launchCameraAsync({ quality: 0.8, mediaTypes: ["images"] })
-          : await ImagePicker.launchImageLibraryAsync({ quality: 0.8, mediaTypes: ["images"] });
-      if (result.canceled) return;
-
-      const asset = result.assets[0];
-      if (asset === undefined) return;
+      const picked = await pickImage(source);
+      if (picked === null) return;
 
       const id = Crypto.randomUUID();
-      // Copied into the app's own storage rather than referenced where the picker left it:
-      // a cache URI can be cleared by the OS at any time, taking the photo with it.
-      await FileSystem.copyAsync({ from: asset.uri, to: store.photoUri(id) }).catch(async () => {
-        await FileSystem.makeDirectoryAsync(store.photoUri("").replace(/[^/]*$/, ""), {
-          intermediates: true,
-        });
-        await FileSystem.copyAsync({ from: asset.uri, to: store.photoUri(id) });
-      });
+      await storePhotoBytes(store, id, picked.uri);
 
       await store.putPhoto(
         createPhoto(
           {
             copyId,
-            contentType: asset.mimeType ?? "image/jpeg",
-            byteSize: asset.fileSize ?? 0,
+            contentType: picked.contentType,
+            byteSize: picked.byteSize,
             sortIndex: photos.data?.length ?? 0,
           },
           clock,
