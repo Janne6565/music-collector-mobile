@@ -77,6 +77,27 @@ export function CoverSheet({
    * what you are reading, so it steps back towards the page's own colour.
    */
   const veil = collapsed.interpolate({ inputRange: [0, 1], outputRange: [0, VEIL] });
+  /*
+   * What the sleeve does when the list is pulled past its own top.
+   *
+   * The picture is pinned outside the scroll view and the body scrolls under it, which is
+   * a seam the screen spends the rest of its time hiding: they read as one canvas only
+   * while the offset is positive. iOS drives it negative on every bounce, and a sleeve
+   * that clamped at zero there would stand still while the words slid out from under it —
+   * the one moment the page admits it is two layers.
+   *
+   * So the sleeve answers the pull as well, by growing: its top edge stays where it is and
+   * its bottom edge follows the words down, which is the whole distance the seam could
+   * otherwise open. Uniform rather than vertical, because a sleeve is square and a
+   * stretched record looks like a mistake — the extra width is cropped by the frame.
+   */
+  const pull = { inputRange: [-coverMax, 0], extrapolate: "clamp" as const };
+  const stretch = scrollY.interpolate({ ...pull, outputRange: [2, 1] });
+  /*
+   * A scale runs about the centre, so half the growth would go up over the status bar and
+   * only the other half would reach the words. This puts the box back down by that half.
+   */
+  const stretchY = scrollY.interpolate({ ...pull, outputRange: [coverMax / 2, 0] });
 
   return (
     // No background of its own: the layers behind it own the colour, which is what lets a
@@ -96,7 +117,13 @@ export function CoverSheet({
         pointerEvents="none"
         style={[
           styles.pinnedCover,
-          { width: coverMax, height: coverMax, transform: [{ translateY: headerY }] },
+          {
+            width: coverMax,
+            height: coverMax,
+            // Only one of these two is ever doing anything: `headerY` is clamped to the
+            // scrolled-down half and the stretch to the pulled-past-the-top half.
+            transform: [{ translateY: headerY }, { translateY: stretchY }, { scale: stretch }],
+          },
         ]}
       >
         {/* Explicitly square rather than left to work itself out: everything inside is
