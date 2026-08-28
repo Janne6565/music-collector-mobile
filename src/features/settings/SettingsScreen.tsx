@@ -101,27 +101,6 @@ export function SettingsScreen() {
           />
         </View>
 
-        {/* 22a: only with an account. What may reach you outside the app follows the
-            account, so a signed-out person has no address to reach and nothing to set. */}
-        {logic.signedIn && (
-          <>
-            <Text style={styles.sectionLabel}>{t("settings.section.notifications")}</Text>
-            <View style={styles.card}>
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => router.push("/settings/notifications")}
-                style={styles.row}
-              >
-                <View style={styles.rowText}>
-                  <Text style={styles.rowTitle}>{t("notifications.title")}</Text>
-                  <Text style={styles.rowBody}>{t("notifications.rowBody")}</Text>
-                </View>
-                <ChevronRight size={16} color={colors.inkSubtle} strokeWidth={1.75} />
-              </Pressable>
-            </View>
-          </>
-        )}
-
         <Text style={styles.sectionLabel}>{t("settings.section.storageSync")}</Text>
         <View style={styles.card}>
           {/* 20g: with no account there is nothing to sync to, so the row becomes the

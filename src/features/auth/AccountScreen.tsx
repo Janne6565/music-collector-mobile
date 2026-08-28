@@ -133,6 +133,24 @@ function SignedIn({ logic }: { readonly logic: ReturnType<typeof useAccountLogic
         </Pressable>
       </View>
 
+      {/* Beside sharing, and for the same reason: what may reach you outside the app is a
+          decision about this account, not about this phone. It sat under Settings, whose
+          whole promise is "only on this phone" — the one row there that was not. */}
+      <Text style={styles.section}>{t("notifications.title")}</Text>
+      <View style={styles.card}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push("/settings/notifications")}
+          style={styles.row}
+        >
+          <View style={styles.rowText}>
+            <Text style={styles.rowTitle}>{t("notifications.title")}</Text>
+            <Text style={styles.rowBody}>{t("notifications.rowBody")}</Text>
+          </View>
+          <ChevronRight size={16} color={colors.inkSubtle} strokeWidth={1.75} />
+        </Pressable>
+      </View>
+
       <Text style={styles.section}>{t("account.section.signIn")}</Text>
       <View style={styles.card}>
         {/* One e-mail row, in whichever state it is in. 21c and 21g are not extra rows

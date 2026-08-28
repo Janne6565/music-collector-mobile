@@ -187,7 +187,6 @@ const enCommon = {
     },
     section: {
       languageCurrency: "Language and currency",
-      notifications: "Notifications",
       storageSync: "Storage and sync",
     },
     saved: "Saved",
@@ -962,7 +961,6 @@ const deCommon: CommonSchema = {
     },
     section: {
       languageCurrency: "Sprache und Währung",
-      notifications: "Benachrichtigungen",
       storageSync: "Speicher und Synchronisierung",
     },
     saved: "Gespeichert",
