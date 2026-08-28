@@ -169,7 +169,7 @@ export function SettingsScreen() {
               value
               disabled
               trackColor={{ true: colors.ink, false: colors.line }}
-              accessibilityLabel={`${t("settings.local.title")} — ${t("settings.local.always")}`}
+              accessibilityLabel={`${t("settings.local.title")}, ${t("settings.local.always")}`}
             />
           </View>
           <View style={styles.divider} />

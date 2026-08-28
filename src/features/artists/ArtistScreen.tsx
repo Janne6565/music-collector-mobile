@@ -252,7 +252,7 @@ function AlbumRow({
       <Pressable
         accessibilityRole="button"
         accessibilityState={{ expanded }}
-        accessibilityLabel={`${album.title} — ${t("artists.pressings")}`}
+        accessibilityLabel={`${album.title}, ${t("artists.pressings")}`}
         onPress={() => logic.toggleAlbum(album)}
         style={styles.row}
       >
@@ -333,7 +333,7 @@ function Pressings({
           <PressingRow
             key={pressing.id}
             marked={added === pressing.id}
-            accessibilityLabel={`${pressing.title} — ${t("add.add")}`}
+            accessibilityLabel={`${pressing.title}, ${t("add.add")}`}
             onPress={() => add(pressing)}
             disabled={addingMbid !== undefined || added === pressing.id}
           >

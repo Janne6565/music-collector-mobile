@@ -115,7 +115,7 @@ function ArtistRow({ artist, onOpen }: { readonly artist: Artist; readonly onOpe
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${artist.name} — ${t("artists.discography")}`}
+      accessibilityLabel={`${artist.name}, ${t("artists.discography")}`}
       onPress={onOpen}
       style={styles.row}
     >
