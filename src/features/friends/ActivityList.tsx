@@ -60,15 +60,24 @@ function Entry({ entry }: { readonly entry: ActivityEntry }) {
   const name = entry.actor?.displayName ?? entry.actor?.handle ?? "";
   const count = entry.copyCount ?? 1;
   const handle = entry.actor?.handle ?? null;
+  const destination = destinationOf(entry);
 
   return (
-    <View style={styles.entry}>
-      {/* Never a bare image: four covers in ten are a 404 at the archive, so this falls
-          back to the format silhouette like every other tile in the app. */}
-      <ReleaseArt
-        release={{ coverArtUrl: entry.coverArtUrl ?? null, format: entry.format as Format }}
-        style={{ width: 48, height: 40, borderRadius: 6 }}
-      />
+    <Pressable
+      // A line whose actor never claimed a handle has nowhere to go — there is no page for
+      // a person without one — so it stays an inert row rather than a tap that lands
+      // nowhere.
+      disabled={handle === null}
+      accessibilityRole={handle === null ? "text" : "button"}
+      onPress={() =>
+        handle !== null &&
+        router.push({
+          pathname: "/profiles/[handle]",
+          params: destination === "wishlist" ? { handle, tab: "wishlist" } : { handle },
+        })
+      }
+      style={({ pressed }) => [styles.entry, pressed && styles.entryPressed]}
+    >
       <Avatar name={name} size={24} />
       <View style={styles.entryText}>
         <Text style={styles.line}>
@@ -87,24 +96,45 @@ function Entry({ entry }: { readonly entry: ActivityEntry }) {
             .join(" · ")}
         </Text>
         {/*
-         * The burst's way in. The feed carries a few sleeves from a collapsed line and no
-         * copy ids, so there is nothing to open that is exactly these eight — but their
-         * shelf is sorted newest first, which puts them at the top of it. Only where there
-         * is a handle to go to: a line whose actor has not claimed one has no destination,
-         * and accent-coloured text that does nothing is what this is fixing.
+         * What the tap does, written out. The feed carries a few sleeves from a collapsed
+         * line and no copy ids, so there is nothing to open that is exactly these eight —
+         * but the destination is their shelf, sorted newest first, which puts them at the
+         * top of it. Plain text, not a button of its own: the whole row is the target now.
          */}
-        {count > 1 && handle !== null && (
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => router.push({ pathname: "/profiles/[handle]", params: { handle } })}
-            hitSlop={6}
-          >
-            <Text style={styles.seeAll}>{t("friends.seeAll", { count })}</Text>
-          </Pressable>
+        {handle !== null && (
+          <Text style={styles.seeAll}>
+            {count > 1 ? t("friends.seeAll", { count }) : t(`friends.action.${destination}`)}
+          </Text>
         )}
       </View>
-    </View>
+      {/*
+       * The sleeve closes the line rather than opening it: the row reads as a sentence
+       * about a person, and the record it is about belongs at its end.
+       *
+       * Never a bare image: four covers in ten are a 404 at the archive, so this falls
+       * back to the format silhouette like every other tile in the app.
+       */}
+      <ReleaseArt
+        release={{ coverArtUrl: entry.coverArtUrl ?? null, format: entry.format as Format }}
+        style={{ width: 48, height: 40, borderRadius: 6 }}
+      />
+    </Pressable>
   );
+}
+
+/**
+ * Where a line takes you.
+ *
+ * A wish that was *added* is on their wishlist; a wish that was *fulfilled* has moved off
+ * it onto the shelf, so it sends you where the record now is rather than where it was.
+ * Everything else — a copy added, a friendship accepted — is the shelf or the person, and
+ * both live at the profile.
+ */
+function destinationOf(entry: ActivityEntry): "wishlist" | "shelf" | "profile" {
+  if ((entry.copyCount ?? 1) > 1) return "shelf";
+  if (entry.type === "WISH_ADDED") return "wishlist";
+  if (entry.type === "FRIENDSHIP_ACCEPTED") return "profile";
+  return "shelf";
 }
 
 /**
@@ -197,6 +227,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.line,
   },
+  entryPressed: { opacity: 0.6 },
   entryText: { flex: 1, minWidth: 0 },
   line: { fontFamily: fonts.sans, fontSize: 13.5, lineHeight: 19, color: colors.ink },
   strong: { fontWeight: "700" },

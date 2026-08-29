@@ -33,9 +33,20 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export function ProfileScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { handle, open } = useLocalSearchParams<{ handle: string; open?: string }>();
+  const { handle, open, tab: initialTab } = useLocalSearchParams<{
+    handle: string;
+    open?: string;
+    tab?: string;
+  }>();
   const logic = useFriendProfileLogic(handle ?? "");
-  const [tab, setTab] = useState<"collection" | "wishlist">("collection");
+  /*
+   * The tab is state, not an address — the sheet inside it is the thing worth linking to.
+   * The param only says which one to open on, so that a wishlist line in the feed lands on
+   * the wishlist instead of on the shelf beside it.
+   */
+  const [tab, setTab] = useState<"collection" | "wishlist">(
+    initialTab === "wishlist" ? "wishlist" : "collection",
+  );
 
   /*
    * Which record the sheet is showing is an address, not a piece of state — the same
