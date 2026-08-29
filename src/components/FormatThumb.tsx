@@ -93,17 +93,46 @@ function Record() {
   );
 }
 
-/** The same silhouette as the record, and that is the point: at 44px what separates them
- *  is value, not outline. White, with a sheen standing in for the deck's iridescence. */
+/**
+ * The compact disc: the same silhouette as the record, and that is the point — at 44px
+ * what separates them is value, not outline.
+ *
+ * The deck builds its iridescence from a conic sweep with a radial sheen laid over the
+ * outer 58% of the disc, and React Native has neither. Two things make the flattening
+ * honest. The visible sliver is a single arc — the cover ends at 83.33%, so only the rim
+ * between roughly 32° and 148° ever shows — and along that arc the sweep runs top to
+ * bottom, near-white into blue, violet, salmon, yellow, green. So it becomes a vertical
+ * gradient, with the stops placed where each of the deck's angles actually lands on the
+ * rim rather than spaced evenly. And that whole arc lies inside the sheen band, so the
+ * sheen is a flat white wash instead of a ring: same result, one view.
+ *
+ * The wash is what keeps this a white disc catching light rather than a coloured one. It
+ * takes back 55% of the hue the sweep supplies, which is the deck's proportion.
+ */
 function Disc() {
   return (
     <View style={[styles.disc, styles.discCd]}>
       <LinearGradient
-        colors={["rgba(255,255,255,0.95)", "rgba(238,240,242,0.55)", "rgba(255,255,255,0.9)"]}
-        start={{ x: 0.15, y: 0 }}
-        end={{ x: 0.85, y: 1 }}
+        colors={[
+          "#f2f0ec",
+          "#f2f0ec",
+          "rgba(159,190,214,0.95)",
+          "rgba(199,164,204,0.85)",
+          "rgba(214,170,158,0.9)",
+          "rgba(214,206,158,0.75)",
+          "rgba(170,206,190,0.85)",
+          "#f4f2ee",
+        ]}
+        locations={[0, 0.2, 0.365, 0.552, 0.731, 0.857, 0.95, 1]}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
         style={styles.discSheen}
       />
+      <View pointerEvents="none" style={[styles.discSheen, styles.discWash]} />
+      {/* The deck's inner white ring, which reads as the bevel of the polycarbonate. The
+          dark edge is the disc's own border and paints over this one's outer half, which
+          is the layering the deck's two inset rings produce. */}
+      <View pointerEvents="none" style={styles.discBevel} />
     </View>
   );
 }
@@ -194,9 +223,10 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   discCd: {
-    backgroundColor: "#fbfaf8",
-    borderColor: "rgba(25,23,19,0.22)",
-    shadowOpacity: 0.22,
+    backgroundColor: "#f2f0ec",
+    borderColor: "rgba(25,23,19,0.28)",
+    borderWidth: 1.5,
+    shadowOpacity: 0.26,
   },
   /** The one groove the rim actually shows; the rest of the deck's rings are behind the cover. */
   recordGroove: {
@@ -208,6 +238,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#26231d",
   },
   discSheen: { ...StyleSheet.absoluteFill, borderRadius: 999 },
+  /** The radial sheen, flattened: the arc that shows lies wholly inside its band. */
+  discWash: { backgroundColor: "rgba(255,255,255,0.55)" },
+  discBevel: {
+    ...StyleSheet.absoluteFill,
+    borderRadius: 999,
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.6)",
+  },
 
   shell: {
     position: "absolute",
