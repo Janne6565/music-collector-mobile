@@ -82,6 +82,12 @@ const enCommon = {
     viewCover: "View the cover full screen",
     oneEntryHint: "One entry per release. Adding it twice just reopens this sheet.",
     longPressHint: "Long-press to reorder",
+    // The box over the list, not the one on the add screen: that one searches a catalogue,
+    // this one narrows what is already on your list.
+    filterPlaceholder: "Search your wishlist",
+    filterClear: "Clear the search",
+    filterNoMatches: "Nothing on the list says that.",
+    dragWhileFiltered: "Clear the search to reorder",
     alsoOwn_one: "You own one other {{artist}} record",
     alsoOwn_other: "You own {{count}} other {{artist}} records",
     sort: {
@@ -143,6 +149,11 @@ const enCommon = {
     decline: "Decline",
     seeAll_one: "See it",
     seeAll_other: "See all {{count}}",
+    action: {
+      shelf: "See it on their shelf",
+      wishlist: "See it on their wishlist",
+      profile: "See their profile",
+    },
     state: { add: "Add", requested: "Requested", friends: "Friends", you: "You" },
     line: {
       added: "<person>{{name}}</person> added <title>{{title}}</title> to their collection",
@@ -859,6 +870,10 @@ const deCommon: CommonSchema = {
     oneEntryHint:
       "Ein Eintrag pro Veröffentlichung. Ein zweites Mal öffnet nur dieses Fenster wieder.",
     longPressHint: "Lange drücken zum Umsortieren",
+    filterPlaceholder: "Wunschliste durchsuchen",
+    filterClear: "Suche leeren",
+    filterNoMatches: "Auf der Liste steht nichts, das so heißt.",
+    dragWhileFiltered: "Suche leeren zum Umsortieren",
     alsoOwn_one: "Du hast eine weitere Platte von {{artist}}",
     alsoOwn_other: "Du hast {{count}} weitere Platten von {{artist}}",
     sort: {
@@ -917,6 +932,11 @@ const deCommon: CommonSchema = {
     decline: "Ablehnen",
     seeAll_one: "Ansehen",
     seeAll_other: "Alle {{count}} ansehen",
+    action: {
+      shelf: "Im Regal ansehen",
+      wishlist: "Auf der Wunschliste ansehen",
+      profile: "Profil ansehen",
+    },
     state: { add: "Hinzuf\u00fcgen", requested: "Angefragt", friends: "Befreundet", you: "Du" },
     line: {
       added: "<person>{{name}}</person> hat <title>{{title}}</title> zur Sammlung gelegt",

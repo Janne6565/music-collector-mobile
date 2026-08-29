@@ -6,6 +6,7 @@ import { readWishlistSort, writeWishlistSort } from "@/local/settings";
 import type { WishPatch, WishSort, WishlistItem } from "@janne6565/rekordo-shared";
 import {
   applyWishPatch,
+  filterWishlist,
   hasManualOrder,
   isManualReleaseId,
   manualOrderWrites,
@@ -38,6 +39,16 @@ export function useWishlistLogic() {
   const sort: WishSort = sortQuery.data ?? "NEWEST";
   const items = wishlist.data ?? [];
   const ordered = useMemo(() => sortWishlist(items, sort), [items, sort]);
+
+  /**
+   * What is typed in the box over the list.
+   *
+   * Not debounced: this is a `filter` over a list already in memory that is two dozen rows
+   * at its longest, and a field that lags behind the keyboard on a phone is the one thing
+   * worse than results that churn.
+   */
+  const [search, setSearch] = useState("");
+  const shown = useMemo(() => filterWishlist(ordered, search), [ordered, search]);
 
   /**
    * The albums on the list, sorted and de-duplicated so the query key is the *set* rather
@@ -172,8 +183,15 @@ export function useWishlistLogic() {
   });
 
   return {
-    items: ordered,
+    items: shown,
+    /** The whole list, which is what the header counts and what "empty" means. */
     count: items.length,
+    search,
+    handleSearch: useCallback((next: string) => setSearch(next), []),
+    /** True while a term is narrowing the list, which several things below hang on. */
+    filtering: search.trim() !== "",
+    /** A term that names nothing — a different state from a wishlist with nothing on it. */
+    noMatches: items.length > 0 && shown.length === 0,
     loading: wishlist.isLoading,
     refreshing,
     refetch,

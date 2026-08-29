@@ -7,7 +7,7 @@ import { colors, fonts } from "@/theme/colors";
 import type { WishSort, WishlistItem } from "@janne6565/rekordo-shared";
 import { CHOOSABLE_WISH_SORTS, FORMAT_LABELS } from "@janne6565/rekordo-shared";
 import { useRouter } from "expo-router";
-import { ArrowUpDown, ChevronDown, ChevronRight, Disc3, Heart, Pencil, Plus, Search, Users } from "lucide-react-native";
+import { ArrowUpDown, ChevronDown, ChevronRight, Disc3, Heart, Pencil, Plus, Search, Users, X } from "lucide-react-native";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -20,6 +20,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -116,6 +117,35 @@ export function WishlistScreen() {
           </Pressable>
         </View>
 
+        {/* Only once there is a list to narrow: a field over an empty screen claims a
+            permanent strip for something that can only ever return nothing. */}
+        {logic.count > 0 && (
+          <View style={styles.searchField}>
+            <Search size={16} color={colors.inkMuted} strokeWidth={1.75} />
+            <TextInput
+              value={logic.search}
+              onChangeText={logic.handleSearch}
+              placeholder={t("wishlist.filterPlaceholder")}
+              placeholderTextColor={colors.inkSubtle}
+              autoCapitalize="none"
+              autoCorrect={false}
+              selectionColor={colors.accent}
+              returnKeyType="search"
+              style={styles.searchInput}
+            />
+            {logic.filtering && (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t("wishlist.filterClear")}
+                onPress={() => logic.handleSearch("")}
+                hitSlop={10}
+              >
+                <X size={15} color={colors.inkMuted} strokeWidth={2} />
+              </Pressable>
+            )}
+          </View>
+        )}
+
         {logic.count > 0 && (
           <View style={styles.controls}>
             <Pressable
@@ -128,7 +158,9 @@ export function WishlistScreen() {
             </Pressable>
             <View style={styles.dragHint}>
               <ArrowUpDown size={13} color={colors.inkMuted} strokeWidth={1.75} />
-              <Text style={styles.dragHintText}>{t("wishlist.longPressHint")}</Text>
+              <Text style={styles.dragHintText}>
+                {logic.filtering ? t("wishlist.dragWhileFiltered") : t("wishlist.longPressHint")}
+              </Text>
             </View>
           </View>
         )}
@@ -160,6 +192,8 @@ export function WishlistScreen() {
 
       {logic.loading ? null : logic.count === 0 ? (
         <EmptyWishlist onTypeItIn={() => setSheet("MANUAL")} />
+      ) : logic.noMatches ? (
+        <Text style={styles.noMatches}>{t("wishlist.filterNoMatches")}</Text>
       ) : (
         <ScrollView
           contentContainerStyle={styles.list}
@@ -190,7 +224,10 @@ export function WishlistScreen() {
                 onPress={() =>
                   router.push({ pathname: "/wishlist/[wishId]", params: { wishId: item.id } })
                 }
-                onLongPress={() => setLifted(index)}
+                // A drag reorders the *whole* list, and an index into a narrowed one points
+                // at the wrong entry — so a long press does nothing until the box is empty
+                // again rather than silently carrying somebody else's row.
+                onLongPress={logic.filtering ? undefined : () => setLifted(index)}
                 art={
                   /* The wanted format is the silhouette, not the artwork: an entry for the
                      vinyl of a record you already have on CD should look like the thing you
@@ -282,11 +319,25 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  searchField: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 9,
+    height: 42,
+    paddingHorizontal: 14,
+    marginTop: 15,
+    borderRadius: 999,
+    backgroundColor: colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.line,
+  },
+  searchInput: { flex: 1, fontFamily: fonts.sans, fontSize: 14, color: colors.ink, padding: 0 },
+  noMatches: { fontSize: 13, color: colors.inkMuted, paddingHorizontal: 18, paddingTop: 26 },
   controls: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginTop: 15,
+    marginTop: 12,
     // The list starts straight under this row, and without it the first entry crowded the
     // pill. On the controls rather than the header, so an empty wishlist -- which has no
     // controls at all -- does not gain a gap it has nothing to separate.
