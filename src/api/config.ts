@@ -52,3 +52,13 @@ export const API_BASE =
 if (__DEV__) {
   console.log(`[rekordo] API_BASE ${API_BASE}`);
 }
+
+/**
+ * Where the *web* app lives — the host a shared link has to name.
+ *
+ * Not `API_BASE`: in development that is the Metro host's LAN address, which is a real
+ * backend but an address nobody outside the flat can open. A link is only worth copying if
+ * the person you send it to can follow it, so a development build hands out the production
+ * one and only a deployed build's own host wins.
+ */
+export const WEB_BASE = API_BASE.startsWith("https://") ? API_BASE : PRODUCTION;

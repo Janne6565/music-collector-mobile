@@ -266,6 +266,18 @@ const enCommon = {
       title: "Findable by handle",
       body: "Appears in search when someone types your handle. Off means only a link you send yourself will reach your profile.",
     },
+    copy: "Copy",
+    copied: "Copied",
+    link: {
+      heading: "Your link",
+      collection: "Collection",
+      wishlist: "Wishlist",
+      who: {
+        public: "Anyone with this link can open it, no account needed.",
+        friends: "Only the friends you accepted can open it, once they are signed in.",
+        only_me: "Nobody can open it yet. Open your collection below to hand it out.",
+      },
+    },
     collection: { legend: "Who can see your collection" },
     wishlist: {
       legend: "Your wishlist",
@@ -1050,6 +1062,18 @@ const deCommon: CommonSchema = {
     findable: {
       title: "\u00dcber Handle auffindbar",
       body: "Taucht in der Suche auf, wenn jemand deinen Handle tippt. Aus hei\u00dft: nur ein Link, den du selbst verschickst, f\u00fchrt zu deinem Profil.",
+    },
+    copy: "Kopieren",
+    copied: "Kopiert",
+    link: {
+      heading: "Dein Link",
+      collection: "Sammlung",
+      wishlist: "Wunschliste",
+      who: {
+        public: "Jede Person mit diesem Link kann ihn öffnen, ganz ohne Konto.",
+        friends: "Nur die Freunde, die du angenommen hast, können ihn öffnen, sobald sie angemeldet sind.",
+        only_me: "Noch kann ihn niemand öffnen. Öffne unten deine Sammlung, um ihn weiterzugeben.",
+      },
     },
     collection: { legend: "Wer deine Sammlung sehen darf" },
     wishlist: {

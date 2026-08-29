@@ -1,8 +1,11 @@
 import type { Visibility } from "@/api/friends";
+import { WEB_BASE } from "@/api/config";
 import { useSharingLogic } from "@/features/friends/useSharingLogic";
 import { colors, fonts } from "@/theme/colors";
+import * as Clipboard from "expo-clipboard";
 import { useRouter } from "expo-router";
-import { Check, ChevronLeft, EyeOff } from "lucide-react-native";
+import { Check, ChevronLeft, Copy, EyeOff } from "lucide-react-native";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -56,6 +59,41 @@ export function SharingScreen() {
             </View>
           </View>
 
+          {/*
+           * The address itself, always shown and always copyable.
+           *
+           * The web panel only draws it once a list is public; on a phone that is the wrong
+           * trade. This is the one screen that knows the address, there is no URL bar to
+           * read it out of, and a friends-only shelf is still a page a friend can open. So
+           * the link stays, and the line under it says who can open it today.
+           */}
+          {settings.handle !== undefined && settings.handle !== "" && (
+            <>
+              <Text style={styles.sectionLabel}>{t("sharing.link.heading")}</Text>
+              <View style={styles.card}>
+                <PublicLink
+                  handle={settings.handle}
+                  label={t("sharing.link.collection")}
+                  who={t(WHO_KEY[settings.collectionVisibility ?? "FRIENDS"])}
+                />
+                {/* Only where it is a second address worth sending. A wishlist nobody may
+                    see is not one, and a copy button beside the wrong of two links that
+                    truncate alike is a link sent to the wrong place. */}
+                {settings.wishlistVisibility === "PUBLIC" && (
+                  <>
+                    <View style={styles.divider} />
+                    <PublicLink
+                      handle={settings.handle}
+                      path="/wishlist"
+                      label={t("sharing.link.wishlist")}
+                      who={t("sharing.link.who.public")}
+                    />
+                  </>
+                )}
+              </View>
+            </>
+          )}
+
           <Choices
             legend={t("sharing.collection.legend")}
             value={settings.collectionVisibility ?? "FRIENDS"}
@@ -100,6 +138,79 @@ export function SharingScreen() {
  * All three answers visible at once, rather than behind a picker. A privacy setting
  * somebody has to open a menu to compare is one they will get wrong.
  */
+/**
+ * Spelled out rather than lower-cased from the enum: the i18n resources are typed, and a
+ * key built by string arithmetic is not a key the type checker can see.
+ */
+const WHO_KEY = {
+  ONLY_ME: "sharing.link.who.only_me",
+  FRIENDS: "sharing.link.who.friends",
+  PUBLIC: "sharing.link.who.public",
+} as const;
+
+/**
+ * One public address, with a button that puts it on the clipboard.
+ *
+ * The label earns its place as soon as there can be two: `/@janne` and `/@janne/wishlist`
+ * truncate to nearly the same string in this width.
+ *
+ * The scheme is dropped from what is drawn and kept in what is copied. A phone has no room
+ * for eight characters that say nothing, and a link pasted without them is not a link.
+ */
+function PublicLink({
+  handle,
+  path = "",
+  label,
+  who,
+}: {
+  readonly handle: string;
+  readonly path?: string;
+  readonly label: string;
+  readonly who: string;
+}) {
+  const { t } = useTranslation();
+  const [copied, setCopied] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const url = `${WEB_BASE}/@${handle}${path}`;
+
+  // Otherwise the two-second reset fires into a screen that has been left, which React
+  // Native answers with a warning about setting state on an unmounted component.
+  useEffect(() => () => {
+    if (timer.current !== null) clearTimeout(timer.current);
+  }, []);
+
+  return (
+    <View style={styles.linkRow}>
+      <View style={styles.rowText}>
+        <Text style={styles.linkLabel}>{label}</Text>
+        <Text style={styles.linkUrl} numberOfLines={1}>
+          {url.replace(/^https?:\/\//, "")}
+        </Text>
+        <Text style={styles.linkWho}>{who}</Text>
+      </View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${t("sharing.copy")} ${label}`}
+        hitSlop={8}
+        onPress={async () => {
+          await Clipboard.setStringAsync(url);
+          setCopied(true);
+          if (timer.current !== null) clearTimeout(timer.current);
+          timer.current = setTimeout(() => setCopied(false), 2000);
+        }}
+        style={({ pressed }) => [styles.copyButton, pressed && styles.copyButtonPressed]}
+      >
+        {copied ? (
+          <Check size={13} color={colors.ink} strokeWidth={2.2} />
+        ) : (
+          <Copy size={13} color={colors.ink} strokeWidth={1.9} />
+        )}
+        <Text style={styles.copyLabel}>{copied ? t("sharing.copied") : t("sharing.copy")}</Text>
+      </Pressable>
+    </View>
+  );
+}
+
 const CHOICES = [
   { value: "ONLY_ME", title: "sharing.choice.only_me.title", body: "sharing.choice.only_me.body" },
   { value: "FRIENDS", title: "sharing.choice.friends.title", body: "sharing.choice.friends.body" },
@@ -170,6 +281,28 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   divider: { height: 1, backgroundColor: colors.line },
+  linkRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 14, paddingVertical: 12 },
+  linkLabel: {
+    fontFamily: fonts.sans,
+    fontSize: 10,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    color: colors.inkSubtle,
+  },
+  linkUrl: { fontFamily: fonts.sans, fontSize: 12, color: colors.ink, marginTop: 3 },
+  linkWho: { fontFamily: fonts.sans, fontSize: 11.5, lineHeight: 16, color: colors.inkMuted, marginTop: 3 },
+  copyButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
+  copyButtonPressed: { backgroundColor: colors.canvas },
+  copyLabel: { fontFamily: fonts.sans, fontSize: 12, fontWeight: "600", color: colors.ink },
   row: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13 },
   rowText: { flex: 1, minWidth: 0 },
   rowTitle: { fontFamily: fonts.sans, fontSize: 13.5, fontWeight: "600", color: colors.ink },
