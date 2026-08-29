@@ -111,15 +111,32 @@ function Entry({ entry }: { readonly entry: ActivityEntry }) {
        * The sleeve closes the line rather than opening it: the row reads as a sentence
        * about a person, and the record it is about belongs at its end.
        *
-       * Never a bare image: four covers in ten are a 404 at the archive, so this falls
-       * back to the format silhouette like every other tile in the app.
+       * Only where there is one. An accepted friendship is about nobody's record: the
+       * server sends it with no title, no format and no cover, so what used to sit here was
+       * a format silhouette standing in for a record that does not exist.
+       *
+       * Never a bare image otherwise: four covers in ten are a 404 at the archive, so this
+       * falls back to the format silhouette like every other tile in the app.
        */}
-      <ReleaseArt
-        release={{ coverArtUrl: entry.coverArtUrl ?? null, format: entry.format as Format }}
-        style={{ width: 48, height: 40, borderRadius: 6 }}
-      />
+      {isAboutARecord(entry) && (
+        <ReleaseArt
+          release={{ coverArtUrl: entry.coverArtUrl ?? null, format: entry.format as Format }}
+          style={{ width: 48, height: 40, borderRadius: 6 }}
+        />
+      )}
     </Pressable>
   );
+}
+
+/**
+ * Whether the line has a record in it at all.
+ *
+ * `FRIENDSHIP_ACCEPTED` is the one type the server stores with no release attached; the
+ * title check is there for the same line arriving hollow for any other reason, since a
+ * sleeve for a record with no name is the same empty box either way.
+ */
+function isAboutARecord(entry: ActivityEntry): boolean {
+  return entry.type !== "FRIENDSHIP_ACCEPTED" && (entry.title ?? "") !== "";
 }
 
 /**
