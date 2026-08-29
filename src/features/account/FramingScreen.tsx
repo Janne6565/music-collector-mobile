@@ -1,5 +1,6 @@
 import type { AvatarCrop } from "@/api/avatar";
 import { type Framing, useFraming, usePreviewStyle } from "@/features/account/useFraming";
+import type { SharedValue } from "react-native-reanimated";
 import type { ChosenPicture } from "@/features/account/useProfilePictureLogic";
 import { colors, fonts } from "@/theme/colors";
 import { RotateCcw } from "lucide-react-native";
@@ -48,7 +49,11 @@ export function FramingScreen({
             <Text style={styles.cancel}>{t("common.cancel")}</Text>
           </Pressable>
           <Text style={styles.barTitle}>{t("account.picture.framing.title")}</Text>
-          <ResetButton framing={framing} label={t("account.picture.framing.reset")} />
+          <ResetButton
+            moved={framing.moved}
+            onReset={framing.reset}
+            label={t("account.picture.framing.reset")}
+          />
         </View>
 
         <View style={styles.stageArea}>
@@ -105,22 +110,37 @@ export function FramingScreen({
  * This is the one thing the gestures tell React about, and it crosses over as a boolean
  * that flips at most a handful of times, never as a position.
  */
-function ResetButton({ framing, label }: { readonly framing: Framing; readonly label: string }) {
-  const [moved, setMoved] = useState(false);
+function ResetButton({
+  moved,
+  onReset,
+  label,
+}: {
+  readonly moved: SharedValue<boolean>;
+  readonly onReset: () => void;
+  readonly label: string;
+}) {
+  const [shown, setShown] = useState(false);
+  /*
+   * The shared value itself, not the `Framing` it came from. A worklet is serialised along
+   * with everything it closes over, so reaching through the whole object for one field
+   * takes the object with it — and one of its fields is the gesture, which cannot be
+   * copied. It fails at runtime, not at build time: "Cannot copy value of type
+   * `ComposedGesture`". Hand worklets the values they need, never the bag they live in.
+   */
   useAnimatedReaction(
-    () => framing.moved.value,
+    () => moved.value,
     (now, before) => {
-      if (now !== before) runOnJS(setMoved)(now);
+      if (now !== before) runOnJS(setShown)(now);
     },
   );
 
-  if (!moved) return <View style={styles.reset} />;
+  if (!shown) return <View style={styles.reset} />;
   return (
     <Animated.View entering={FadeIn.duration(160)} style={styles.reset}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={label}
-        onPress={framing.reset}
+        onPress={onReset}
         hitSlop={12}
       >
         <RotateCcw size={17} color="rgba(255,255,255,0.7)" strokeWidth={1.75} />
