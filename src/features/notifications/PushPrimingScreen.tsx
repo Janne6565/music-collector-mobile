@@ -23,7 +23,7 @@ export function PushPrimingScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const { store } = useStore();
-  const { friend } = useLocalSearchParams<{ friend?: string }>();
+  const { friend, occasion } = useLocalSearchParams<{ friend?: string; occasion?: string }>();
   const [asking, setAsking] = useState(false);
 
   const leave = () => router.back();
@@ -50,9 +50,13 @@ export function PushPrimingScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.body}>
-        {friend !== undefined && friend !== "" && (
+        {friend !== undefined && friend !== "" ? (
           <Text style={styles.eyebrow}>{t("push.priming.eyebrow", { name: friend })}</Text>
-        )}
+        ) : occasion === "existing" ? (
+          // Reached from launch rather than from an acceptance, where "you two are friends
+          // now" would be a lie about a friendship that may be months old.
+          <Text style={styles.eyebrow}>{t("push.priming.eyebrowExisting")}</Text>
+        ) : null}
         <Text style={styles.title}>{t("push.priming.title")}</Text>
         <Text style={styles.lede}>{t("push.priming.lede")}</Text>
 

@@ -66,3 +66,19 @@ export async function syncPushRegistration(store: LocalStore): Promise<boolean> 
     return false;
   }
 }
+
+/**
+ * What the OS would do if asked, in one word.
+ *
+ * The screens need three answers, not two: a phone that has never been asked gets a button
+ * that asks, a phone that already said no gets one that opens iOS Settings, and a simulator
+ * gets nothing at all. Asks the OS nothing itself.
+ */
+export type PushPermission = "granted" | "askable" | "blocked" | "unsupported";
+
+export async function pushPermissionState(): Promise<PushPermission> {
+  if (!Device.isDevice) return "unsupported";
+  const { status, canAskAgain } = await Notifications.getPermissionsAsync();
+  if (status === "granted") return "granted";
+  return canAskAgain ? "askable" : "blocked";
+}

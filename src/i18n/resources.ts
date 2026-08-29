@@ -725,7 +725,18 @@ const enCommon = {
     noPush: {
       bodyMobile: "Push is not set up yet, so the column has nothing to switch. Your choices are kept and will apply the moment it is.",
     },
-    devices: { heading: "Where push would arrive", none: "No devices yet" },
+    devices: {
+      heading: "Where push would arrive",
+      none: "No devices yet",
+      noneAskable: "Turn a push switch on above and this phone appears here.",
+      noneBlocked: "iOS has push switched off for Rekordo, so nothing can be added from here.",
+    },
+    pushBlocked: {
+      title: "iOS is not letting us send push",
+      body: "Turned off for Rekordo in the iOS settings, so the push column below cannot do anything. Mail is unaffected.",
+      open: "Open iOS Settings",
+      footnote: "We cannot ask again from in here. Only you can, out there.",
+    },
     category: {
       FRIEND_REQUEST: { title: "A friend request", short: "Waits for your answer" },
       FRIEND_ACTIVITY: { title: "What friends added", short: "Weekly, Sunday morning" },
@@ -737,6 +748,7 @@ const enCommon = {
     priming: {
       skip: "Skip",
       eyebrow: "You and {{name}} are friends now",
+      eyebrowExisting: "You are collecting with friends now",
       title: "Want a nudge when a friend asks for you?",
       lede: "iOS will ask once, and only we can ask it. So before it does: here is everything we would ever send.",
       request: {
@@ -1557,7 +1569,18 @@ const deCommon: CommonSchema = {
     noPush: {
       bodyMobile: "Push ist noch nicht eingerichtet, die Spalte hat also nichts zu schalten. Deine Auswahl bleibt gespeichert und gilt, sobald es soweit ist.",
     },
-    devices: { heading: "Wo Push ankommen würde", none: "Noch keine Geräte" },
+    devices: {
+      heading: "Wo Push ankommen würde",
+      none: "Noch keine Geräte",
+      noneAskable: "Schalte oben einen Push-Schalter ein, dann erscheint dieses Telefon hier.",
+      noneBlocked: "iOS hat Push für Rekordo abgeschaltet, von hier aus lässt sich nichts hinzufügen.",
+    },
+    pushBlocked: {
+      title: "iOS lässt uns kein Push senden",
+      body: "In den iOS-Einstellungen für Rekordo abgeschaltet, die Push-Spalte unten kann also nichts bewirken. Mail ist davon nicht betroffen.",
+      open: "iOS-Einstellungen öffnen",
+      footnote: "Von hier aus können wir nicht noch einmal fragen. Nur du kannst das, dort draußen.",
+    },
     category: {
       FRIEND_REQUEST: { title: "Eine Freundschaftsanfrage", short: "Wartet auf deine Antwort" },
       FRIEND_ACTIVITY: { title: "Was Freunde eingestellt haben", short: "Wöchentlich, Sonntagmorgen" },
@@ -1569,6 +1592,7 @@ const deCommon: CommonSchema = {
     priming: {
       skip: "Überspringen",
       eyebrow: "Du und {{name}} seid jetzt befreundet",
+      eyebrowExisting: "Du sammelst jetzt mit Freunden",
       title: "Einen Hinweis, wenn jemand nach dir fragt?",
       lede: "iOS fragt einmal, und nur wir können es auslösen. Also vorher: das hier ist alles, was wir je senden würden.",
       request: {

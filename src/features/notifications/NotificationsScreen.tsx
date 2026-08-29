@@ -1,6 +1,15 @@
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Linking,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ChevronLeft, Lock } from "lucide-react-native";
 import { useEffect, useState } from "react";
@@ -11,6 +20,12 @@ import {
   updateNotificationPreference,
 } from "@/api/notifications";
 import { listDevices, muteDevice } from "@/api/devices";
+import {
+  type PushPermission,
+  askForPush,
+  pushPermissionState,
+  syncPushRegistration,
+} from "@/features/notifications/push";
 import { useStore } from "@/local/StoreProvider";
 import { useAppSelector } from "@/store/hooks";
 import { colors, fonts } from "@/theme/colors";
@@ -26,9 +41,15 @@ const ORDER: readonly NotificationCategory[] = [
  * Screen 22a on the phone, with 22e's off states folded in — they are the same screen.
  *
  * Two levels, deliberately: *what* may reach you belongs to the account, *which device*
- * buzzes belongs to the device. Only the first exists today. There is no push transport, so
- * no device could receive one, and the column says that rather than showing switches that
- * would quietly do nothing.
+ * buzzes belongs to the device.
+ *
+ * This screen is also the only way back into the OS prompt (22b): somebody who declined on
+ * the priming screen, or who never reached it because they *sent* the friend request rather
+ * than accepting one, turns push on by flipping a switch in the push column. Flipping the
+ * first one on is what opens the iOS dialog, and a grant registers this phone before the
+ * choice is saved. Once iOS has been told no for good, 22e applies instead: the column
+ * greys out, keeps its remembered positions, and points at iOS Settings rather than
+ * pretending a switch here could undo that.
  *
  * The grid is read from the server, not the local store — unlike everything else under
  * Settings, which stays on this phone. That is the whole point of it: set here, and the web
@@ -77,9 +98,48 @@ export function NotificationsScreen() {
     categories.length > 0 && categories.every((row) => row.mailLocked || (!row.mail && !row.push));
   const emailReachable = user?.emailVerified !== false;
 
+  const [permission, setPermission] = useState<PushPermission | null>(null);
+  const [asking, setAsking] = useState(false);
+  useEffect(() => {
+    void pushPermissionState().then(setPermission);
+  }, []);
+
+  // Live wherever flipping one could still lead somewhere: iOS has said yes, or has not been
+  // asked yet. A simulator ("unsupported") can never mint a token, and until the OS has
+  // answered we go by what the server knows rather than flickering the column.
+  const pushSwitchable =
+    permission === null ? pushAvailable : permission === "granted" || permission === "askable";
+  const pushBlocked = permission === "blocked";
+
+  /**
+   * The second of the app's two doors to the iOS dialog, and the one 22b's footnote
+   * promises: turning a push switch on is what asks.
+   *
+   * Order matters. The grid is written only after a grant, so a declined prompt leaves the
+   * switch where it was rather than storing a preference nothing could honour. The device
+   * registers in between, which is what turns the server's `pushAvailable` true.
+   */
+  const grantThenSet = async (category: NotificationCategory, mail: boolean) => {
+    setAsking(true);
+    try {
+      const granted = await askForPush();
+      setPermission(await pushPermissionState());
+      if (!granted) return;
+      await syncPushRegistration(store);
+      await queryClient.invalidateQueries({ queryKey: ["notificationDevices"] });
+      flip.mutate({ category, mail, push: true });
+    } finally {
+      setAsking(false);
+    }
+  };
+
   const set = (category: NotificationCategory, channel: "mail" | "push", on: boolean) => {
     const row = categories.find((candidate) => candidate.category === category);
     if (row === undefined) return;
+    if (channel === "push" && on && permission !== "granted") {
+      void grantThenSet(category, row.mail);
+      return;
+    }
     flip.mutate({
       category,
       mail: channel === "mail" ? on : row.mail,
@@ -103,6 +163,23 @@ export function NotificationsScreen() {
           <View style={styles.notice}>
             <Text style={styles.noticeTitle}>{t("notifications.allQuiet.title")}</Text>
             <Text style={styles.noticeBody}>{t("notifications.allQuiet.body")}</Text>
+          </View>
+        )}
+
+        {/* 22e: iOS has been told no for good. The screen does not argue with that, and it
+            does not offer a switch that could not honour the flip. */}
+        {pushBlocked && (
+          <View style={styles.notice}>
+            <Text style={styles.noticeTitle}>{t("notifications.pushBlocked.title")}</Text>
+            <Text style={styles.noticeBody}>{t("notifications.pushBlocked.body")}</Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => void Linking.openSettings()}
+              style={styles.noticeAction}
+            >
+              <Text style={styles.noticeActionText}>{t("notifications.pushBlocked.open")}</Text>
+            </Pressable>
+            <Text style={styles.noticeFootnote}>{t("notifications.pushBlocked.footnote")}</Text>
           </View>
         )}
 
@@ -145,10 +222,20 @@ export function NotificationsScreen() {
                   </View>
 
                   <View style={styles.cell}>
-                    {pushAvailable ? (
+                    {pushSwitchable ? (
                       <Switch
                         value={row.push}
                         onValueChange={(on) => set(category, "push", on)}
+                        disabled={asking}
+                        trackColor={{ true: colors.ink, false: colors.line }}
+                      />
+                    ) : pushBlocked ? (
+                      // Greyed, not blank, and still showing what was chosen: if push is ever
+                      // allowed again the account's answers are already here (22e).
+                      <Switch
+                        value={row.push}
+                        disabled
+                        style={styles.greyed}
                         trackColor={{ true: colors.ink, false: colors.line }}
                       />
                     ) : (
@@ -171,7 +258,13 @@ export function NotificationsScreen() {
             <View style={[styles.row, styles.rowLast]}>
               <View style={styles.categoryColumn}>
                 <Text style={styles.rowTitle}>{t("notifications.devices.none")}</Text>
-                <Text style={styles.rowBody}>{t("notifications.noPush.bodyMobile")}</Text>
+                <Text style={styles.rowBody}>
+                  {pushSwitchable && permission !== "granted"
+                    ? t("notifications.devices.noneAskable")
+                    : pushBlocked
+                      ? t("notifications.devices.noneBlocked")
+                      : t("notifications.noPush.bodyMobile")}
+                </Text>
               </View>
             </View>
           ) : (
@@ -268,6 +361,24 @@ const styles = StyleSheet.create({
     color: colors.accent,
   },
   dash: { fontFamily: fonts.sans, fontSize: 14, color: colors.inkSubtle },
+  greyed: { opacity: 0.4 },
+  noticeAction: {
+    alignSelf: "flex-start",
+    marginTop: 8,
+    height: 34,
+    justifyContent: "center",
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    backgroundColor: colors.ink,
+  },
+  noticeActionText: { fontFamily: fonts.sans, fontSize: 12.5, fontWeight: "600", color: colors.paper },
+  noticeFootnote: {
+    fontFamily: fonts.sans,
+    fontSize: 11.5,
+    lineHeight: 16,
+    color: colors.inkSubtle,
+    marginTop: 6,
+  },
   sectionLabel: {
     fontFamily: fonts.sans,
     fontSize: 10,

@@ -5,6 +5,7 @@ import { Provider } from "react-redux";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import "@/i18n/config";
 import { RestoreSession } from "@/features/auth/RestoreSession";
+import { PushInvite } from "@/features/notifications/PushInvite";
 import { UndoProvider } from "@/features/wishlist/UndoBar";
 import { StoreProvider } from "@/local/StoreProvider";
 import { SyncProvider } from "@/sync/SyncProvider";
@@ -25,6 +26,9 @@ export default function RootLayout() {
             {/* The session comes back from the keychain here, above the tabs: a tab is not
                 mounted until it is opened, and Friends must not have to guess. */}
             <RestoreSession />
+            {/* 22b, for the half of a friendship that never taps Accept: offered once on
+                launch, and only ever the explaining screen, never the OS dialog. */}
+            <PushInvite />
             {/* The sync loop belongs here for the same reason: a tab is not mounted until
                 it is opened, so hanging it off the account screen meant a cold launch into
                 the shelf never synced at all. */}
