@@ -572,7 +572,8 @@ const enCommon = {
       tryAgain: "Try again",
       framing: {
         title: "Your picture",
-        hint: "drag to move · pinch to zoom · starts centred",
+        hint: "drag to move · pinch to zoom · double tap to go in",
+        reset: "Back to the middle",
         publicShort: "public · strangers see this",
         use: "Use this picture",
       },
@@ -1401,7 +1402,8 @@ const deCommon: CommonSchema = {
       tryAgain: "Erneut versuchen",
       framing: {
         title: "Dein Bild",
-        hint: "ziehen zum Verschieben · zwei Finger zum Zoomen · startet mittig",
+        hint: "ziehen zum Verschieben · zwei Finger zum Zoomen · Doppeltipp zum Heranholen",
+        reset: "Zurück in die Mitte",
         publicShort: "öffentlich · auch Fremde sehen das",
         use: "Dieses Bild verwenden",
       },
