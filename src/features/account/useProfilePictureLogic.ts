@@ -5,11 +5,16 @@ import {
   removeAvatar,
   uploadAvatar,
 } from "@/api/avatar";
+import * as FileSystem from "expo-file-system/legacy";
+import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 /** The server's ceiling, checked on the device so nothing is sent that cannot be accepted. */
 export const MAX_PICTURE_BYTES = 15_728_640;
+
+/** The longest edge a picture is sent at. See `asJpeg` for why it is not the original. */
+const MAX_EDGE = 4096;
 
 /** The picture the picker handed over, before anything has been decided about it. */
 export interface ChosenPicture {
@@ -114,34 +119,37 @@ export function useProfilePictureLogic(
       mediaTypes: ["images"],
       // The framing step is the app's own (27c), so the system cropper stays out of the way.
       allowsEditing: false,
-      // Full size: the server renders from the original, and a picture downscaled here would
-      // be a second, worse crop of a crop.
+      // Uncompressed out of the picker: `asJpeg` below is what decides the format and the
+      // size, and compressing twice would only cost quality. The server still crops from
+      // what it is sent, so nothing here is a crop of a crop.
       quality: 1,
       exif: false,
     })
-      .then((result) => {
+      .then(async (result) => {
         const asset = result.canceled ? undefined : result.assets[0];
         if (asset === undefined) {
           setState({ kind: "idle" });
           return;
         }
         const name = asset.fileName ?? "picture.jpg";
-        const bytes = asset.fileSize ?? 0;
-        if (bytes > MAX_PICTURE_BYTES) {
-          setState({ kind: "tooLarge", name, bytes });
+        const jpeg = await asJpeg(asset.uri).catch(() => null);
+        if (jpeg === null) {
+          setState({ kind: "wrongType", name });
+          return;
+        }
+        if (jpeg.bytes > MAX_PICTURE_BYTES) {
+          setState({ kind: "tooLarge", name, bytes: jpeg.bytes });
           return;
         }
         setState({
           kind: "framing",
           picture: {
-            uri: asset.uri,
+            uri: jpeg.uri,
             name,
-            bytes,
-            width: asset.width,
-            height: asset.height,
-            // The picker hands back a JPEG on both platforms, whatever the camera roll
-            // holds — which is why a HEIC library never reaches the server as one.
-            contentType: asset.mimeType ?? "image/jpeg",
+            bytes: jpeg.bytes,
+            width: jpeg.width,
+            height: jpeg.height,
+            contentType: "image/jpeg",
           },
         });
       })
@@ -189,4 +197,43 @@ function problemOf(error: unknown, picture: ChosenPicture): PictureState {
   if (status === 415) return { kind: "wrongType", name: picture.name };
   if (status === 413) return { kind: "tooLarge", name: picture.name, bytes: picture.bytes };
   return { kind: "unavailable" };
+}
+
+/**
+ * The picked file, decoded and written back out as a JPEG.
+ *
+ * <p>Not optional politeness: `AvatarService` decodes JPEG and PNG only, and every photo an
+ * iPhone takes is HEIC. The picker does not help here — its iOS side returns HEIC's bytes
+ * untouched whatever `quality` says, so the original code's assumption that "the picker
+ * hands back a JPEG on both platforms" held for screenshots and failed for photographs,
+ * which is the whole point of the feature.
+ *
+ * <p>Re-encoding is also what bakes in the EXIF orientation flag that every gallery applies
+ * and `ImageIO` ignores, and what drops the EXIF block, which on a public picture carries
+ * the place it was taken.
+ *
+ * <p>The long edge is capped. A JPEG is usually *larger* than the HEIC it came from, so a
+ * 12-megapixel photo can cross the 15 MB ceiling by being converted; 4096 keeps the crop
+ * above the 512 the server renders even at full zoom, and brings a phone photo to a few MB.
+ */
+async function asJpeg(uri: string): Promise<{
+  readonly uri: string;
+  readonly width: number;
+  readonly height: number;
+  readonly bytes: number;
+} | null> {
+  const context = ImageManipulator.manipulate(uri);
+  const rendered = await context.renderAsync();
+  const longest = Math.max(rendered.width, rendered.height);
+  if (longest > MAX_EDGE) {
+    context.resize(
+      rendered.width >= rendered.height ? { width: MAX_EDGE } : { height: MAX_EDGE },
+    );
+  }
+  const saved = await (longest > MAX_EDGE ? context.renderAsync() : Promise.resolve(rendered)).then(
+    (image) => image.saveAsync({ format: SaveFormat.JPEG, compress: 0.92 }),
+  );
+  const info = await FileSystem.getInfoAsync(saved.uri);
+  if (!info.exists) return null;
+  return { uri: saved.uri, width: saved.width, height: saved.height, bytes: info.size };
 }

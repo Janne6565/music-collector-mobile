@@ -564,7 +564,7 @@ const enCommon = {
       updated: "Updated just now",
       choosing: "Waiting on the photo picker…",
       uploading: "Uploading · {{sent}} of {{total}} MB",
-      wrongType: "{{name}} isn't a picture this can use. JPEG, PNG, WebP or HEIC.",
+      wrongType: "{{name}} could not be opened as a picture. Try another one.",
       tooLarge: "{{name}} is {{size}} MB, and the ceiling is 15. Export it smaller and try again.",
       unavailable:
         "The picture service didn't answer. Everything else is working, and your current picture is unchanged. Try again in a few minutes.",
@@ -1405,7 +1405,7 @@ const deCommon: CommonSchema = {
       updated: "Gerade aktualisiert",
       choosing: "Wartet auf die Fotoauswahl…",
       uploading: "Wird hochgeladen · {{sent}} von {{total}} MB",
-      wrongType: "{{name}} ist kein Bild, das hier verwendbar ist. JPEG, PNG, WebP oder HEIC.",
+      wrongType: "{{name}} ließ sich nicht als Bild öffnen. Nimm ein anderes.",
       tooLarge:
         "{{name}} hat {{size}} MB, die Grenze liegt bei 15. Exportiere es kleiner und versuch es noch einmal.",
       unavailable:
