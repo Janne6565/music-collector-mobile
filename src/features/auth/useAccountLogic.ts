@@ -436,6 +436,14 @@ export function useAccountLogic() {
   return {
     user,
     restoring,
+    /** Told the account's new picture so the You header follows without a round trip. */
+    avatarChanged: useCallback(
+      (url: string | null) => {
+        if (user === null) return;
+        dispatch(accountChanged({ ...user, avatarUrl: url ?? undefined }));
+      },
+      [user, dispatch],
+    ),
     /** What the name field shows, which is the account's own name until it is edited. */
     nameDraft: nameDraft ?? accountName,
     editName: useCallback((next: string) => {

@@ -24,6 +24,8 @@ export interface ProfileSummary {
   id?: string;
   handle?: string;
   displayName?: string;
+  /** Their picture, or absent. Never withheld the way the count is: it is public. */
+  avatarUrl?: string;
   /** Absent when the shelf is closed to the viewer — the count is itself about a collection. */
   copyCount?: number;
   relationship?: Relationship;
@@ -34,6 +36,8 @@ export interface Profile {
   id?: string;
   handle?: string;
   displayName?: string;
+  /** Present even on a locked shelf: the picture is account data, not shelf data (27f). */
+  avatarUrl?: string;
   relationship?: Relationship;
   canSeeCollection?: boolean;
   canSeeWishlist?: boolean;
@@ -59,7 +63,7 @@ export interface FriendsOverview {
 export interface ActivityEntry {
   id?: string;
   type?: ActivityType;
-  actor?: { id?: string; handle?: string; displayName?: string };
+  actor?: { id?: string; handle?: string; displayName?: string; avatarUrl?: string };
   title?: string;
   artistName?: string;
   releaseId?: string;

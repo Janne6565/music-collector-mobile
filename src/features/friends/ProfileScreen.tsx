@@ -92,7 +92,7 @@ export function ProfileScreen() {
            */}
           <View style={styles.pinned}>
             <View style={styles.header}>
-              <Avatar name={name} size={56} />
+              <Avatar name={name} uri={person.avatarUrl} size={56} />
               <View style={styles.headerText}>
                 <Text style={styles.name}>{name}</Text>
                 <Text style={styles.meta}>

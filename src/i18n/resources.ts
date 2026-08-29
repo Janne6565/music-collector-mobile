@@ -556,6 +556,33 @@ const enCommon = {
       title: "Sync, offline copy and language",
       body: "Set per device, in Settings",
     },
+    picture: {
+      title: "Picture",
+      notSet: "Not set. Your initials stand in",
+      publicAt: "Public. Anyone who opens @{{handle}} sees it",
+      publicNoHandle: "Public as soon as you claim a handle",
+      updated: "Updated just now",
+      choosing: "Waiting on the photo picker…",
+      uploading: "Uploading · {{sent}} of {{total}} MB",
+      wrongType: "{{name}} isn't a picture this can use. JPEG, PNG, WebP or HEIC.",
+      tooLarge: "{{name}} is {{size}} MB, and the ceiling is 15. Export it smaller and try again.",
+      unavailable:
+        "The picture service didn't answer. Everything else is working, and your current picture is unchanged. Try again in a few minutes.",
+      chooseAnother: "Choose another",
+      tryAgain: "Try again",
+      framing: {
+        title: "Your picture",
+        hint: "drag to move · pinch to zoom · starts centred",
+        publicShort: "public · strangers see this",
+        use: "Use this picture",
+      },
+      sheet: {
+        publicAt: "Your picture is public at @{{handle}}",
+        publicNoHandle: "Your picture is public on your profile",
+        replace: "Replace picture",
+        remove: "Remove picture",
+      },
+    },
     name: {
       title: "Display name",
       body: "What the app calls you. Leave it empty to go by your e-mail.",
@@ -1356,6 +1383,34 @@ const deCommon: CommonSchema = {
     deviceSettings: {
       title: "Synchronisierung, Offline-Kopie und Sprache",
       body: "Pro Gerät, unter Einstellungen",
+    },
+    picture: {
+      title: "Bild",
+      notSet: "Nicht gesetzt. Deine Initialen stehen dafür",
+      publicAt: "Öffentlich. Wer @{{handle}} öffnet, sieht es",
+      publicNoHandle: "Öffentlich, sobald du dir ein Handle sicherst",
+      updated: "Gerade aktualisiert",
+      choosing: "Wartet auf die Fotoauswahl…",
+      uploading: "Wird hochgeladen · {{sent}} von {{total}} MB",
+      wrongType: "{{name}} ist kein Bild, das hier verwendbar ist. JPEG, PNG, WebP oder HEIC.",
+      tooLarge:
+        "{{name}} hat {{size}} MB, die Grenze liegt bei 15. Exportiere es kleiner und versuch es noch einmal.",
+      unavailable:
+        "Der Bilddienst hat nicht geantwortet. Alles andere funktioniert, und dein aktuelles Bild ist unverändert. Versuch es in ein paar Minuten noch einmal.",
+      chooseAnother: "Anderes wählen",
+      tryAgain: "Erneut versuchen",
+      framing: {
+        title: "Dein Bild",
+        hint: "ziehen zum Verschieben · zwei Finger zum Zoomen · startet mittig",
+        publicShort: "öffentlich · auch Fremde sehen das",
+        use: "Dieses Bild verwenden",
+      },
+      sheet: {
+        publicAt: "Dein Bild ist öffentlich unter @{{handle}}",
+        publicNoHandle: "Dein Bild ist öffentlich auf deinem Profil",
+        replace: "Bild ersetzen",
+        remove: "Bild entfernen",
+      },
     },
     name: {
       title: "Anzeigename",

@@ -238,6 +238,7 @@ export function FriendsScreen() {
                 <RequestCard
                   key={invite.id}
                   name={invite.from?.displayName ?? invite.from?.handle ?? ""}
+                  avatarUrl={invite.from?.avatarUrl}
                   handle={invite.from?.handle ?? ""}
                   mutual={invite.mutualFriends ?? 0}
                   busy={logic.accept.isPending || logic.decline.isPending}
@@ -391,7 +392,7 @@ function RecentRow({ entry, logic }: { readonly entry: RecentCollector; readonly
         }
         style={styles.recentTap}
       >
-        <Avatar name={name} size={44} />
+        <Avatar name={name} uri={entry.avatarUrl} size={44} />
         <View style={styles.rowText}>
           <Text style={styles.recentName} numberOfLines={1}>
             {name}
@@ -439,12 +440,13 @@ function PersonRow({ person, logic }: { readonly person: ProfileSummary; readonl
           // What their shelf held when you went; absent when it is closed to you, which is
           // the same reason the row above it has no count either.
           copyCount: person.copyCount,
+          avatarUrl: person.avatarUrl,
         });
         router.push({ pathname: "/profiles/[handle]", params: { handle: person.handle ?? "" } });
       }}
       accessibilityRole="button"
     >
-      <Avatar name={name} size={38} />
+      <Avatar name={name} uri={person.avatarUrl} size={38} />
       <View style={styles.rowText}>
         <Text style={styles.rowTitle} numberOfLines={1}>
           {name}
@@ -507,6 +509,7 @@ function RelationshipButton({
 
 interface RequestCardProps {
   readonly name: string;
+  readonly avatarUrl: string | undefined;
   readonly handle: string;
   readonly mutual: number;
   readonly busy: boolean;
@@ -521,11 +524,11 @@ interface RequestCardProps {
  * a request from activity is that it is addressed to you and waits — the card is the same
  * material as everything else, outlined.
  */
-function RequestCard({ name, handle, mutual, busy, onAccept, onDecline }: RequestCardProps) {
+function RequestCard({ name, avatarUrl, handle, mutual, busy, onAccept, onDecline }: RequestCardProps) {
   const { t } = useTranslation();
   return (
     <View style={styles.requestCard}>
-      <Avatar name={name} size={38} />
+      <Avatar name={name} uri={avatarUrl} size={38} />
       <View style={styles.rowText}>
         <Text style={styles.requestName} numberOfLines={1}>
           {name}

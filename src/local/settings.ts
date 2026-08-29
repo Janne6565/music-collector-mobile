@@ -80,6 +80,16 @@ export interface RecentCollector {
   readonly seenAt?: number;
   /** What their shelf held when it was last seen; absent when it is closed to this viewer. */
   readonly copyCount?: number;
+  /**
+   * Their picture as of the last visit, or absent.
+   *
+   * Remembered rather than looked up, because this list is drawn from the device and asks
+   * the server nothing. It can therefore be a version behind: a picture replaced since the
+   * last visit keeps showing the old one here until the shelf is opened again, and a
+   * picture removed since falls back to initials on its own, because the URL 404s and the
+   * circle underneath is already the right drawing of that person.
+   */
+  readonly avatarUrl?: string;
 }
 
 export async function readRecentCollectors(store: LocalStore): Promise<RecentCollector[]> {

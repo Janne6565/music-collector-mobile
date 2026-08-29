@@ -78,7 +78,7 @@ function Entry({ entry }: { readonly entry: ActivityEntry }) {
       }
       style={({ pressed }) => [styles.entry, pressed && styles.entryPressed]}
     >
-      <Avatar name={name} size={24} />
+      <Avatar name={name} uri={entry.actor?.avatarUrl} size={24} />
       <View style={styles.entryText}>
         <Text style={styles.line}>
           <Sentence entry={entry} name={name} count={count} />

@@ -4,6 +4,13 @@ export interface AccountUser {
   readonly id: string;
   readonly email: string;
   readonly displayName: string | null;
+  /**
+   * Where the profile picture is (a path on the API host), or absent when there is none —
+   * which is the ordinary case. Optional for the same reason as the two fields below: this
+   * client is hand-written, and a build talking to a server that predates turn 27 must
+   * read "no picture" rather than break.
+   */
+  readonly avatarUrl?: string;
   readonly createdAt: string;
   /**
    * Whether the address has been confirmed. Optional because this client is hand-written

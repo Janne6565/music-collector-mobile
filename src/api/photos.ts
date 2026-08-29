@@ -21,6 +21,11 @@ export function setBinaryAccessToken(token: string | null): void {
   accessTokenForBinary = token;
 }
 
+/** The same token, for the other binary endpoint: the profile picture upload. */
+export function binaryAccessToken(): string | null {
+  return accessTokenForBinary;
+}
+
 /** A photo pictures a copy or a wishlist entry, never both — the server rejects the pair. */
 export type PhotoOwner = { readonly copyId: string } | { readonly wishId: string };
 

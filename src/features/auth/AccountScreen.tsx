@@ -13,9 +13,13 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
+import { friendsApi } from "@/api/friends";
+import { PictureRow } from "@/features/account/PictureRow";
+import { useProfilePictureLogic } from "@/features/account/useProfilePictureLogic";
 import { AuthForm } from "@/features/auth/AuthForm";
 import { FirstSyncPrompt } from "@/features/auth/FirstSyncPrompt";
 import { useAccountLogic } from "@/features/auth/useAccountLogic";
+import { Avatar } from "@/features/friends/Avatar";
 import { CollectionStatsBlock } from "@/features/profile/CollectionStatsBlock";
 import { useStore } from "@/local/StoreProvider";
 import { colors, fonts } from "@/theme/colors";
@@ -90,13 +94,20 @@ function SignedIn({ logic }: { readonly logic: ReturnType<typeof useAccountLogic
   const router = useRouter();
   const { store } = useStore();
   const stats = useQuery({ queryKey: ["stats"], queryFn: () => store.stats() });
+  // Only for the handle: the picture row and its sheet say where the picture is public,
+  // and that is the handle. Same query key as the Sharing screen, so it is one request.
+  const sharing = useQuery({ queryKey: ["sharing"], queryFn: friendsApi.sharing });
+  const name = logic.user?.displayName ?? logic.user?.email ?? "";
+  const picture = useProfilePictureLogic(logic.user?.avatarUrl ?? null, logic.avatarChanged);
 
   return (
     <>
       <Text style={styles.heading}>{t("account.title")}</Text>
 
       <View style={styles.profile}>
-        <View style={styles.avatar} />
+        {/* 27i: the same 56 circle as the public profile header, because it is the same
+            circle showing the same person. */}
+        <Avatar name={name} uri={picture.url} size={56} />
         <View style={styles.profileText}>
           <Text style={styles.name}>{logic.user?.displayName ?? logic.user?.email}</Text>
           <Text style={styles.email} numberOfLines={1}>
@@ -112,6 +123,9 @@ function SignedIn({ logic }: { readonly logic: ReturnType<typeof useAccountLogic
 
       <Text style={styles.section}>{t("account.section.profile")}</Text>
       <View style={styles.card}>
+        {/* Above the name, per 27a: it is the first thing about you that other people see,
+            and the only row here anybody else ever looks at. */}
+        <PictureRow logic={picture} name={name} handle={sharing.data?.handle ?? null} />
         <NameRow logic={logic} />
       </View>
 
