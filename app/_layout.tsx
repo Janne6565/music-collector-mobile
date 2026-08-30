@@ -6,6 +6,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import "@/i18n/config";
 import { RestoreSession } from "@/features/auth/RestoreSession";
 import { PushInvite } from "@/features/notifications/PushInvite";
+import { UploadRefusalSheet } from "@/features/photos/UploadRefusalSheet";
 import { UndoProvider } from "@/features/wishlist/UndoBar";
 import { StoreProvider } from "@/local/StoreProvider";
 import { PendingScans } from "@/sync/PendingScans";
@@ -38,6 +39,10 @@ export default function RootLayout() {
                 it is opened, so hanging it off the account screen meant a cold launch into
                 the shelf never synced at all. */}
             <SyncProvider>
+            {/* 28d, above the tabs for the same reason the sync loop is: the refusal is
+                learned during a sync, which lands long after the sheet that saved the copy
+                is gone. Hung off the editor it would reach nobody. */}
+            <UploadRefusalSheet />
             {/* Screen 16e's line lives above the stack: the entry that leaves on its own
                 does so wherever a record gets filed, which is rarely the wishlist. */}
             <UndoProvider>

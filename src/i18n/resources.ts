@@ -43,6 +43,20 @@ const enCommon = {
     hideCatalogArt: "Hide the catalogue's cover",
     showCatalogArt: "Show the catalogue's cover",
     deviceOnly: "on device",
+    refusal: {
+      title: "Saved on this iPhone",
+      /* 28d: each sentence names its own fix and rules the other one out. Deleting does not
+         help a picture that is too big, and a smaller picture does not help a full account. */
+      full: "Your photo space is full, {{quota}} of {{quota}} MB, so this photo was not uploaded. Delete a photo you can live without and this one goes up by itself. A smaller picture will not help.",
+      /* Drawn without the figures rather than with invented ones, when the server has not
+         said what the allowance is. */
+      fullPlain:
+        "Your photo space is full, so this photo was not uploaded. Delete a photo you can live without and this one goes up by itself. A smaller picture will not help.",
+      tooLarge:
+        "That picture is over 5 MB, the ceiling for a single upload. Choose another picture or a smaller export of this one. Deleting photos will not help.",
+      ok: "OK",
+      showStorage: "Show storage",
+    },
   },
   wishlist: {
     count_one: "1 record you're hunting",
@@ -1025,6 +1039,16 @@ const deCommon: CommonSchema = {
     hideCatalogArt: "Katalog-Cover ausblenden",
     showCatalogArt: "Katalog-Cover einblenden",
     deviceOnly: "nur hier",
+    refusal: {
+      title: "Auf diesem iPhone gespeichert",
+      full: "Dein Speicherplatz ist voll, {{quota}} von {{quota}} MB, darum wurde dieses Foto nicht hochgeladen. Lösche ein anderes Foto, dann lädt es von selbst hoch. Ein kleineres Bild hilft hier nicht.",
+      fullPlain:
+        "Dein Speicherplatz ist voll, darum wurde dieses Foto nicht hochgeladen. Lösche ein anderes Foto, dann lädt es von selbst hoch. Ein kleineres Bild hilft hier nicht.",
+      tooLarge:
+        "Dieses Bild ist größer als 5 MB, die Obergrenze für ein einzelnes Bild. Wähle ein anderes Bild oder einen kleineren Export. Andere Fotos zu löschen hilft hier nicht.",
+      ok: "OK",
+      showStorage: "Speicherplatz anzeigen",
+    },
   },
   wishlist: {
     count_one: "1 Platte, die du suchst",

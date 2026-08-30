@@ -1,4 +1,4 @@
-import { Camera, EyeOff, ImagePlus, Star, Trash2 } from "lucide-react-native";
+import { Camera, CloudOff, EyeOff, ImagePlus, Star, Trash2 } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Animated, Pressable, StyleSheet, Text, View } from "react-native";
@@ -112,8 +112,11 @@ export function PhotoStrip({
             </Pressable>
             {photo.storageKey === null && (
               // Not an error: a photo that has not uploaded is perfectly usable here, it
-              // simply is not on your other devices yet.
+              // simply is not on your other devices yet. 28e gives it the cloud-off glyph
+              // the rest of the app uses for exactly that, and no dimming and no red: the
+              // photo is fine, and only its copy elsewhere is missing.
               <View style={[styles.localBadge, { backgroundColor: chrome.surface }]}>
+                <CloudOff size={8} color={chrome.muted} strokeWidth={2} />
                 <Text style={[styles.localBadgeText, { color: chrome.muted }]}>
                   {t("photos.deviceOnly")}
                 </Text>
@@ -223,10 +226,13 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
+    flexDirection: "row",
+    gap: 3,
     paddingVertical: 2,
     borderBottomLeftRadius: 6,
     borderBottomRightRadius: 6,
     alignItems: "center",
+    justifyContent: "center",
   },
   localBadgeText: { fontSize: 8, fontWeight: "600" },
   addTile: {
