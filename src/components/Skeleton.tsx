@@ -1,13 +1,24 @@
 import { useEffect, useRef, useState } from "react";
 import { AccessibilityInfo, Animated, Easing, type ViewStyle } from "react-native";
 
-/** The deck's three bar weights, strongest first — on the add screen's dark chrome. */
+/** The deck's three bar weights, strongest first. */
 export type SkeletonTone = "strong" | "soft" | "faint";
 
+/**
+ * Ink on paper, not white on dark.
+ *
+ * The deck drew these on the add screen's dark chrome and the tones were white to match.
+ * That screen went light and these did not follow, which made every placeholder in the app
+ * invisible — a search whose artists were still loading looked like a search that had
+ * finished and found nothing. The one call site still on dark chrome, the tracklist, has
+ * always had its own skeleton that takes the chrome it is drawn in.
+ *
+ * The weights are the deck's, kept as they were; only the colour they are mixed from moved.
+ */
 const TONES: Record<SkeletonTone, string> = {
-  strong: "rgba(255,255,255,0.10)",
-  soft: "rgba(255,255,255,0.075)",
-  faint: "rgba(255,255,255,0.055)",
+  strong: "rgba(25,23,19,0.10)",
+  soft: "rgba(25,23,19,0.075)",
+  faint: "rgba(25,23,19,0.055)",
 };
 
 /**
