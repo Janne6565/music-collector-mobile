@@ -1,9 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { lookupByBarcode, searchReleases } from "@/api/releases";
-import type { Copy, Format, Release } from "@janne6565/rekordo-shared";
+import { lookupAlbumCovers, lookupByBarcode, lookupPressingCovers, searchReleases } from "@/api/releases";
+import type { Copy, Format, Release, WishlistItem } from "@janne6565/rekordo-shared";
+import { isManualReleaseId } from "@janne6565/rekordo-shared";
 import { useAddCopy } from "@/features/add/useAddCopy";
 import { useArtistSearchLogic } from "@/features/add/useArtistSearchLogic";
+import { useWishPhotos } from "@/features/wishlist/useWishPhotos";
 import { clearRecentSearches, readRecentSearches, rememberSearch } from "@/local/settings";
 import { useStore } from "@/local/StoreProvider";
 
@@ -71,6 +73,53 @@ export function useAddLogic(seedTerm = "") {
   });
 
   const wishlist = useQuery({ queryKey: ["wishlist"], queryFn: () => store.listWishlist() });
+
+  /**
+   * The four entries this screen shows, and their artwork.
+   *
+   * `WishlistItem` carries no cover of its own, only the ids to resolve one with -- so a
+   * screen that does not run these lookups draws four empty frames, which is what this
+   * block used to do. The keys match the wishlist tab's exactly, so opening this screen
+   * after that one costs nothing; the id sets differ (four entries, not the whole list),
+   * and React Query keeps them as separate entries rather than one answering for the other.
+   */
+  const wishes = useMemo(() => (wishlist.data ?? []).slice(0, 4), [wishlist.data]);
+
+  const wishAlbumIds = useMemo(
+    () => [...new Set(wishes.map((wish) => wish.albumId))].sort(),
+    [wishes],
+  );
+
+  const wishReleaseIds = useMemo(
+    () =>
+      [
+        ...new Set(
+          wishes
+            .map((wish) => wish.releaseId)
+            .filter((releaseId): releaseId is string => releaseId !== null),
+        ),
+      ]
+        // A hand-typed entry's release id is local and names nothing the mirror holds.
+        .filter((releaseId) => !isManualReleaseId(releaseId))
+        .sort(),
+    [wishes],
+  );
+
+  const wishPressingCovers = useQuery({
+    queryKey: ["pressingCovers", wishReleaseIds],
+    enabled: wishReleaseIds.length > 0,
+    staleTime: 60 * 60 * 1000,
+    queryFn: () => lookupPressingCovers(wishReleaseIds),
+  });
+
+  const wishCovers = useQuery({
+    queryKey: ["albumCovers", wishAlbumIds],
+    enabled: wishAlbumIds.length > 0,
+    staleTime: 60 * 60 * 1000,
+    queryFn: () => lookupAlbumCovers(wishAlbumIds, store),
+  });
+
+  const wishPhotos = useWishPhotos(useMemo(() => wishes.map((wish) => wish.id), [wishes]));
 
   /**
    * What is already on the shelf, and the grade of it.
@@ -189,7 +238,15 @@ export function useAddLogic(seedTerm = "") {
     },
     clearRecent: () => forgetSearches.mutate(),
     /** Screen 5a's quick-add strip: things you already said you wanted. */
-    wishlist: (wishlist.data ?? []).slice(0, 4),
+    wishlist: wishes,
+    /** The pressing's sleeve when the entry was made from one, else the album's. */
+    wishCoverOf: (wish: WishlistItem): string | null => {
+      const pressing =
+        wish.releaseId === null ? undefined : wishPressingCovers.data?.get(wish.releaseId);
+      return pressing ?? wishCovers.data?.get(wish.albumId) ?? null;
+    },
+    /** A picture somebody gave the entry themselves, which no catalogue can supply. */
+    wishPictureOf: (wish: WishlistItem): string | null => wishPhotos.get(wish.id) ?? null,
     searchWish: (title: string, artistName: string) => {
       const wish = `${artistName} ${title}`;
       setTerm(wish);

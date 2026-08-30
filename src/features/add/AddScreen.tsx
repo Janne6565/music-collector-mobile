@@ -27,9 +27,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { releaseDisambiguation } from "@/api/releases";
 import { ArtistResults } from "@/features/add/ArtistResults";
 import { useCross } from "@/lib/motion";
-import { FormatThumb } from "@/components/FormatThumb";
 import { Skeleton } from "@/components/Skeleton";
 import { ReleaseArt } from "@/components/ReleaseArt";
+import { WishRow } from "@/components/WishRow";
 import type { Artist, Copy, Format, Release, WishlistItem } from "@janne6565/rekordo-shared";
 import { CONDITION_SHORT, FORMAT_LABELS } from "@janne6565/rekordo-shared";
 import { FORMAT_FILTERS, useAddLogic } from "@/features/add/useAddLogic";
@@ -197,26 +197,29 @@ function Body({
       keyExtractor={(release) => release.id}
       contentContainerStyle={styles.list}
       keyboardShouldPersistTaps="handled"
+      /*
+       * Artists first, releases under them.
+       *
+       * This has now been both ways round. Releases led on the grounds that somebody
+       * typing into an *add* screen is usually holding a record, and that a discography in
+       * front of it is in the way. Against that: a name-shaped query ("fred again") answers
+       * with pressings that merely contain the word, and the artist who was actually meant
+       * sat below eight of them, off the screen. Janne asked for the artists back on top.
+       */
       ListHeaderComponent={
-        <View style={styles.releasesHeader}>
-          <Text style={styles.section}>{t("add.releases")}</Text>
-          {/* The deck puts the way into manual entry here, beside the releases it is an
-              alternative to: the moment you can see the archive's answer is not the one
-              you are holding is the moment you want to type it in yourself. */}
-          <Pressable accessibilityRole="button" onPress={() => router.push("/manual")}>
-            <Text style={styles.sectionAction}>{t("add.manualCard.title")}</Text>
-          </Pressable>
+        <View>
+          <ArtistResults logic={logic.artists} onOpen={openArtist} />
+          <View style={styles.releasesHeader}>
+            <Text style={styles.section}>{t("add.releases")}</Text>
+            {/* The deck puts the way into manual entry here, beside the releases it is an
+                alternative to: the moment you can see the archive's answer is not the one
+                you are holding is the moment you want to type it in yourself. */}
+            <Pressable accessibilityRole="button" onPress={() => router.push("/manual")}>
+              <Text style={styles.sectionAction}>{t("add.manualCard.title")}</Text>
+            </Pressable>
+          </View>
         </View>
       }
-      /*
-       * Releases first, artists under them.
-       *
-       * The block order is the answer order: somebody typing "miles davis" into an add
-       * screen is usually holding a record, and the artist block is the way out when the
-       * pressing in their hand is not one of the three rows above. It used to be the other
-       * way round, which put a discography in front of the record being added.
-       */
-      ListFooterComponent={<ArtistResults logic={logic.artists} onOpen={openArtist} />}
       ListEmptyComponent={
         <Text style={styles.hint}>
           {t("add.noneOfFormat", { format: FORMAT_LABELS[logic.format as Format] })}
@@ -361,32 +364,35 @@ function BeforeTyping({ logic, onScan }: { readonly logic: Logic; readonly onSca
         <>
           <Text style={[styles.section, styles.sectionSpaced]}>{t("add.onWishlist")}</Text>
           {logic.wishlist.map((item: WishlistItem) => (
-            <Pressable
+            <WishRow
               key={item.id}
-              accessibilityRole="button"
               onPress={() => logic.searchWish(item.title, item.artistName)}
-              style={styles.row}
-            >
-              <View style={styles.thumb}>
-                <FormatThumb format={item.desiredFormat ?? "OTHER"} />
-              </View>
-              <View style={styles.rowBody}>
-                <Text style={styles.rowTitle} numberOfLines={1}>
-                  {item.title}
-                </Text>
-                <Text style={styles.rowSubtitle} numberOfLines={1}>
-                  {item.artistName}
-                  {item.year === null ? "" : ` · ${item.year}`}
-                  {item.desiredFormat === null ? "" : ` · ${FORMAT_LABELS[item.desiredFormat]}`}
-                </Text>
-              </View>
-              {/* Not a destination button: this row runs the wish's own search, which is
-                  what the block is for. A search icon says that; a plus would promise a
-                  copy the tap does not make. */}
-              <View style={[styles.rowAdd, styles.rowAddOwned]}>
-                <Search size={15} color={colors.inkMuted} strokeWidth={1.8} />
-              </View>
-            </Pressable>
+              art={
+                /* The wanted format is the silhouette, exactly as on the wishlist tab: an
+                   entry for the vinyl of a record you own on CD looks like what is being
+                   hunted, not like what is already on the shelf. */
+                <ReleaseArt
+                  release={{ coverArtUrl: logic.wishCoverOf(item) }}
+                  previewUri={logic.wishPictureOf(item)}
+                  format={item.desiredFormat ?? "OTHER"}
+                />
+              }
+              title={item.title}
+              subtitle={`${item.artistName}${item.year === null ? "" : ` · ${item.year}`}`}
+              format={
+                item.desiredFormat === null
+                  ? t("wishlist.anyFormat")
+                  : FORMAT_LABELS[item.desiredFormat]
+              }
+              /* Not a destination button: this row runs the wish's own search, which is
+                 what the block is for. A search icon says that; a plus would promise a
+                 copy the tap does not make. */
+              action={
+                <View style={[styles.rowAdd, styles.rowAddOwned]}>
+                  <Search size={15} color={colors.inkMuted} strokeWidth={1.8} />
+                </View>
+              }
+            />
           ))}
         </>
       )}

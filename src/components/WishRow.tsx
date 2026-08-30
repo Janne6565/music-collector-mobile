@@ -19,6 +19,7 @@ export function WishRow({
   note,
   format,
   trailing,
+  action,
   onPress,
   onLongPress,
 }: {
@@ -29,6 +30,12 @@ export function WishRow({
   readonly format: string;
   /** The relative time on your own list; nothing on a friend's, whose dates are not yours. */
   readonly trailing?: string;
+  /**
+   * An affordance at the right edge, for a list whose rows do something other than open
+   * the entry -- the add screen's block runs the wish's own search. A node rather than a
+   * flag because only the caller knows what its tap means.
+   */
+  readonly action?: ReactNode;
   readonly onPress?: () => void;
   readonly onLongPress?: () => void;
 }) {
@@ -52,6 +59,7 @@ export function WishRow({
           {trailing !== undefined && <Text style={styles.trailing}>{trailing}</Text>}
         </View>
       </View>
+      {action !== undefined && <View style={styles.action}>{action}</View>}
     </>
   );
 
@@ -96,4 +104,5 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   trailing: { fontSize: 10, color: colors.inkSubtle },
+  action: { justifyContent: "center" },
 });

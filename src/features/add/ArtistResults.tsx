@@ -7,6 +7,7 @@ import { artistSubtitle } from "@/domain/artist";
 import { Skeleton } from "@/components/Skeleton";
 import type { Artist } from "@janne6565/rekordo-shared";
 import { useArtistImage } from "@/features/add/useArtistImage";
+import { colors } from "@/theme/colors";
 import type { useArtistSearchLogic } from "@/features/add/useArtistSearchLogic";
 
 /**
@@ -39,8 +40,8 @@ export function ArtistAvatar({
       <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
         <Defs>
           <Pattern id="artistStripes" width={14.14} height={14.14} patternUnits="userSpaceOnUse">
-            <Rect width={14.14} height={14.14} fill="#2b2822" />
-            <Line x1={0} y1={14.14} x2={14.14} y2={0} stroke="#34302a" strokeWidth={7.07} />
+            <Rect width={14.14} height={14.14} fill="#e7e3db" />
+            <Line x1={0} y1={14.14} x2={14.14} y2={0} stroke="#ddd8ce" strokeWidth={7.07} />
           </Pattern>
         </Defs>
         <Rect width={size} height={size} fill="url(#artistStripes)" />
@@ -101,7 +102,7 @@ export function ArtistResults({ logic, onOpen }: ArtistResultsProps) {
       {!logic.expanded && logic.hidden > 0 && (
         <Pressable accessibilityRole="button" onPress={logic.expand} style={styles.moreRow}>
           <Text style={styles.moreText}>{t("artists.showMore", { count: logic.hidden })}</Text>
-          <ChevronDown size={16} color="rgba(255,255,255,0.45)" strokeWidth={1.75} />
+          <ChevronDown size={16} color={colors.inkSubtle} strokeWidth={1.75} />
         </Pressable>
       )}
     </View>
@@ -140,7 +141,7 @@ function ArtistRow({ artist, onOpen }: { readonly artist: Artist; readonly onOpe
           </Text>
         )}
       </View>
-      <ChevronRight size={18} color="rgba(255,255,255,0.45)" strokeWidth={1.75} />
+      <ChevronRight size={18} color={colors.inkSubtle} strokeWidth={1.75} />
     </Pressable>
   );
 }
@@ -169,7 +170,12 @@ function ArtistSkeletons() {
   );
 }
 
-const HAIRLINE = "rgba(255,255,255,0.09)";
+/**
+ * Matches the release rows this section sits with (`AddScreen`), not the deck's dark
+ * chrome the block was first drawn on. The add screen went light and this file did not
+ * follow, which left the whole section white on white and effectively invisible.
+ */
+const HAIRLINE = "rgba(25,23,19,0.08)";
 
 const styles = StyleSheet.create({
   avatar: {
@@ -178,9 +184,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255,255,255,0.16)",
+    borderColor: colors.line,
   },
-  avatarInitial: { fontWeight: "500", color: "rgba(255,255,255,0.5)" },
+  avatarInitial: { fontWeight: "500", color: colors.inkSubtle },
   avatarSkeleton: { width: 48, height: 48, borderRadius: 999 },
   sectionRow: {
     flexDirection: "row",
@@ -193,9 +199,9 @@ const styles = StyleSheet.create({
     fontSize: 10,
     letterSpacing: 1.2,
     textTransform: "uppercase",
-    color: "rgba(255,255,255,0.4)",
+    color: colors.inkSubtle,
   },
-  sectionAside: { fontSize: 10.5, fontWeight: "500", color: "rgba(255,255,255,0.3)" },
+  sectionAside: { fontSize: 10.5, fontWeight: "500", color: colors.inkSubtle },
   row: {
     flexDirection: "row",
     alignItems: "center",
@@ -206,21 +212,21 @@ const styles = StyleSheet.create({
   },
   rowBody: { flex: 1 },
   nameRow: { flexDirection: "row", alignItems: "center", gap: 7 },
-  rowTitle: { flexShrink: 1, fontSize: 13.5, fontWeight: "600", color: "#fff" },
+  rowTitle: { flexShrink: 1, fontSize: 13.5, fontWeight: "600", color: colors.ink },
   badge: {
     fontSize: 9,
     fontWeight: "600",
     letterSpacing: 0.9,
     textTransform: "uppercase",
-    color: "rgba(255,255,255,0.55)",
-    backgroundColor: "rgba(255,255,255,0.1)",
+    color: colors.inkMuted,
+    backgroundColor: "rgba(25,23,19,0.06)",
     borderRadius: 4,
     paddingHorizontal: 6,
     paddingVertical: 3,
     overflow: "hidden",
   },
-  rowSubtitle: { fontSize: 11.5, color: "rgba(255,255,255,0.62)" },
-  rowMeta: { fontSize: 10, color: "rgba(255,255,255,0.38)" },
+  rowSubtitle: { fontSize: 11.5, color: colors.inkMuted },
+  rowMeta: { fontSize: 10, color: colors.inkSubtle },
   moreRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -230,5 +236,5 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: HAIRLINE,
   },
-  moreText: { fontSize: 12, fontWeight: "500", color: "rgba(255,255,255,0.6)" },
+  moreText: { fontSize: 12, fontWeight: "500", color: colors.inkMuted },
 });

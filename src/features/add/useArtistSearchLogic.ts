@@ -5,11 +5,12 @@ import { findArtists } from "@/api/releases";
 /**
  * How many artist rows show before the disclosure.
  *
- * Two here, three on the web (screen 10b). The deck draws it that way for a reason: a
- * phone shows the artists section above the releases in a column a quarter the height, and
- * a third row would push the first record off the screen entirely.
+ * Three, matching the web (screen 10b). The deck asked for two on a phone, on the grounds
+ * that a third row pushes the first record off the screen -- which it does. Janne asked
+ * for three anyway: the block is now the first thing on the results list, so the rows it
+ * costs are rows somebody scrolls past rather than rows they never see.
  */
-export const ARTISTS_SHOWN = 2;
+export const ARTISTS_SHOWN = 3;
 
 /**
  * The artists half of a search (screen 10a).
