@@ -1,3 +1,4 @@
+import { RisingSheet } from "@/components/RisingSheet";
 import { CURRENCIES, type CurrencyCode, currencyChipLabel } from "@/domain/currency";
 import { formatRelativeTime } from "@/domain/relativeTime";
 import { useSettingsLogic } from "@/features/settings/useSettingsLogic";
@@ -303,30 +304,32 @@ function PickerSheet({
   readonly onChoose: (value: string) => void;
 }) {
   return (
-    <Modal visible={open} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal visible={open} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.scrim} onPress={onClose} accessibilityRole="button" />
-      <View style={styles.sheet}>
-        <View style={styles.grabber} />
-        <Text style={styles.sheetTitle}>{title}</Text>
-        <Text style={styles.sheetNote}>{note}</Text>
-        <View style={styles.sheetCard}>
-          {options.map((option, index) => (
-            <View key={option.value}>
-              {index > 0 && <View style={styles.divider} />}
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => onChoose(option.value)}
-                style={styles.sheetRow}
-              >
-                <Text style={styles.sheetLabel}>{option.label}</Text>
-                {option.value === selected && (
-                  <Check size={16} color={colors.accent} strokeWidth={2.25} />
-                )}
-              </Pressable>
-            </View>
-          ))}
-        </View>
-        {footnote !== undefined && <Text style={styles.sheetFootnote}>{footnote}</Text>}
+      <View style={styles.sheetHolder} pointerEvents="box-none">
+        <RisingSheet visible={open} style={styles.sheet}>
+          <View style={styles.grabber} />
+          <Text style={styles.sheetTitle}>{title}</Text>
+          <Text style={styles.sheetNote}>{note}</Text>
+          <View style={styles.sheetCard}>
+            {options.map((option, index) => (
+              <View key={option.value}>
+                {index > 0 && <View style={styles.divider} />}
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => onChoose(option.value)}
+                  style={styles.sheetRow}
+                >
+                  <Text style={styles.sheetLabel}>{option.label}</Text>
+                  {option.value === selected && (
+                    <Check size={16} color={colors.accent} strokeWidth={2.25} />
+                  )}
+                </Pressable>
+              </View>
+            ))}
+          </View>
+          {footnote !== undefined && <Text style={styles.sheetFootnote}>{footnote}</Text>}
+        </RisingSheet>
       </View>
     </Modal>
   );
@@ -437,7 +440,12 @@ const styles = StyleSheet.create({
     color: colors.inkSubtle,
     marginTop: 16,
   },
-  scrim: { flex: 1, backgroundColor: "rgba(25,23,19,0.35)" },
+  // Covers the whole screen, behind the panel as well as above it: as a `flex: 1`
+  // sibling it only filled the space the sheet left over, so the strip the rising
+  // panel was about to occupy stayed undimmed while it travelled.
+  scrim: { ...StyleSheet.absoluteFill, backgroundColor: "rgba(25,23,19,0.35)" },
+  // `box-none` so a tap above the panel still reaches the scrim underneath it.
+  sheetHolder: { flex: 1, justifyContent: "flex-end" },
   sheet: {
     backgroundColor: colors.paper,
     borderTopLeftRadius: 18,

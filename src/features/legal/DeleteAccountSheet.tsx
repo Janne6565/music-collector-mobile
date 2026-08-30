@@ -1,3 +1,4 @@
+import { RisingSheet } from "@/components/RisingSheet";
 import { isDeletionConfirmed } from "@/features/legal/confirmDeletion";
 import { colors, fonts } from "@/theme/colors";
 import { Download } from "lucide-react-native";
@@ -36,7 +37,7 @@ export function DeleteAccountSheet({
   const confirmed = isDeletionConfirmed(typed);
 
   return (
-    <Modal animationType="slide" transparent onRequestClose={onCancel}>
+    <Modal animationType="fade" transparent onRequestClose={onCancel}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={t("common.cancel")}
@@ -47,7 +48,7 @@ export function DeleteAccountSheet({
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.sheetHolder}
       >
-        <View style={styles.sheet}>
+        <RisingSheet style={styles.sheet}>
           <View style={styles.grabber} />
           <Text style={styles.title}>{t("legal.delete.title")}</Text>
           <Text style={styles.body}>{t("legal.delete.body", { count: copyCount ?? 0 })}</Text>
@@ -88,7 +89,7 @@ export function DeleteAccountSheet({
           <Pressable accessibilityRole="button" onPress={onCancel} style={styles.keep}>
             <Text style={styles.keepText}>{t("legal.delete.keep")}</Text>
           </Pressable>
-        </View>
+        </RisingSheet>
       </KeyboardAvoidingView>
     </Modal>
   );

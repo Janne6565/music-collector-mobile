@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { releaseDisambiguation } from "@/api/releases";
 import { ReleaseArt } from "@/components/ReleaseArt";
+import { RisingSheet } from "@/components/RisingSheet";
 import { type AddDestination, useAddSheetLogic } from "@/features/add/useAddSheetLogic";
 import type { Format, Release } from "@janne6565/rekordo-shared";
 import { FORMAT_LABELS } from "@janne6565/rekordo-shared";
@@ -32,127 +33,129 @@ export function AddSheet({
   const shelf = logic.destination === "SHELF";
 
   return (
-    <Modal transparent animationType="slide" onRequestClose={onClose}>
+    <Modal transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.scrim} onPress={onClose} accessibilityRole="button" />
-      <View style={styles.sheet}>
-        <View style={styles.grabber} />
+      <View style={styles.sheetHolder} pointerEvents="box-none">
+        <RisingSheet style={styles.sheet}>
+          <View style={styles.grabber} />
 
-        {logic.picking ? (
-          <>
-            <View style={styles.pickerHead}>
-              <Text style={styles.serif}>{t("addSheet.whichPressing")}</Text>
-              <Pressable accessibilityRole="button" onPress={logic.closePicker}>
-                <Text style={styles.link}>{t("common.cancel")}</Text>
-              </Pressable>
-            </View>
-            <ScrollView style={styles.pickerList}>
-              {logic.pressings.map((pressing, index) => (
-                <PressingRow
-                  key={pressing.id}
-                  release={pressing}
-                  picked={logic.picked.id === pressing.id}
-                  best={index === 0}
-                  onPress={() => logic.pick(pressing)}
-                />
-              ))}
-            </ScrollView>
-          </>
-        ) : (
-          <>
-            <View style={styles.eyebrow}>
-              {shelf ? (
-                <LibraryBig size={13} color={colors.inkSubtle} strokeWidth={2} />
-              ) : (
-                <Heart size={13} color={colors.inkSubtle} strokeWidth={2} />
-              )}
-              <Text style={styles.eyebrowText}>
-                {shelf ? t("addSheet.toYourShelf") : t("addSheet.toYourWishlist")}
-              </Text>
-            </View>
-
-            <View style={styles.head}>
-              <ReleaseArt release={logic.picked} format={logic.format} style={styles.art} />
-              <View style={styles.headText}>
-                <Text style={styles.serif}>{logic.picked.title}</Text>
-                <Text style={styles.headMeta}>
-                  {[
-                    logic.picked.artistName,
-                    logic.picked.year === null ? null : String(logic.picked.year),
-                    FORMAT_LABELS[logic.format],
-                  ]
-                    .filter((part) => part !== null)
-                    .join(" · ")}
+          {logic.picking ? (
+            <>
+              <View style={styles.pickerHead}>
+                <Text style={styles.serif}>{t("addSheet.whichPressing")}</Text>
+                <Pressable accessibilityRole="button" onPress={logic.closePicker}>
+                  <Text style={styles.link}>{t("common.cancel")}</Text>
+                </Pressable>
+              </View>
+              <ScrollView style={styles.pickerList}>
+                {logic.pressings.map((pressing, index) => (
+                  <PressingRow
+                    key={pressing.id}
+                    release={pressing}
+                    picked={logic.picked.id === pressing.id}
+                    best={index === 0}
+                    onPress={() => logic.pick(pressing)}
+                  />
+                ))}
+              </ScrollView>
+            </>
+          ) : (
+            <>
+              <View style={styles.eyebrow}>
+                {shelf ? (
+                  <LibraryBig size={13} color={colors.inkSubtle} strokeWidth={2} />
+                ) : (
+                  <Heart size={13} color={colors.inkSubtle} strokeWidth={2} />
+                )}
+                <Text style={styles.eyebrowText}>
+                  {shelf ? t("addSheet.toYourShelf") : t("addSheet.toYourWishlist")}
                 </Text>
               </View>
-            </View>
 
-            <Text style={styles.label}>{t("addSheet.pressing")}</Text>
-            <View style={styles.pressing}>
-              <View style={styles.headText}>
-                <View style={styles.pressingTitleRow}>
-                  <Text style={styles.pressingTitle}>
+              <View style={styles.head}>
+                <ReleaseArt release={logic.picked} format={logic.format} style={styles.art} />
+                <View style={styles.headText}>
+                  <Text style={styles.serif}>{logic.picked.title}</Text>
+                  <Text style={styles.headMeta}>
                     {[
-                      FORMAT_LABELS[logic.picked.format],
+                      logic.picked.artistName,
                       logic.picked.year === null ? null : String(logic.picked.year),
+                      FORMAT_LABELS[logic.format],
                     ]
                       .filter((part) => part !== null)
                       .join(" · ")}
                   </Text>
-                  {logic.isGuess && (
-                    <View style={styles.guess}>
-                      <Text style={styles.guessText}>{t("addSheet.bestGuess")}</Text>
-                    </View>
-                  )}
                 </View>
-                <Text style={styles.pressingMeta}>
-                  {releaseDisambiguation(logic.picked) || t("addSheet.noCatalog")}
-                </Text>
               </View>
-              {logic.others > 0 && (
-                <Pressable accessibilityRole="button" onPress={logic.openPicker}>
-                  <Text style={styles.link}>{t("addSheet.others", { count: logic.others })}</Text>
-                </Pressable>
-              )}
-            </View>
 
-            <Text style={styles.label}>{t("addSheet.format")}</Text>
-            <View style={styles.chips}>
-              {CHIPS.map((chip) => (
-                <Pressable
-                  key={chip}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: logic.format === chip }}
-                  onPress={() => logic.setFormat(chip)}
-                  style={[styles.chip, logic.format === chip && styles.chipOn]}
-                >
-                  <Text
-                    style={[styles.chipText, logic.format === chip && styles.chipTextOn]}
-                  >
-                    {FORMAT_LABELS[chip]}
+              <Text style={styles.label}>{t("addSheet.pressing")}</Text>
+              <View style={styles.pressing}>
+                <View style={styles.headText}>
+                  <View style={styles.pressingTitleRow}>
+                    <Text style={styles.pressingTitle}>
+                      {[
+                        FORMAT_LABELS[logic.picked.format],
+                        logic.picked.year === null ? null : String(logic.picked.year),
+                      ]
+                        .filter((part) => part !== null)
+                        .join(" · ")}
+                    </Text>
+                    {logic.isGuess && (
+                      <View style={styles.guess}>
+                        <Text style={styles.guessText}>{t("addSheet.bestGuess")}</Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text style={styles.pressingMeta}>
+                    {releaseDisambiguation(logic.picked) || t("addSheet.noCatalog")}
                   </Text>
-                </Pressable>
-              ))}
-            </View>
+                </View>
+                {logic.others > 0 && (
+                  <Pressable accessibilityRole="button" onPress={logic.openPicker}>
+                    <Text style={styles.link}>{t("addSheet.others", { count: logic.others })}</Text>
+                  </Pressable>
+                )}
+              </View>
 
-            <Pressable
-              accessibilityRole="button"
-              onPress={logic.save}
-              disabled={logic.saving}
-              style={[styles.primary, logic.saving && styles.primaryOff]}
-            >
-              <Check size={17} color="#ffffff" strokeWidth={2.2} />
-              <Text style={styles.primaryText}>
-                {shelf ? t("addSheet.addToShelf") : t("addSheet.addToWishlist")}
-              </Text>
-            </Pressable>
+              <Text style={styles.label}>{t("addSheet.format")}</Text>
+              <View style={styles.chips}>
+                {CHIPS.map((chip) => (
+                  <Pressable
+                    key={chip}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: logic.format === chip }}
+                    onPress={() => logic.setFormat(chip)}
+                    style={[styles.chip, logic.format === chip && styles.chipOn]}
+                  >
+                    <Text
+                      style={[styles.chipText, logic.format === chip && styles.chipTextOn]}
+                    >
+                      {FORMAT_LABELS[chip]}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
 
-            <Pressable accessibilityRole="button" onPress={logic.flip}>
-              <Text style={styles.flip}>
-                {shelf ? t("addSheet.wishlistInstead") : t("addSheet.shelfInstead")}
-              </Text>
-            </Pressable>
-          </>
-        )}
+              <Pressable
+                accessibilityRole="button"
+                onPress={logic.save}
+                disabled={logic.saving}
+                style={[styles.primary, logic.saving && styles.primaryOff]}
+              >
+                <Check size={17} color="#ffffff" strokeWidth={2.2} />
+                <Text style={styles.primaryText}>
+                  {shelf ? t("addSheet.addToShelf") : t("addSheet.addToWishlist")}
+                </Text>
+              </Pressable>
+
+              <Pressable accessibilityRole="button" onPress={logic.flip}>
+                <Text style={styles.flip}>
+                  {shelf ? t("addSheet.wishlistInstead") : t("addSheet.shelfInstead")}
+                </Text>
+              </Pressable>
+            </>
+          )}
+        </RisingSheet>
       </View>
     </Modal>
   );
@@ -205,7 +208,12 @@ function PressingRow({
 const MONO = "ui-monospace";
 
 const styles = StyleSheet.create({
-  scrim: { flex: 1, backgroundColor: "rgba(25,23,19,0.35)" },
+  // Covers the whole screen, behind the panel as well as above it: as a `flex: 1`
+  // sibling it only filled the space the sheet left over, so the strip the rising
+  // panel was about to occupy stayed undimmed while it travelled.
+  scrim: { ...StyleSheet.absoluteFill, backgroundColor: "rgba(25,23,19,0.35)" },
+  // `box-none` so a tap above the panel still reaches the scrim underneath it.
+  sheetHolder: { flex: 1, justifyContent: "flex-end" },
   sheet: {
     marginHorizontal: 10,
     backgroundColor: colors.surface,

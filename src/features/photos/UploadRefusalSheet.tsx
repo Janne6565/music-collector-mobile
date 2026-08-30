@@ -9,6 +9,7 @@ import {
 import { useStore } from "@/local/StoreProvider";
 import { accountStorage } from "@/api/storage";
 import { formatMegabytes } from "@/features/account/storageReading";
+import { RisingSheet } from "@/components/RisingSheet";
 import { colors, fonts } from "@/theme/colors";
 
 /**
@@ -75,11 +76,11 @@ export function UploadRefusalSheet() {
     <Modal
       visible={pending !== null}
       transparent
-      animationType="slide"
+      animationType="fade"
       onRequestClose={() => void dismiss()}
     >
       <View style={styles.scrim}>
-        <View style={styles.sheet}>
+        <RisingSheet visible={pending !== null} style={styles.sheet}>
           <View style={styles.grabber} />
           <Text style={styles.title}>{t("photos.refusal.title")}</Text>
           <Text style={styles.body}>
@@ -99,7 +100,7 @@ export function UploadRefusalSheet() {
               <Text style={styles.link}>{t("photos.refusal.showStorage")}</Text>
             </Pressable>
           )}
-        </View>
+        </RisingSheet>
       </View>
     </Modal>
   );

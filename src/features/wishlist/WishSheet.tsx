@@ -1,5 +1,6 @@
 import { lookupAlbumCovers, lookupPressingCovers } from "@/api/releases";
 import { ReleaseArt } from "@/components/ReleaseArt";
+import { RisingSheet } from "@/components/RisingSheet";
 import {
   type PhotoSource,
   type PickedImage,
@@ -271,13 +272,13 @@ export function WishSheet({ onClose, release = null, entry = null }: WishSheetPr
     typed.artistName.trim() !== "";
 
   return (
-    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
+    <Modal visible transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose} accessibilityRole="button" />
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.sheetWrap}
       >
-        <View style={styles.sheet}>
+        <RisingSheet style={styles.sheet}>
           <View style={styles.grabber} />
           <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
             {heading !== null ? (
@@ -416,7 +417,7 @@ export function WishSheet({ onClose, release = null, entry = null }: WishSheetPr
             </Pressable>
             <Text style={styles.footnote}>{t("wishlist.oneEntryHint")}</Text>
           </ScrollView>
-        </View>
+        </RisingSheet>
       </KeyboardAvoidingView>
     </Modal>
   );
