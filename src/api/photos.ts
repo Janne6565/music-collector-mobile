@@ -1,5 +1,5 @@
 import { API_BASE } from "@/api/config";
-import { readRefreshToken, refreshSession, request } from "@/api/client";
+import { HttpError, readRefreshToken, refreshSession, request } from "@/api/client";
 
 /**
  * The photo bytes, which do not go through the JSON client.
@@ -61,6 +61,13 @@ export async function uploadPhotoBytes(
       accessTokenForBinary = refreshed;
       response = await send(refreshed);
     }
+  }
+  // A refusal is an answer, not an accident: the account is full (507) or this one picture
+  // is too big (413), and neither resolves by trying again. Those are thrown so the sync
+  // engine can remember them; everything else stays a null, which means "not now" and is
+  // exactly what the ordinary failures deserve.
+  if (response.status === 507 || response.status === 413) {
+    throw new HttpError(response.status, "/api/v1/photos");
   }
   if (!response.ok) return null;
 
