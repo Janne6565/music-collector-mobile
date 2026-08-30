@@ -5,7 +5,7 @@
     "": {
       "name": "music-collector-mobile",
       "dependencies": {
-        "@janne6565/rekordo-shared": "0.24.0",
+        "@janne6565/rekordo-shared": "0.25.0",
         "@reduxjs/toolkit": "^2.5.0",
         "@tanstack/react-query": "^5.62.0",
         "expo": "~57.0.16",
@@ -266,7 +266,7 @@
 
     "@isaacs/ttlcache": ["@isaacs/ttlcache@1.4.1", "", {}, "sha512-RQgQ4uQ+pLbqXfOmieB91ejmLwvSgv9nLx6sT6sD83s7umBypgg+OIBOBbEUiJXrfpnp9j0mRhYYdzp9uqq3lA=="],
 
-    "@janne6565/rekordo-shared": ["@janne6565/rekordo-shared@0.24.0", "https://npm.pkg.github.com/download/@janne6565/rekordo-shared/0.24.0/ef040c55338c28799e4635d68703d4a235633d5d", { "peerDependencies": { "react": ">=18" } }, "sha512-B402VU3E0fwjqyL2tcoN9J4XBHh5+R4bnvO5vf6O89GCKRJCSmcJ9wUVhPOvqtXTmlMZ2q8gyfMcWgpRcYhjow=="],
+    "@janne6565/rekordo-shared": ["@janne6565/rekordo-shared@0.25.0", "https://npm.pkg.github.com/download/@janne6565/rekordo-shared/0.25.0/bcfa95d385aab7cb6010e430bd4a7f33a253881d", { "peerDependencies": { "react": ">=18" } }, "sha512-nymMNIpAX8Lv1Dk/cWK/CYKOCHWEIpFEzcLeCBCmi8/uafNhBXc5zllH02IcUP0XVnrxZxFCQd59HVZPWt5cuQ=="],
 
     "@jest/schemas": ["@jest/schemas@29.6.3", "", { "dependencies": { "@sinclair/typebox": "^0.27.8" } }, "sha512-mo5j5X+jIZmJQveBKeS/clAueipV7KgiX1vMgCxam1RNYiqE1w62n0/tJJnHtjW8ZHcQco5gY85jA3mi0L+nSA=="],
 
