@@ -23,6 +23,7 @@ const release: Release = {
 const copy: Copy = {
   id: "c1",
   releaseId: "r1",
+  pendingBarcode: null,
   manualTitle: null,
   manualArtist: null,
   manualYear: null,
@@ -123,6 +124,7 @@ function wish(over: Partial<WishlistItem>): WishlistItem {
     id: "w1",
     albumId: "rg1",
     releaseId: null,
+    pendingBarcode: null,
     title: "Ege Bamyasi",
     artistName: "Can",
     year: 1972,

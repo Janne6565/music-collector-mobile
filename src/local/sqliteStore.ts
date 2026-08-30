@@ -93,6 +93,10 @@ export class SqliteLocalStore implements LocalStore {
         manualLabel     TEXT,
         manualCatalogNumber TEXT,
         manualFormat    TEXT,
+        -- The digits of a scan nobody could look up yet; null the moment it has a name.
+        -- No index: it is null on all but a handful of rows, and the one query that reads
+        -- it is a scan of those rows.
+        pendingBarcode  TEXT,
         condition       TEXT,
         sleeveCondition TEXT,
         pricePaidCents  INTEGER,
@@ -135,6 +139,8 @@ export class SqliteLocalStore implements LocalStore {
         -- The pressing the entry was made from, when one was picked (19a). No index:
         -- nothing looks an entry up by it, it is read off the row already in hand.
         releaseId        TEXT,
+        -- Mirrors copies.pendingBarcode: a scan sent here before it had a name.
+        pendingBarcode   TEXT,
         title            TEXT NOT NULL,
         artistName       TEXT NOT NULL,
         year             INTEGER,
@@ -193,6 +199,11 @@ export class SqliteLocalStore implements LocalStore {
     if (!columns.some((column) => column.name === "hidden")) {
       await db.execAsync("ALTER TABLE copies ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0");
     }
+    // A scan kept before it could be identified (2e). Nullable, and every row already here
+    // gets null: they were all identified at the moment they were made.
+    if (!columns.some((column) => column.name === "pendingBarcode")) {
+      await db.execAsync("ALTER TABLE copies ADD COLUMN pendingBarcode TEXT");
+    }
     // Why a not-yet-pushed copy exists, so the server can keep imports out of the feed.
     // Local-only and never merged: it is the reason for one push, not a fact about the
     // record, and only this device was ever asked the question.
@@ -213,6 +224,9 @@ export class SqliteLocalStore implements LocalStore {
     // falls back to the album exactly as it did before.
     if (!wishColumns.some((column) => column.name === "releaseId")) {
       await db.execAsync("ALTER TABLE wishlist ADD COLUMN releaseId TEXT");
+    }
+    if (!wishColumns.some((column) => column.name === "pendingBarcode")) {
+      await db.execAsync("ALTER TABLE wishlist ADD COLUMN pendingBarcode TEXT");
     }
     await this.widenPhotoOwner(db);
     await this.qualifyIds(db, columns);
@@ -426,14 +440,15 @@ export class SqliteLocalStore implements LocalStore {
   private async write(copy: Copy): Promise<void> {
     await this.handle().runAsync(
       `INSERT OR REPLACE INTO copies
-        (id, releaseId, manualTitle, manualArtist, manualYear, manualLabel,
+        (id, releaseId, pendingBarcode, manualTitle, manualArtist, manualYear, manualLabel,
          manualCatalogNumber, manualFormat, condition, sleeveCondition, pricePaidCents,
          currency, purchasedOn, purchasedAt, notes, notesConflict, rating, hidden,
          createdAt, deletedAt, fieldClocks)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         copy.id,
         copy.releaseId,
+        copy.pendingBarcode,
         copy.manualTitle,
         copy.manualArtist,
         copy.manualYear,
@@ -686,6 +701,18 @@ export class SqliteLocalStore implements LocalStore {
     await FileSystem.deleteAsync(photoPath(id), { idempotent: true }).catch(() => undefined);
   }
 
+  /** Scanned, kept, and still nameless — see {@link LocalStore.listPendingScans}. */
+  async listPendingScans(): Promise<{ copies: Copy[]; wishes: WishlistItem[] }> {
+    const db = this.handle();
+    const copies = await db.getAllAsync<CopyRow>(
+      "SELECT * FROM copies WHERE deletedAt IS NULL AND pendingBarcode IS NOT NULL",
+    );
+    const wishes = await db.getAllAsync<WishRow>(
+      "SELECT * FROM wishlist WHERE deletedAt IS NULL AND pendingBarcode IS NOT NULL",
+    );
+    return { copies: copies.map(toCopy), wishes: wishes.map(toWish) };
+  }
+
   async listWishlist(): Promise<WishlistItem[]> {
     const rows = await this.handle().getAllAsync<WishRow>(
       "SELECT * FROM wishlist WHERE deletedAt IS NULL ORDER BY createdAt DESC",
@@ -719,12 +746,14 @@ export class SqliteLocalStore implements LocalStore {
   private async writeWish(item: WishlistItem): Promise<void> {
     await this.handle().runAsync(
       `INSERT OR REPLACE INTO wishlist
-        (id, albumId, releaseId, title, artistName, year, desiredFormat, note, sortIndex, createdAt, deletedAt, fieldClocks)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (id, albumId, releaseId, pendingBarcode, title, artistName, year, desiredFormat, note,
+         sortIndex, createdAt, deletedAt, fieldClocks)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         item.id,
         item.albumId,
         item.releaseId,
+        item.pendingBarcode,
         item.title,
         item.artistName,
         item.year,
@@ -829,10 +858,12 @@ export class SqliteLocalStore implements LocalStore {
   }
 }
 
-interface CopyRow extends Omit<Copy, "fieldClocks" | "hidden"> {
+interface CopyRow extends Omit<Copy, "fieldClocks" | "hidden" | "pendingBarcode"> {
   fieldClocks: string;
   /** SQLite has no boolean; 0 or 1. */
   hidden: number;
+  /** Undefined on a row written before the column existed, which reads as "not pending". */
+  pendingBarcode: string | null | undefined;
 }
 
 interface ReleaseRow extends Omit<Release, "coverTheme"> {
@@ -841,10 +872,14 @@ interface ReleaseRow extends Omit<Release, "coverTheme"> {
 
 type PhotoRow = Omit<Photo, "fieldClocks"> & { fieldClocks: string };
 
-type WishRow = Omit<WishlistItem, "desiredFormat" | "releaseId" | "fieldClocks"> & {
+type WishRow = Omit<
+  WishlistItem,
+  "desiredFormat" | "releaseId" | "pendingBarcode" | "fieldClocks"
+> & {
   desiredFormat: string | null;
   /** Undefined on a row written before the column existed, which reads as "none picked". */
   releaseId: string | null | undefined;
+  pendingBarcode: string | null | undefined;
   fieldClocks: string;
 };
 
@@ -852,6 +887,9 @@ function toCopy(row: CopyRow): Copy {
   return {
     ...row,
     hidden: row.hidden === 1,
+    // Undefined on a row older than the column, and undefined is not null to the merge —
+    // the same reason `toWish` normalises `releaseId`.
+    pendingBarcode: row.pendingBarcode ?? null,
     fieldClocks: JSON.parse(row.fieldClocks) as Copy["fieldClocks"],
   };
 }
@@ -867,6 +905,7 @@ function toWish(row: WishRow): WishlistItem {
     // null to the merge: a field missing from a pushed record reads as one nobody has ever
     // set, which is a different claim from "no pressing was picked".
     releaseId: row.releaseId ?? null,
+    pendingBarcode: row.pendingBarcode ?? null,
     desiredFormat: row.desiredFormat as Format | null,
     fieldClocks: JSON.parse(row.fieldClocks) as WishlistItem["fieldClocks"],
   };

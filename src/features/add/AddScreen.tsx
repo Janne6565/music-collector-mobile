@@ -1,16 +1,17 @@
-import { CameraView, useCameraPermissions } from "expo-camera";
 import { useRouter } from "expo-router";
 import {
   ArrowUpLeft,
   Clock,
+  CopyPlus,
   Heart,
-  Plus,
+  LibraryBig,
   PencilLine,
   ScanBarcode,
   Search,
   SearchX,
   X,
 } from "lucide-react-native";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
@@ -29,10 +30,11 @@ import { useCross } from "@/lib/motion";
 import { FormatThumb } from "@/components/FormatThumb";
 import { Skeleton } from "@/components/Skeleton";
 import { ReleaseArt } from "@/components/ReleaseArt";
-import type { Artist, Format, Release, WishlistItem } from "@janne6565/rekordo-shared";
-import { FORMAT_LABELS } from "@janne6565/rekordo-shared";
+import type { Artist, Copy, Format, Release, WishlistItem } from "@janne6565/rekordo-shared";
+import { CONDITION_SHORT, FORMAT_LABELS } from "@janne6565/rekordo-shared";
 import { FORMAT_FILTERS, useAddLogic } from "@/features/add/useAddLogic";
-import { WishSheet } from "@/features/wishlist/WishSheet";
+import { AddSheet } from "@/features/add/AddSheet";
+import type { AddDestination } from "@/features/add/useAddSheetLogic";
 import { colors, fonts } from "@/theme/colors";
 
 type Logic = ReturnType<typeof useAddLogic>;
@@ -69,39 +71,40 @@ export function AddScreen({ seedTerm = "" }: { readonly seedTerm?: string } = {}
   const { t } = useTranslation();
   const router = useRouter();
   const logic = useAddLogic(seedTerm);
-  const [permission, requestPermission] = useCameraPermissions();
+  /** A release a destination button was pressed on, which raises the confirm sheet (6c). */
+  const [confirming, setConfirming] = useState<{
+    release: Release;
+    destination: AddDestination;
+  } | null>(null);
 
-  if (logic.scanning) {
-    return <Scanner onScan={logic.handleScan} onCancel={logic.stopScanning} />;
-  }
-
-  const scan = async () => {
-    if (permission?.granted !== true) {
-      const result = await requestPermission();
-      if (!result.granted) return;
-    }
-    logic.startScanning();
-  };
+  /*
+   * Scanning is a screen of its own now, not a mode this one switches into.
+   *
+   * It used to be a black overlay owned by the search: one barcode, dumped into the search
+   * box, and back. A crate is scanned in a run of twenty, so the scanner grew a tray, a
+   * confirm card and a batch — none of which belongs to a search field.
+   */
+  const scan = () => router.push("/scan");
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <View style={styles.header}>
         <View style={styles.searchBox}>
-          <Search size={16} color="rgba(255,255,255,0.65)" strokeWidth={1.75} />
+          <Search size={16} color={colors.inkMuted} strokeWidth={1.75} />
           <TextInput
             value={logic.term}
             onChangeText={logic.setTerm}
             onSubmitEditing={logic.submit}
             returnKeyType="search"
             placeholder={t("add.searchPlaceholder")}
-            placeholderTextColor="rgba(255,255,255,0.42)"
+            placeholderTextColor={colors.inkSubtle}
             style={styles.searchInput}
           />
           {/* The spinner belongs to the field that caused the wait, so the cause and the
               wait are in the same place. It replaces the clear button rather than sitting
               beside it, which keeps the field's contents from shifting mid-search. */}
           {logic.searching ? (
-            <ActivityIndicator size="small" color="rgba(255,255,255,0.7)" />
+            <ActivityIndicator size="small" color={colors.inkMuted} />
           ) : logic.term !== "" ? (
             <Pressable
               accessibilityRole="button"
@@ -109,7 +112,7 @@ export function AddScreen({ seedTerm = "" }: { readonly seedTerm?: string } = {}
               onPress={() => logic.setTerm("")}
               style={styles.clear}
             >
-              <X size={12} color={colors.night} strokeWidth={1.75} />
+              <X size={12} color="#ffffff" strokeWidth={1.75} />
             </Pressable>
           ) : null}
         </View>
@@ -120,16 +123,28 @@ export function AddScreen({ seedTerm = "" }: { readonly seedTerm?: string } = {}
 
       {logic.showFormatFilter && <FormatChips logic={logic} />}
 
-      <Body logic={logic} onScan={() => void scan()} />
+      <Body logic={logic} onScan={scan} onConfirm={setConfirming} />
 
-      {logic.wishFor !== null && (
-        <WishSheet onClose={logic.closeWish} release={logic.wishFor} />
+      {confirming !== null && (
+        <AddSheet
+          release={confirming.release}
+          destination={confirming.destination}
+          onClose={() => setConfirming(null)}
+        />
       )}
     </SafeAreaView>
   );
 }
 
-function Body({ logic, onScan }: { readonly logic: Logic; readonly onScan: () => void }) {
+function Body({
+  logic,
+  onScan,
+  onConfirm,
+}: {
+  readonly logic: Logic;
+  readonly onScan: () => void;
+  readonly onConfirm: (subject: { release: Release; destination: AddDestination }) => void;
+}) {
   const { t } = useTranslation();
   const router = useRouter();
   /*
@@ -183,24 +198,25 @@ function Body({ logic, onScan }: { readonly logic: Logic; readonly onScan: () =>
       contentContainerStyle={styles.list}
       keyboardShouldPersistTaps="handled"
       ListHeaderComponent={
-        <>
-          {/* Screen 10a: artists first, in their own section. A band name searched in the
-              release index returns records *called* that name, so the artists are the
-              answer to the question that was actually asked. */}
-          <ArtistResults logic={logic.artists} onOpen={openArtist} />
-          <View style={styles.releasesHeader}>
-            <Text style={styles.section}>
-              {t("add.releaseCount", { count: logic.unfilteredCount })}
-            </Text>
-            {/* The deck puts the way into manual entry here, beside the releases it is an
-                alternative to: the moment you can see the archive's answer is not the one
-                you are holding is the moment you want to type it in yourself. */}
-            <Pressable accessibilityRole="button" onPress={() => router.push("/manual")}>
-              <Text style={styles.sectionAction}>{t("add.manualCard.title")}</Text>
-            </Pressable>
-          </View>
-        </>
+        <View style={styles.releasesHeader}>
+          <Text style={styles.section}>{t("add.releases")}</Text>
+          {/* The deck puts the way into manual entry here, beside the releases it is an
+              alternative to: the moment you can see the archive's answer is not the one
+              you are holding is the moment you want to type it in yourself. */}
+          <Pressable accessibilityRole="button" onPress={() => router.push("/manual")}>
+            <Text style={styles.sectionAction}>{t("add.manualCard.title")}</Text>
+          </Pressable>
+        </View>
       }
+      /*
+       * Releases first, artists under them.
+       *
+       * The block order is the answer order: somebody typing "miles davis" into an add
+       * screen is usually holding a record, and the artist block is the way out when the
+       * pressing in their hand is not one of the three rows above. It used to be the other
+       * way round, which put a discography in front of the record being added.
+       */
+      ListFooterComponent={<ArtistResults logic={logic.artists} onOpen={openArtist} />}
       ListEmptyComponent={
         <Text style={styles.hint}>
           {t("add.noneOfFormat", { format: FORMAT_LABELS[logic.format as Format] })}
@@ -209,10 +225,9 @@ function Body({ logic, onScan }: { readonly logic: Logic; readonly onScan: () =>
       renderItem={({ item }) => (
         <ResultRow
           release={item}
-          adding={logic.addingMbid === item.id}
-          onAdd={() => logic.addRelease(item)}
-          wishing={false}
-          onWish={() => logic.openWish(item)}
+          owned={logic.ownedCopy(item)}
+          onShelf={() => onConfirm({ release: item, destination: "SHELF" })}
+          onWish={() => onConfirm({ release: item, destination: "WISHLIST" })}
         />
       )}
     />
@@ -301,7 +316,7 @@ function BeforeTyping({ logic, onScan }: { readonly logic: Logic; readonly onSca
     <ScrollView contentContainerStyle={styles.list} keyboardShouldPersistTaps="handled">
       <View style={styles.shortcuts}>
         <Pressable accessibilityRole="button" onPress={onScan} style={styles.shortcut}>
-          <ScanBarcode size={20} color="#fff" strokeWidth={1.6} />
+          <ScanBarcode size={20} color={colors.ink} strokeWidth={1.6} />
           <Text style={styles.shortcutTitle}>{t("add.scanCard.title")}</Text>
           <Text style={styles.shortcutBody}>{t("add.scanCard.body")}</Text>
         </Pressable>
@@ -311,7 +326,7 @@ function BeforeTyping({ logic, onScan }: { readonly logic: Logic; readonly onSca
           onPress={() => router.push("/manual")}
           style={styles.shortcut}
         >
-          <PencilLine size={20} color="#fff" strokeWidth={1.6} />
+          <PencilLine size={20} color={colors.ink} strokeWidth={1.6} />
           <Text style={styles.shortcutTitle}>{t("add.manualCard.title")}</Text>
           <Text style={styles.shortcutBody}>{t("add.manualBody")}</Text>
         </Pressable>
@@ -332,11 +347,11 @@ function BeforeTyping({ logic, onScan }: { readonly logic: Logic; readonly onSca
               onPress={() => logic.repeatSearch(term)}
               style={styles.recentRow}
             >
-              <Clock size={16} color="rgba(255,255,255,0.4)" strokeWidth={1.75} />
+              <Clock size={16} color={colors.inkSubtle} strokeWidth={1.75} />
               <Text style={styles.recentText} numberOfLines={1}>
                 {term}
               </Text>
-              <ArrowUpLeft size={15} color="rgba(255,255,255,0.35)" strokeWidth={1.75} />
+              <ArrowUpLeft size={15} color={colors.inkSubtle} strokeWidth={1.75} />
             </Pressable>
           ))}
         </>
@@ -365,8 +380,11 @@ function BeforeTyping({ logic, onScan }: { readonly logic: Logic; readonly onSca
                   {item.desiredFormat === null ? "" : ` · ${FORMAT_LABELS[item.desiredFormat]}`}
                 </Text>
               </View>
-              <View style={styles.rowAdd}>
-                <Plus size={16} color="#fff" strokeWidth={1.75} />
+              {/* Not a destination button: this row runs the wish's own search, which is
+                  what the block is for. A search icon says that; a plus would promise a
+                  copy the tap does not make. */}
+              <View style={[styles.rowAdd, styles.rowAddOwned]}>
+                <Search size={15} color={colors.inkMuted} strokeWidth={1.8} />
               </View>
             </Pressable>
           ))}
@@ -384,7 +402,7 @@ function BarcodeNotFound({ logic, onScan }: { readonly logic: Logic; readonly on
   return (
     <ScrollView contentContainerStyle={styles.list} keyboardShouldPersistTaps="handled">
       <View style={styles.scanned}>
-        <ScanBarcode size={18} color="rgba(255,255,255,0.6)" strokeWidth={1.6} />
+        <ScanBarcode size={18} color={colors.inkMuted} strokeWidth={1.6} />
         <View style={styles.rowBody}>
           <Text style={styles.scannedCode}>{logic.submittedTerm}</Text>
           <Text style={styles.scannedSource}>{t("add.checkedSources")}</Text>
@@ -396,7 +414,7 @@ function BarcodeNotFound({ logic, onScan }: { readonly logic: Logic; readonly on
 
       <View style={styles.emptyState}>
         <View style={styles.emptyIcon}>
-          <SearchX size={26} color="rgba(255,255,255,0.55)" strokeWidth={1.5} />
+          <SearchX size={26} color={colors.inkMuted} strokeWidth={1.5} />
         </View>
         <Text style={styles.emptyTitle}>{t("add.barcodeMissing.title")}</Text>
         <Text style={styles.emptyBody}>{t("add.barcodeMissing.body")}</Text>
@@ -417,25 +435,33 @@ function BarcodeNotFound({ logic, onScan }: { readonly logic: Logic; readonly on
         onPress={() => logic.setTerm("")}
         style={styles.secondaryAction}
       >
-        <Search size={16} color="#fff" strokeWidth={1.9} />
+        <Search size={16} color={colors.ink} strokeWidth={1.9} />
         <Text style={styles.secondaryActionText}>{t("add.searchByTitle")}</Text>
       </Pressable>
     </ScrollView>
   );
 }
 
-/** One row per release *and* format, as screen 2a lists them. */
+/**
+ * One row per release *and* format, as screen 6a lists them.
+ *
+ * Both destinations ride the row as icon buttons, equal in size and in weight, wishlist
+ * left and shelf right — the same order they take everywhere else in the app, so the hand
+ * learns one position. Neither writes anything: a search hit names a release and a shelf
+ * holds a pressing, so both raise the sheet that closes that gap.
+ *
+ * Owning one already does not take the buttons away. It says so under the title and steps
+ * them back, because a second pressing is an ordinary thing to buy.
+ */
 function ResultRow({
   release,
-  adding,
-  onAdd,
-  wishing,
+  owned,
+  onShelf,
   onWish,
 }: {
   readonly release: Release;
-  readonly adding: boolean;
-  readonly onAdd: () => void;
-  readonly wishing: boolean;
+  readonly owned: { readonly condition: Copy["condition"]; readonly addedAt: number } | null;
+  readonly onShelf: () => void;
   readonly onWish: () => void;
 }) {
   const { t } = useTranslation();
@@ -459,73 +485,56 @@ function ResultRow({
           {release.year === null ? "" : ` · ${release.year}`}
           {` · ${FORMAT_LABELS[release.format]}`}
         </Text>
-        {subtitle !== "" && (
-          <Text style={styles.rowMeta} numberOfLines={1}>
-            {subtitle}
-          </Text>
+        {owned !== null ? (
+          <View style={styles.rowOwnedLine}>
+            <LibraryBig size={10} color={colors.accentStrong} strokeWidth={2.2} />
+            <Text style={styles.rowOwnedText} numberOfLines={1}>
+              {owned.condition === null
+                ? t("add.ownedNoGrade")
+                : t("add.owned", { grade: CONDITION_SHORT[owned.condition] })}
+            </Text>
+          </View>
+        ) : (
+          subtitle !== "" && (
+            <Text style={styles.rowMeta} numberOfLines={1}>
+              {subtitle}
+            </Text>
+          )
         )}
       </View>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={t("wishlist.addToWishlist")}
         onPress={onWish}
-        disabled={wishing}
-        style={styles.rowAdd}
+        style={[styles.rowAdd, owned !== null && styles.rowAddOwned]}
       >
-        {wishing ? (
-          <ActivityIndicator size="small" color="#fff" />
-        ) : (
-          <Heart size={15} color="rgba(255,255,255,0.7)" strokeWidth={1.75} />
-        )}
+        <Heart
+          size={15}
+          color={owned === null ? "#ffffff" : colors.inkMuted}
+          strokeWidth={owned === null ? 1.9 : 1.8}
+        />
       </Pressable>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={t("add.add")}
-        onPress={onAdd}
-        disabled={adding}
-        style={styles.rowAdd}
+        accessibilityLabel={owned === null ? t("add.add") : t("addSheet.secondCopy")}
+        onPress={onShelf}
+        style={[styles.rowAdd, owned !== null && styles.rowAddOwned]}
       >
-        {adding ? (
-          <ActivityIndicator size="small" color="#fff" />
+        {owned === null ? (
+          <LibraryBig size={15} color="#ffffff" strokeWidth={1.9} />
         ) : (
-          <Plus size={16} color="#fff" strokeWidth={1.75} />
+          <CopyPlus size={15} color={colors.inkMuted} strokeWidth={1.8} />
         )}
       </Pressable>
     </View>
   );
 }
 
-function Scanner({
-  onScan,
-  onCancel,
-}: {
-  readonly onScan: (code: string) => void;
-  readonly onCancel: () => void;
-}) {
-  const { t } = useTranslation();
-  return (
-    <View style={styles.scanner}>
-      <CameraView
-        style={StyleSheet.absoluteFill}
-        barcodeScannerSettings={{ barcodeTypes: ["ean13", "ean8", "upc_a", "upc_e"] }}
-        onBarcodeScanned={(result) => onScan(result.data)}
-      />
-      <SafeAreaView style={styles.scannerOverlay} edges={["top", "bottom"]}>
-        <Pressable onPress={onCancel} accessibilityRole="button" style={styles.scannerClose}>
-          <X size={20} color="#fff" strokeWidth={1.75} />
-        </Pressable>
-        <View style={styles.scannerFrame} />
-        <Text style={styles.scannerHint}>{t("add.scanHint")}</Text>
-      </SafeAreaView>
-    </View>
-  );
-}
-
-const RAISED = "rgba(255,255,255,0.07)";
-const HAIRLINE = "rgba(255,255,255,0.09)";
+const HAIRLINE = "rgba(25,23,19,0.08)";
+const MONO = "ui-monospace";
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.night },
+  safe: { flex: 1, backgroundColor: colors.paper },
   header: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 18, paddingTop: 8 },
   searchBox: {
     flex: 1,
@@ -535,26 +544,34 @@ const styles = StyleSheet.create({
     height: 44,
     paddingHorizontal: 15,
     borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.1)",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255,255,255,0.24)",
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.ink,
   },
-  searchInput: { flex: 1, fontSize: 14, color: "#fff" },
+  searchInput: { flex: 1, fontSize: 14, color: colors.ink },
   clear: {
     width: 18,
     height: 18,
     borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.25)",
+    backgroundColor: "rgba(25,23,19,0.16)",
     alignItems: "center",
     justifyContent: "center",
   },
-  cancel: { fontSize: 13.5, fontWeight: "500", color: "rgba(255,255,255,0.6)" },
-  hint: { fontSize: 13, color: "rgba(255,255,255,0.5)", padding: 18 },
+  cancel: { fontSize: 13.5, fontWeight: "500", color: colors.inkMuted },
+  hint: { fontSize: 13, color: colors.inkMuted, padding: 18 },
   list: { paddingHorizontal: 18, paddingTop: 14, paddingBottom: 28 },
   shortcuts: { flexDirection: "row", gap: 10 },
-  shortcut: { flex: 1, gap: 9, padding: 14, borderRadius: 12, backgroundColor: RAISED },
-  shortcutTitle: { fontSize: 13, fontWeight: "600", color: "#fff" },
-  shortcutBody: { fontSize: 11, lineHeight: 16, color: "rgba(255,255,255,0.45)" },
+  shortcut: {
+    flex: 1,
+    gap: 9,
+    padding: 14,
+    borderRadius: 12,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: "rgba(25,23,19,0.09)",
+  },
+  shortcutTitle: { fontSize: 13, fontWeight: "600", color: colors.ink },
+  shortcutBody: { fontSize: 11, lineHeight: 16, color: colors.inkSubtle },
   sectionRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -565,10 +582,10 @@ const styles = StyleSheet.create({
     fontSize: 10,
     letterSpacing: 1.2,
     textTransform: "uppercase",
-    color: "rgba(255,255,255,0.4)",
+    color: colors.inkSubtle,
   },
   sectionSpaced: { marginTop: 26 },
-  sectionAction: { fontSize: 11.5, fontWeight: "500", color: "rgba(255,255,255,0.45)" },
+  sectionAction: { fontSize: 11.5, fontWeight: "500", color: colors.accent },
   recentRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -577,7 +594,7 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: HAIRLINE,
   },
-  recentText: { flex: 1, fontSize: 14, color: "#fff" },
+  recentText: { flex: 1, fontSize: 14, color: colors.ink },
   row: {
     flexDirection: "row",
     alignItems: "center",
@@ -612,9 +629,11 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    backgroundColor: "rgba(255,255,255,0.1)",
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: "rgba(25,23,19,0.12)",
   },
-  formatChipActive: { backgroundColor: "#fff" },
+  formatChipActive: { backgroundColor: colors.ink, borderColor: colors.ink },
   /*
    * The line height is spelled out because the chip is exactly as tall as this text: with
    * the box no longer stretching, a line sized to the glyphs alone cropped the tails off
@@ -625,49 +644,58 @@ const styles = StyleSheet.create({
     fontSize: 11.5,
     lineHeight: 16,
     fontWeight: "500",
-    color: "rgba(255,255,255,0.7)",
+    color: colors.inkMuted,
   },
-  formatChipTextActive: { fontWeight: "600", color: colors.night },
+  formatChipTextActive: { fontWeight: "600", color: "#ffffff" },
   rowBody: { flex: 1 },
-  rowTitle: { fontSize: 13.5, fontWeight: "600", color: "#fff" },
-  rowSubtitle: { fontSize: 11.5, color: "rgba(255,255,255,0.55)" },
-  rowMeta: { fontSize: 10, color: "rgba(255,255,255,0.38)" },
+  rowTitle: { fontSize: 13.5, fontWeight: "600", color: colors.ink },
+  rowSubtitle: { fontSize: 11.5, color: colors.inkMuted },
+  rowMeta: { fontSize: 10, color: colors.inkSubtle },
   rowAdd: {
-    width: 30,
-    height: 30,
+    width: 34,
+    height: 34,
     borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.14)",
+    backgroundColor: colors.ink,
     alignItems: "center",
     justifyContent: "center",
   },
+  /* Owning one already does not take the buttons away, it steps them back: a second
+     pressing is a normal thing to buy, and a disabled button would refuse it. */
+  rowAddOwned: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: "rgba(25,23,19,0.14)",
+  },
+  rowOwnedLine: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 2 },
+  rowOwnedText: { fontFamily: MONO, fontSize: 10, color: colors.accentStrong },
   scanned: {
     flexDirection: "row",
     alignItems: "center",
     gap: 11,
     padding: 13,
     borderRadius: 12,
-    backgroundColor: RAISED,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255,255,255,0.1)",
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: "rgba(25,23,19,0.09)",
   },
-  scannedCode: { fontSize: 12, fontVariant: ["tabular-nums"], color: "#fff" },
-  scannedSource: { fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2 },
-  rescan: { fontSize: 11.5, fontWeight: "500", color: "rgba(255,255,255,0.55)" },
+  scannedCode: { fontSize: 12, fontVariant: ["tabular-nums"], color: colors.ink },
+  scannedSource: { fontSize: 11, color: colors.inkSubtle, marginTop: 2 },
+  rescan: { fontSize: 11.5, fontWeight: "500", color: colors.accent },
   emptyState: { alignItems: "center", marginTop: 34, gap: 8 },
   emptyIcon: {
     width: 56,
     height: 56,
     borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.08)",
+    backgroundColor: "rgba(25,23,19,0.06)",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 10,
   },
-  emptyTitle: { fontFamily: fonts.serif, fontSize: 24, color: "#fff", textAlign: "center" },
+  emptyTitle: { fontFamily: fonts.serif, fontSize: 24, color: colors.ink, textAlign: "center" },
   emptyBody: {
     fontSize: 13,
     lineHeight: 21,
-    color: "rgba(255,255,255,0.5)",
+    color: colors.inkMuted,
     textAlign: "center",
   },
   primaryAction: {
@@ -678,9 +706,9 @@ const styles = StyleSheet.create({
     height: 48,
     marginTop: 26,
     borderRadius: 999,
-    backgroundColor: "#fff",
+    backgroundColor: colors.ink,
   },
-  primaryActionText: { fontSize: 14, fontWeight: "600", color: colors.night },
+  primaryActionText: { fontSize: 14, fontWeight: "600", color: "#ffffff" },
   secondaryAction: {
     flexDirection: "row",
     alignItems: "center",
@@ -689,11 +717,11 @@ const styles = StyleSheet.create({
     height: 48,
     marginTop: 10,
     borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.1)",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255,255,255,0.16)",
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: "rgba(25,23,19,0.14)",
   },
-  secondaryActionText: { fontSize: 14, fontWeight: "600", color: "#fff" },
+  secondaryActionText: { fontSize: 14, fontWeight: "600", color: colors.ink },
   scanner: { flex: 1, backgroundColor: "#000" },
   scannerOverlay: { flex: 1, alignItems: "center", justifyContent: "center", gap: 18 },
   scannerClose: { position: "absolute", top: 12, left: 18, padding: 8 },

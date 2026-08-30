@@ -1,7 +1,21 @@
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { type Discography, lookupDiscography, lookupPressings } from "@/api/releases";
-import type { Album } from "@janne6565/rekordo-shared";
+import { useStore } from "@/local/StoreProvider";
+import type { Album, Condition } from "@janne6565/rekordo-shared";
+
+/**
+ * What you have already said about an album, drawn on its row.
+ *
+ * Three states rather than two booleans: a record is on the shelf, or being hunted, or
+ * neither, and the pair could otherwise hold "owned and wished" — which the wishlist
+ * empties itself precisely to prevent.
+ */
+export type AlbumMark = "OWNED" | "WISHED" | "NEITHER";
+
+/** The chips over the discography: what is yours, what you are hunting, what is left. */
+export const OWNERSHIP_FILTERS = ["ALL", "OWNED", "WISHED", "NEITHER"] as const;
+export type OwnershipFilter = (typeof OWNERSHIP_FILTERS)[number];
 /**
  * The primary types the artist screen offers, in the order the deck lists them.
  *
@@ -33,11 +47,45 @@ const REST_SECTIONS: readonly PrimaryType[] = ["Single", "Broadcast", "Other"];
  * "everything" query runs behind all of it purely to learn two totals nobody is waiting on.
  */
 export function useDiscographyLogic(artistMbid: string) {
+  const { store } = useStore();
   /** Null while the screen is at rest, showing the sections the deck opens with. */
   const [type, setType] = useState<PrimaryType | null>(null);
   const [filter, setFilter] = useState("");
   const [expandedAlbum, setExpandedAlbum] = useState<string | null>(null);
   const [restExpanded, setRestExpanded] = useState(false);
+  const [ownership, setOwnership] = useState<OwnershipFilter>("ALL");
+
+  /**
+   * Your marks on this artist's records, keyed by album.
+   *
+   * Read from the local store rather than asked of the server: this is the app's own data,
+   * it is the whole reason the discography is worth opening rather than browsing Discogs,
+   * and it has to be right with no connection at all.
+   */
+  const marks = useQuery({
+    queryKey: ["albumMarks"],
+    queryFn: async () => {
+      const copies = await store.listCopies();
+      const releases = await store.getReleases(copies.map((copy) => copy.releaseId));
+      const owned = new Map<string, Condition | null>();
+      for (const copy of copies) {
+        const album = releases.get(copy.releaseId)?.albumId;
+        if (album === undefined) continue;
+        // The first grade found stands for the album: the row is saying "you have this
+        // record", and picking between two copies' grades is the copy screen's job.
+        if (!owned.has(album)) owned.set(album, copy.condition);
+      }
+      const wished = new Set((await store.listWishlist()).map((wish) => wish.albumId));
+      return { owned, wished };
+    },
+  });
+
+  const markOf = (album: Album): AlbumMark =>
+    marks.data?.owned.has(album.albumId) === true
+      ? "OWNED"
+      : marks.data?.wished.has(album.albumId) === true
+        ? "WISHED"
+        : "NEITHER";
 
   /** The sections actually being fetched: one chosen type, or the deck's default pair. */
   const active = useMemo(() => {
@@ -78,22 +126,37 @@ export function useDiscographyLogic(artistMbid: string) {
    * nothing — but only while filtering, so a type that genuinely has no releases still
    * gets to say so.
    */
-  const sections = active
-    .map((sectionType, index) => {
-      const data = results[index]?.data as Discography | undefined;
-      const albums = data?.albums ?? [];
-      return {
-        type: sectionType,
-        albums:
-          term === ""
-            ? albums
-            : albums.filter((album) => album.title.toLowerCase().includes(term)),
-        total: data?.total ?? null,
-        loading: results[index]?.isFetching === true,
-        failed: results[index]?.isError === true,
-      };
-    })
-    .filter((section) => term === "" || section.albums.length > 0);
+  /**
+   * The sections with the typed filter applied, before the chips narrow them further.
+   *
+   * Kept separate because the chips have to count what they are about to hide: counts
+   * taken after the chip was applied would read "Yours · 4" only while Yours was selected,
+   * and 0 the rest of the time.
+   */
+  const matching = active.map((sectionType, index) => {
+    const data = results[index]?.data as Discography | undefined;
+    const albums = data?.albums ?? [];
+    return {
+      type: sectionType,
+      albums:
+        term === "" ? albums : albums.filter((album) => album.title.toLowerCase().includes(term)),
+      total: data?.total ?? null,
+      loading: results[index]?.isFetching === true,
+      failed: results[index]?.isError === true,
+    };
+  });
+
+  const sections = matching
+    .map((section) => ({
+      ...section,
+      albums:
+        ownership === "ALL"
+          ? section.albums
+          : section.albums.filter((album) => markOf(album) === ownership),
+    }))
+    // A section the filters empty disappears with them, rather than leaving a heading over
+    // nothing — but only while filtering, so a type that genuinely has none still says so.
+    .filter((section) => (term === "" && ownership === "ALL") || section.albums.length > 0);
 
   const pressings = useQuery({
     queryKey: ["pressings", expandedAlbum],
@@ -123,6 +186,21 @@ export function useDiscographyLogic(artistMbid: string) {
     filter,
     setFilter,
     filtering: term !== "",
+    ownership,
+    setOwnership,
+    markOf,
+    /** The grade of the copy standing for an owned album, when it has one. */
+    gradeOf: (album: Album) => marks.data?.owned.get(album.albumId) ?? null,
+    /**
+     * The chip counts, over what has actually been fetched.
+     *
+     * Deliberately not over `releaseCount`: that number counts release groups the typed
+     * queries have never asked for, and a "Not yours · 312" that included 300 broadcasts
+     * nobody will ever scroll to would be a true number saying something false.
+     */
+    ownershipCounts: countMarks(matching, markOf),
+    /** How many rows are on screen, for 6d's "2 of 61 releases". */
+    shownCount: sections.reduce((sum, section) => sum + section.albums.length, 0),
     sections,
     totals,
     /** What MusicBrainz says the artist has in total, once that answer has arrived. */
@@ -162,4 +240,18 @@ export function useDiscographyLogic(artistMbid: string) {
     pressingsLoading: pressings.isFetching,
     pressingsFailed: pressings.isError,
   };
+}
+
+function countMarks(
+  sections: readonly { readonly albums: readonly Album[] }[],
+  markOf: (album: Album) => AlbumMark,
+): Record<OwnershipFilter, number> {
+  const counts: Record<OwnershipFilter, number> = { ALL: 0, OWNED: 0, WISHED: 0, NEITHER: 0 };
+  for (const section of sections) {
+    for (const album of section.albums) {
+      counts.ALL += 1;
+      counts[markOf(album)] += 1;
+    }
+  }
+  return counts;
 }

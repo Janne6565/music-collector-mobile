@@ -26,6 +26,8 @@ function toCopy(raw: unknown): Copy | null {
   return {
     id: dto.id,
     releaseId: dto.releaseId,
+    // Absent means a server older than the field, which reads as nothing pending.
+    pendingBarcode: dto.pendingBarcode ?? null,
     // The pressing a hand-entered copy describes itself. Null throughout on a matched one,
     // and on anything a server older than the fields sends back.
     manualTitle: dto.manualTitle ?? null,
@@ -71,6 +73,7 @@ function toWish(raw: unknown): WishlistItem | null {
     albumId: dto.albumId,
     // Absent means a server older than the field, which reads as no pressing picked.
     releaseId: dto.releaseId ?? null,
+    pendingBarcode: dto.pendingBarcode ?? null,
     title: dto.title,
     artistName: dto.artistName,
     year: dto.year ?? null,

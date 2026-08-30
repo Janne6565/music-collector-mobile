@@ -26,6 +26,7 @@ export interface ManualFields {
   title: string;
   year: string;
   label: string;
+  catalogNumber: string;
   format: Format;
 }
 
@@ -34,6 +35,7 @@ const EMPTY: ManualFields = {
   title: "",
   year: "",
   label: "",
+  catalogNumber: "",
   format: DEFAULT_FORMAT,
 };
 
@@ -125,7 +127,7 @@ export function useManualEntryLogic() {
         manualArtist: blankToNull(fields.artist),
         manualYear: Number.isNaN(year) ? null : year,
         manualLabel: blankToNull(fields.label),
-        manualCatalogNumber: null,
+        manualCatalogNumber: blankToNull(fields.catalogNumber),
         manualFormat: fields.format,
       };
       const copy = createManualCopy(

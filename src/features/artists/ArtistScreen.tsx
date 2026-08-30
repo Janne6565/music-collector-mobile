@@ -1,5 +1,14 @@
-import { Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Search } from "lucide-react-native";
-import type { ReactNode } from "react";
+import {
+  Check,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  Heart,
+  LibraryBig,
+  Search,
+} from "lucide-react-native";
+import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
@@ -13,15 +22,21 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { releaseDisambiguation } from "@/api/releases";
+import { lookupPressings, releaseDisambiguation } from "@/api/releases";
 import { ReleaseArt } from "@/components/ReleaseArt";
 import { Skeleton } from "@/components/Skeleton";
 import type { Album, Artist, Release } from "@janne6565/rekordo-shared";
-import { FORMAT_LABELS } from "@janne6565/rekordo-shared";
+import { CONDITION_SHORT, FORMAT_LABELS } from "@janne6565/rekordo-shared";
+import { AddSheet } from "@/features/add/AddSheet";
 import { ArtistAvatar } from "@/features/add/ArtistResults";
+import type { AddDestination } from "@/features/add/useAddSheetLogic";
 import { useAddCopy } from "@/features/add/useAddCopy";
 import { useMarkRing } from "@/lib/motion";
-import { PRIMARY_TYPES, useDiscographyLogic } from "@/features/artists/useDiscographyLogic";
+import {
+  OWNERSHIP_FILTERS,
+  PRIMARY_TYPES,
+  useDiscographyLogic,
+} from "@/features/artists/useDiscographyLogic";
 import { colors } from "@/theme/colors";
 
 type Logic = ReturnType<typeof useDiscographyLogic>;
@@ -49,6 +64,41 @@ export function ArtistScreen({ artist, fromQuery }: ArtistScreenProps) {
   const logic = useDiscographyLogic(artist.mbid);
   const { add, addingMbid, added } = useAddCopy({ stay: true });
 
+  /**
+   * A destination pressed on an album row, resolved to the pressing the sheet is about.
+   *
+   * An album is not an object you can own — "Bitches Brew" is one row here and forty-seven
+   * pressings in the archive — so the row cannot write anything by itself. It fetches the
+   * pressings and hands the archive's first to the same sheet a search result opens, which
+   * is where the other forty-six are one tap away.
+   */
+  const [sheet, setSheet] = useState<{
+    release: Release;
+    destination: AddDestination;
+  } | null>(null);
+  const [resolving, setResolving] = useState<string | null>(null);
+
+  const openSheet = async (album: Album, destination: AddDestination) => {
+    setResolving(album.albumId);
+    try {
+      const pressings = await lookupPressings(album.albumId, 100);
+      const first = pressings[0];
+      // Nothing to add: the archive has the album but no pressing of it. Opening the album
+      // is then the only honest next step, and that is what the row already does.
+      if (first === undefined) {
+        logic.toggleAlbum(album);
+        return;
+      }
+      setSheet({ release: first, destination });
+    } catch {
+      // No connection, or the proxy is down. The pressings list under the row says so in
+      // its own words, so unfolding it is both the fallback and the explanation.
+      logic.toggleAlbum(album);
+    } finally {
+      setResolving(null);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <View style={styles.header}>
@@ -58,7 +108,7 @@ export function ArtistScreen({ artist, fromQuery }: ArtistScreenProps) {
           onPress={() => router.back()}
           style={styles.back}
         >
-          <ChevronLeft size={18} color="#fff" strokeWidth={1.75} />
+          <ChevronLeft size={18} color={colors.inkMuted} strokeWidth={1.9} />
         </Pressable>
         <Text style={styles.headerCaption} numberOfLines={1}>
           {t("artists.resultsFor", { query: fromQuery })}
@@ -70,50 +120,109 @@ export function ArtistScreen({ artist, fromQuery }: ArtistScreenProps) {
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
         <ArtistHeader artist={artist} logic={logic} />
 
-        <View style={styles.filterBox}>
-          <Search size={15} color="rgba(255,255,255,0.5)" strokeWidth={1.75} />
+        <View style={[styles.filterBox, logic.filtering && styles.filterFocused]}>
+          <Search size={15} color={colors.inkMuted} strokeWidth={1.75} />
           <TextInput
             value={logic.filter}
             onChangeText={logic.setFilter}
             placeholder={t("artists.filterPlaceholder", { name: artist.name })}
-            placeholderTextColor="rgba(255,255,255,0.42)"
+            placeholderTextColor={colors.inkSubtle}
             style={styles.filterInput}
           />
+          {/* The scope, in the field rather than above it (6d): what is being searched is
+              this artist's records, and a field that looks like every other search field
+              would suggest otherwise. */}
+          {logic.filtering && (
+            <Text style={styles.filterScope} numberOfLines={1}>
+              {artist.name}
+            </Text>
+          )}
         </View>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.chips}
-        >
-          <TypeChip
-            label={t("artists.type.Default")}
-            count={null}
-            active={logic.type === null}
-            onPress={() => logic.setType(null)}
-          />
-          {PRIMARY_TYPES.map((primaryType) => (
-            <TypeChip
-              key={primaryType}
-              label={t(`artists.type.${primaryType}`)}
-              count={logic.totals[primaryType]}
-              active={logic.type === primaryType}
-              onPress={() => logic.setType(primaryType)}
-            />
-          ))}
-        </ScrollView>
+        {/*
+         * Both chip rows step aside while the field has something in it (6d).
+         *
+         * Typing is already the narrowest filter on screen, and leaving two rows of
+         * competing ones above the results makes a short list look like a filtered one.
+         * What replaces them is the count, which is the only thing worth knowing then.
+         */}
+        {logic.filtering ? (
+          <Text style={styles.section}>
+            {t("artists.shownOf", { shown: logic.shownCount, total: logic.releaseCount ?? 0 })}
+          </Text>
+        ) : (
+          <>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.chips}
+            >
+              <TypeChip
+                label={t("artists.type.Default")}
+                count={null}
+                active={logic.type === null}
+                onPress={() => logic.setType(null)}
+              />
+              {PRIMARY_TYPES.map((primaryType) => (
+                <TypeChip
+                  key={primaryType}
+                  label={t(`artists.type.${primaryType}`)}
+                  count={logic.totals[primaryType]}
+                  active={logic.type === primaryType}
+                  onPress={() => logic.setType(primaryType)}
+                />
+              ))}
+            </ScrollView>
+            {/*
+             * The second row, and the one the deck draws: what is yours, what you are
+             * hunting, what is left. Kept beside the type chips rather than instead of
+             * them — an artist with three hundred release groups needs both, and the deck
+             * sketched this screen with an artist who has sixty.
+             */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.chips}
+            >
+              {OWNERSHIP_FILTERS.map((filter) => (
+                <TypeChip
+                  key={filter}
+                  label={t(`artists.own.${filter}`)}
+                  count={filter === "ALL" ? null : logic.ownershipCounts[filter]}
+                  active={logic.ownership === filter}
+                  onPress={() => logic.setOwnership(filter)}
+                />
+              ))}
+            </ScrollView>
+          </>
+        )}
 
-        <Discography logic={logic} add={add} addingMbid={addingMbid} added={added} />
+        <Discography
+          logic={logic}
+          add={add}
+          addingMbid={addingMbid}
+          added={added}
+          onDestination={(album, destination) => void openSheet(album, destination)}
+          resolving={resolving}
+        />
 
         {logic.type === null && <RestDisclosure logic={logic} />}
 
         {logic.settling && (
           <View style={styles.settling}>
-            <ActivityIndicator size="small" color="rgba(255,255,255,0.6)" />
+            <ActivityIndicator size="small" color={colors.inkMuted} />
             <Text style={styles.settlingText}>{t("artists.paced")}</Text>
           </View>
         )}
       </ScrollView>
+
+      {sheet !== null && (
+        <AddSheet
+          release={sheet.release}
+          destination={sheet.destination}
+          onClose={() => setSheet(null)}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -128,6 +237,15 @@ function ArtistHeader({ artist, logic }: { readonly artist: Artist; readonly log
     // Only once the untyped query has answered. A release count that starts at the album
     // count and jumps to ten times it reads as a bug, not as loading.
     logic.releaseCount === null ? "" : t("artists.releaseCount", { count: logic.releaseCount }),
+    // 6b: your own marks on this artist, beside the archive's facts about them. Only once
+    // there is something to say — "you own 0 · 0 on your wishlist" is a sentence nobody
+    // needs on an artist they have just opened for the first time.
+    logic.ownershipCounts.OWNED === 0 && logic.ownershipCounts.WISHED === 0
+      ? ""
+      : t("artists.yourMarks", {
+          owned: logic.ownershipCounts.OWNED,
+          wished: logic.ownershipCounts.WISHED,
+        }),
   ].filter((fact) => fact !== "");
 
   return (
@@ -186,11 +304,15 @@ function Discography({
   add,
   addingMbid,
   added,
+  onDestination,
+  resolving,
 }: {
   readonly logic: Logic;
   readonly add: (release: Release) => void;
   readonly addingMbid: string | undefined;
   readonly added: string | null;
+  readonly onDestination: (album: Album, destination: AddDestination) => void;
+  readonly resolving: string | null;
 }) {
   const { t } = useTranslation();
 
@@ -222,6 +344,8 @@ function Discography({
                 add={add}
                 addingMbid={addingMbid}
                 added={added}
+                onDestination={onDestination}
+                resolving={resolving === album.albumId}
               />
             ))
           )}
@@ -237,15 +361,21 @@ function AlbumRow({
   add,
   addingMbid,
   added,
+  onDestination,
+  resolving,
 }: {
   readonly album: Album;
   readonly logic: Logic;
   readonly add: (release: Release) => void;
   readonly addingMbid: string | undefined;
   readonly added: string | null;
+  readonly onDestination: (album: Album, destination: AddDestination) => void;
+  readonly resolving: boolean;
 }) {
   const { t } = useTranslation();
   const expanded = logic.expandedAlbum === album.albumId;
+  const mark = logic.markOf(album);
+  const grade = logic.gradeOf(album);
 
   return (
     <View>
@@ -269,14 +399,51 @@ function AlbumRow({
             {[album.year, album.primaryType].filter((part) => part !== null).join(" · ")}
           </Text>
         </View>
-        <View style={styles.addPill}>
-          <Text style={styles.addPillText}>{t("add.add")}</Text>
-          {expanded ? (
-            <ChevronUp size={13} color="#fff" strokeWidth={2} />
-          ) : (
-            <ChevronRight size={13} color="#fff" strokeWidth={2} />
-          )}
-        </View>
+        {/*
+         * What the row offers depends on what you have already said about the record.
+         *
+         * Owned and wished rows say so and step back — the pressings are still one tap
+         * away under the row, which is where a second copy is chosen. Everything else
+         * carries the two destinations, in the order they take everywhere else.
+         */}
+        {mark === "OWNED" ? (
+          <View style={styles.mark}>
+            <Check size={11} color={colors.accentStrong} strokeWidth={2.4} />
+            <Text style={styles.markText}>
+              {grade === null ? t("artists.yours") : t("artists.yoursGraded", { grade: CONDITION_SHORT[grade] })}
+            </Text>
+          </View>
+        ) : mark === "WISHED" ? (
+          <View style={styles.mark}>
+            <Heart size={11} color={colors.accent} strokeWidth={2.4} />
+            <Text style={[styles.markText, styles.markWished]}>{t("artists.onWishlist")}</Text>
+          </View>
+        ) : (
+          <View style={styles.destinations}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t("wishlist.addToWishlist")}
+              onPress={() => onDestination(album, "WISHLIST")}
+              disabled={resolving}
+              style={styles.destination}
+            >
+              <Heart size={15} color="#ffffff" strokeWidth={1.9} />
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t("add.add")}
+              onPress={() => onDestination(album, "SHELF")}
+              disabled={resolving}
+              style={styles.destination}
+            >
+              {resolving ? (
+                <ActivityIndicator size="small" color="#ffffff" />
+              ) : (
+                <LibraryBig size={15} color="#ffffff" strokeWidth={1.9} />
+              )}
+            </Pressable>
+          </View>
+        )}
       </Pressable>
 
       {expanded && (
@@ -348,12 +515,12 @@ function Pressings({
               )}
             </View>
             {addingMbid === pressing.id ? (
-              <ActivityIndicator size="small" color="#fff" />
+              <ActivityIndicator size="small" color={colors.inkMuted} />
             ) : added === pressing.id ? (
               // The control itself is the answer: it became the tick, in place.
-              <Check size={15} color="#fff" strokeWidth={2} />
+              <Check size={15} color={colors.accentStrong} strokeWidth={2} />
             ) : (
-              <ChevronRight size={15} color="rgba(255,255,255,0.45)" strokeWidth={1.75} />
+              <ChevronRight size={15} color={colors.inkSubtle} strokeWidth={1.75} />
             )}
           </PressingRow>
         );
@@ -383,9 +550,9 @@ function RestDisclosure({ logic }: { readonly logic: Logic }) {
         </Text>
       </View>
       {logic.restExpanded ? (
-        <ChevronUp size={17} color="rgba(255,255,255,0.45)" strokeWidth={1.75} />
+        <ChevronUp size={17} color={colors.inkSubtle} strokeWidth={1.75} />
       ) : (
-        <ChevronDown size={17} color="rgba(255,255,255,0.45)" strokeWidth={1.75} />
+        <ChevronDown size={17} color={colors.inkSubtle} strokeWidth={1.75} />
       )}
     </Pressable>
   );
@@ -408,10 +575,11 @@ function AlbumSkeletons() {
   );
 }
 
-const HAIRLINE = "rgba(255,255,255,0.09)";
+const HAIRLINE = "rgba(25,23,19,0.08)";
+const MONO = "ui-monospace";
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.night },
+  safe: { flex: 1, backgroundColor: colors.paper },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -424,23 +592,25 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.14)",
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: "rgba(25,23,19,0.1)",
     alignItems: "center",
     justifyContent: "center",
   },
-  headerCaption: { flex: 1, textAlign: "center", fontSize: 11.5, color: "rgba(255,255,255,0.5)" },
+  headerCaption: { flex: 1, textAlign: "center", fontSize: 11.5, color: colors.inkMuted },
   body: { paddingHorizontal: 18, paddingTop: 14, paddingBottom: 32 },
   identity: { flexDirection: "row", gap: 14, alignItems: "flex-start" },
   identityBody: { flex: 1, paddingTop: 2 },
-  name: { fontSize: 28, lineHeight: 30, color: "#fff" },
-  disambiguation: { fontSize: 12.5, lineHeight: 19, color: "rgba(255,255,255,0.62)", marginTop: 6 },
+  name: { fontSize: 28, lineHeight: 30, color: colors.ink },
+  disambiguation: { fontSize: 12.5, lineHeight: 19, color: colors.inkMuted, marginTop: 6 },
   facts: { flexDirection: "row", flexWrap: "wrap", gap: 7, marginTop: 14 },
   fact: {
     fontSize: 10,
     letterSpacing: 0.8,
     textTransform: "uppercase",
-    color: "rgba(255,255,255,0.55)",
-    backgroundColor: "rgba(255,255,255,0.06)",
+    color: colors.inkMuted,
+    backgroundColor: "rgba(25,23,19,0.05)",
     borderRadius: 5,
     paddingHorizontal: 9,
     paddingVertical: 5,
@@ -450,8 +620,8 @@ const styles = StyleSheet.create({
     fontSize: 10,
     letterSpacing: 0.8,
     textTransform: "uppercase",
-    color: "rgba(255,255,255,0.7)",
-    backgroundColor: "rgba(255,255,255,0.1)",
+    color: colors.ink,
+    backgroundColor: "rgba(25,23,19,0.09)",
     borderRadius: 5,
     paddingHorizontal: 9,
     paddingVertical: 5,
@@ -465,30 +635,41 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     marginTop: 16,
     borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.08)",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255,255,255,0.18)",
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: "rgba(25,23,19,0.12)",
   },
-  filterInput: { flex: 1, fontSize: 13.5, color: "#fff" },
+  filterFocused: { borderWidth: 1.5, borderColor: colors.ink },
+  filterInput: { flex: 1, fontSize: 13.5, color: colors.ink },
+  /** 6d: the artist's name inside the field, saying what the search is scoped to. */
+  filterScope: {
+    fontFamily: MONO,
+    fontSize: 9.5,
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+    color: colors.inkSubtle,
+  },
   chips: { gap: 7, paddingTop: 12, paddingBottom: 2 },
   chip: {
     borderRadius: 999,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    backgroundColor: "rgba(255,255,255,0.1)",
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: "rgba(25,23,19,0.12)",
   },
-  chipActive: { backgroundColor: "#fff" },
-  chipText: { fontSize: 11.5, fontWeight: "500", color: "rgba(255,255,255,0.7)" },
-  chipTextActive: { fontWeight: "600", color: colors.night },
+  chipActive: { backgroundColor: colors.ink, borderColor: colors.ink },
+  chipText: { fontSize: 11.5, fontWeight: "500", color: colors.inkMuted },
+  chipTextActive: { fontWeight: "600", color: "#ffffff" },
   section: {
     fontSize: 10,
     letterSpacing: 1.2,
     textTransform: "uppercase",
-    color: "rgba(255,255,255,0.4)",
+    color: colors.inkSubtle,
     paddingTop: 22,
     paddingBottom: 4,
   },
-  hint: { fontSize: 13, color: "rgba(255,255,255,0.5)", paddingVertical: 18 },
+  hint: { fontSize: 13, color: colors.inkMuted, paddingVertical: 18 },
   row: {
     flexDirection: "row",
     alignItems: "center",
@@ -500,9 +681,9 @@ const styles = StyleSheet.create({
   albumThumb: { width: 62, height: 52 },
   albumThumbSkeleton: { width: 62, height: 52, borderRadius: 5 },
   rowBody: { flex: 1 },
-  rowTitle: { fontSize: 13.5, fontWeight: "600", color: "#fff" },
-  rowSubtitle: { fontSize: 11.5, color: "rgba(255,255,255,0.55)" },
-  rowMeta: { fontSize: 10, color: "rgba(255,255,255,0.38)" },
+  rowTitle: { fontSize: 13.5, fontWeight: "600", color: colors.ink },
+  rowSubtitle: { fontSize: 11.5, color: colors.inkMuted },
+  rowMeta: { fontSize: 10, color: colors.inkSubtle },
   addPill: {
     flexDirection: "row",
     alignItems: "center",
@@ -510,14 +691,30 @@ const styles = StyleSheet.create({
     height: 30,
     paddingHorizontal: 12,
     borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.14)",
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: "rgba(25,23,19,0.14)",
   },
-  addPillText: { fontSize: 11.5, fontWeight: "600", color: "#fff" },
+  addPillText: { fontSize: 11.5, fontWeight: "600", color: colors.inkMuted },
+  /* 6b: the two destinations on a row that offers them, and the line on a row that does
+     not — an album already yours says so and steps back rather than disappearing. */
+  destinations: { flexDirection: "row", gap: 7 },
+  destination: {
+    width: 34,
+    height: 34,
+    borderRadius: 999,
+    backgroundColor: colors.ink,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  mark: { flexDirection: "row", alignItems: "center", gap: 5 },
+  markText: { fontFamily: MONO, fontSize: 10, color: colors.accentStrong },
+  markWished: { color: colors.accent },
   pressings: {
     marginBottom: 4,
     paddingHorizontal: 13,
     borderRadius: 12,
-    backgroundColor: "rgba(255,255,255,0.05)",
+    backgroundColor: "rgba(25,23,19,0.04)",
   },
   pressingRow: {
     flexDirection: "row",
@@ -529,14 +726,14 @@ const styles = StyleSheet.create({
   markRing: {
     borderRadius: 8,
     borderWidth: 2,
-    borderColor: "#d08a5f",
+    borderColor: colors.accent,
     marginHorizontal: -6,
   },
-  pressingTitle: { fontSize: 12.5, fontWeight: "600", color: "#fff" },
+  pressingTitle: { fontSize: 12.5, fontWeight: "600", color: colors.ink },
   pressingHint: {
     fontSize: 11,
     lineHeight: 16,
-    color: "rgba(255,255,255,0.45)",
+    color: colors.inkMuted,
     paddingVertical: 10,
   },
   rest: {
@@ -546,18 +743,18 @@ const styles = StyleSheet.create({
     marginTop: 20,
     padding: 15,
     borderRadius: 12,
-    backgroundColor: "rgba(255,255,255,0.05)",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255,255,255,0.1)",
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: "rgba(25,23,19,0.09)",
   },
-  restTitle: { fontSize: 12.5, fontWeight: "600", color: "#fff" },
-  restBody: { fontSize: 11.5, lineHeight: 17, color: "rgba(255,255,255,0.5)", marginTop: 3 },
+  restTitle: { fontSize: 12.5, fontWeight: "600", color: colors.ink },
+  restBody: { fontSize: 11.5, lineHeight: 17, color: colors.inkMuted, marginTop: 3 },
   settling: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 14 },
   settlingText: {
     fontSize: 10,
     letterSpacing: 1,
     textTransform: "uppercase",
-    color: "rgba(255,255,255,0.4)",
+    color: colors.inkSubtle,
   },
 });
 

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { lookupByBarcode, searchReleases } from "@/api/releases";
-import type { Format, Release } from "@janne6565/rekordo-shared";
+import type { Copy, Format, Release } from "@janne6565/rekordo-shared";
 import { useAddCopy } from "@/features/add/useAddCopy";
 import { useArtistSearchLogic } from "@/features/add/useArtistSearchLogic";
 import { clearRecentSearches, readRecentSearches, rememberSearch } from "@/local/settings";
@@ -44,7 +44,6 @@ export function useAddLogic(seedTerm = "") {
   const queryClient = useQueryClient();
   const [term, setTerm] = useState(seedTerm);
   const [submitted, setSubmitted] = useState(seedTerm);
-  const [scanning, setScanning] = useState(false);
   const [format, setFormat] = useState<AddFormatFilter>("ALL");
 
   const resultsQuery = useQuery({
@@ -57,15 +56,6 @@ export function useAddLogic(seedTerm = "") {
   });
 
   const { add, addingMbid } = useAddCopy();
-
-  /**
-   * Wishing for something you do not own yet.
-   *
-   * The heart opens the sheet (screen 16c) rather than writing the entry on the spot: an
-   * entry is a release *plus* the format you want and a note, and a heart that silently
-   * guessed both would produce a list nobody wrote.
-   */
-  const [wishFor, setWishFor] = useState<Release | null>(null);
 
   /** The empty state of screen 5a: what you looked for last. */
   const recent = useQuery({
@@ -81,6 +71,28 @@ export function useAddLogic(seedTerm = "") {
   });
 
   const wishlist = useQuery({ queryKey: ["wishlist"], queryFn: () => store.listWishlist() });
+
+  /**
+   * What is already on the shelf, and the grade of it.
+   *
+   * Keyed by release, not album: owning the CD is not owning the LP, and telling somebody
+   * holding a different pressing that they already have it is how a collection ends up
+   * missing the record they were standing in the shop with.
+   */
+  const owned = useQuery({
+    queryKey: ["ownedReleases"],
+    queryFn: async () => {
+      const map = new Map<string, { condition: Copy["condition"]; addedAt: number }>();
+      for (const copy of await store.listCopies()) {
+        const seen = map.get(copy.releaseId);
+        // The oldest is the copy somebody thinks of as "the one I have".
+        if (seen === undefined || copy.createdAt < seen.addedAt) {
+          map.set(copy.releaseId, { condition: copy.condition, addedAt: copy.createdAt });
+        }
+      }
+      return map;
+    },
+  });
 
   const run = useCallback((query: string) => setSubmitted(query), []);
 
@@ -141,16 +153,6 @@ export function useAddLogic(seedTerm = "") {
     return () => clearTimeout(timer);
   }, [query, queryReady, submitted, run]);
 
-  /** A scanned barcode goes straight into the search box and submits itself. */
-  const handleScan = useCallback(
-    (barcode: string) => {
-      setScanning(false);
-      setTerm(barcode);
-      run(barcode);
-    },
-    [run],
-  );
-
   return {
     term,
     setTerm,
@@ -161,10 +163,6 @@ export function useAddLogic(seedTerm = "") {
       remember(query);
     }, [query, run, remember]),
     canSubmit: query !== "",
-    scanning,
-    startScanning: useCallback(() => setScanning(true), []),
-    stopScanning: useCallback(() => setScanning(false), []),
-    handleScan,
     results,
     /** How many came back before the chips narrowed them, for the empty-filter wording. */
     unfilteredCount: all.length,
@@ -204,8 +202,6 @@ export function useAddLogic(seedTerm = "") {
       add(release);
     },
     addingMbid,
-    wishFor,
-    openWish: (release: Release) => setWishFor(release),
-    closeWish: () => setWishFor(null),
+    ownedCopy: (release: Release) => owned.data?.get(release.id) ?? null,
   };
 }

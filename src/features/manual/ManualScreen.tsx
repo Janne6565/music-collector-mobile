@@ -15,7 +15,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { Format } from "@janne6565/rekordo-shared";
-import { FORMATS, FORMAT_LABELS } from "@janne6565/rekordo-shared";
+import { FORMATS, FORMAT_LABELS, formatBarcode } from "@janne6565/rekordo-shared";
 import { useManualEntryLogic } from "@/features/manual/useManualEntryLogic";
 import { colors } from "@/theme/colors";
 
@@ -27,7 +27,7 @@ import { colors } from "@/theme/colors";
  * catalogue number would simply not get filled in. Saving lands on the copy with its
  * editor open, which is where the condition, the price and the shop belong.
  */
-export function ManualScreen() {
+export function ManualScreen({ barcode = "" }: { readonly barcode?: string } = {}) {
   const { t } = useTranslation();
   const router = useRouter();
   const logic = useManualEntryLogic();
@@ -51,7 +51,7 @@ export function ManualScreen() {
             hitSlop={10}
           >
             {logic.saving ? (
-              <ActivityIndicator size="small" color="#fff" />
+              <ActivityIndicator size="small" color={colors.accent} />
             ) : (
               <Text style={logic.canSave ? styles.save : styles.saveOff}>{t("manual.save")}</Text>
             )}
@@ -63,6 +63,16 @@ export function ManualScreen() {
           contentContainerStyle={styles.body}
           keyboardShouldPersistTaps="handled"
         >
+          {/* Screen 4b: arrived at from a scan the catalogues could not answer. The read
+              itself worked, and showing it says so — and saves reading it off the sleeve. */}
+          {barcode !== "" && (
+            <View style={styles.scanStrip}>
+              <ScanBarcode size={16} color={colors.inkSubtle} strokeWidth={1.7} />
+              <Text style={styles.scanDigits}>{formatBarcode(barcode)}</Text>
+              <Text style={styles.scanNote}>{t("manual.keptFromScan")}</Text>
+            </View>
+          )}
+
           <View style={styles.topRow}>
             {/*
              * The deck's cover well, and the one picture this form takes.
@@ -82,7 +92,7 @@ export function ManualScreen() {
             >
               {logic.coverUri === null ? (
                 <>
-                  <ImagePlus size={17} color="rgba(255,255,255,0.4)" strokeWidth={1.6} />
+                  <ImagePlus size={17} color={colors.inkSubtle} strokeWidth={1.6} />
                   <Text style={styles.coverLabel}>{t("manual.cover")}</Text>
                 </>
               ) : (
@@ -97,7 +107,7 @@ export function ManualScreen() {
                 hitSlop={6}
                 style={styles.coverBadge}
               >
-                <Camera size={12} color={colors.night} strokeWidth={2} />
+                <Camera size={12} color="#ffffff" strokeWidth={2} />
               </Pressable>
 
               {/* Only once there is one to take off, and never as a confirm step: nothing
@@ -110,7 +120,7 @@ export function ManualScreen() {
                   hitSlop={6}
                   style={[styles.coverBadge, styles.coverBadgeRemove]}
                 >
-                  <X size={12} color={colors.night} strokeWidth={2} />
+                  <X size={12} color="#ffffff" strokeWidth={2} />
                 </Pressable>
               )}
             </Pressable>
@@ -121,7 +131,7 @@ export function ManualScreen() {
                 value={logic.fields.artist}
                 onChangeText={(value) => logic.set("artist", value)}
                 placeholder={t("manual.artistPlaceholder")}
-                placeholderTextColor="rgba(255,255,255,0.3)"
+                placeholderTextColor="rgba(25,23,19,0.3)"
                 autoFocus
                 style={[styles.input, styles.inputLead]}
               />
@@ -131,7 +141,7 @@ export function ManualScreen() {
                   onPress={() => logic.set("artist", logic.artistHint?.name ?? "")}
                   style={styles.shelfRow}
                 >
-                  <LibraryBig size={13} color="rgba(255,255,255,0.4)" strokeWidth={1.75} />
+                  <LibraryBig size={13} color={colors.inkSubtle} strokeWidth={1.75} />
                   <Text style={styles.shelfText} numberOfLines={1}>
                     {t("manual.onShelf", {
                       artist: logic.artistHint.name,
@@ -149,7 +159,7 @@ export function ManualScreen() {
               value={logic.fields.title}
               onChangeText={(value) => logic.set("title", value)}
               placeholder={t("manual.titlePlaceholder")}
-              placeholderTextColor="rgba(255,255,255,0.3)"
+              placeholderTextColor="rgba(25,23,19,0.3)"
               style={styles.input}
             />
           </View>
@@ -163,20 +173,38 @@ export function ManualScreen() {
                 keyboardType="number-pad"
                 maxLength={4}
                 placeholder="————"
-                placeholderTextColor="rgba(255,255,255,0.3)"
+                placeholderTextColor="rgba(25,23,19,0.3)"
                 style={styles.input}
               />
             </View>
             <View style={styles.fill}>
-              <Text style={styles.eyebrow}>{t("manual.labelAndCatalog")}</Text>
+              <Text style={styles.eyebrow}>{t("manual.label")}</Text>
               <TextInput
                 value={logic.fields.label}
                 onChangeText={(value) => logic.set("label", value)}
                 placeholder={t("manual.labelPlaceholder")}
-                placeholderTextColor="rgba(255,255,255,0.3)"
+                placeholderTextColor="rgba(25,23,19,0.3)"
                 style={styles.input}
               />
             </View>
+          </View>
+
+          {/*
+           * The catalogue number, its own field rather than typed after the label.
+           *
+           * It is the one string that identifies a pressing nobody has listed — "UD 01" is
+           * what a collector writes down about a bootleg — and folding it into the label
+           * field made it unsearchable and unsortable for the sake of one line of layout.
+           */}
+          <View style={styles.field}>
+            <Text style={styles.eyebrow}>{t("manual.catalogNumber")}</Text>
+            <TextInput
+              value={logic.fields.catalogNumber}
+              onChangeText={(value) => logic.set("catalogNumber", value)}
+              placeholder={t("manual.catalogPlaceholder")}
+              placeholderTextColor="rgba(25,23,19,0.3)"
+              style={styles.input}
+            />
           </View>
 
           <View style={styles.formatBlock}>
@@ -202,7 +230,7 @@ export function ManualScreen() {
         </ScrollView>
 
         <View style={styles.footer}>
-          <ScanBarcode size={17} color="rgba(255,255,255,0.45)" strokeWidth={1.6} />
+          <ScanBarcode size={17} color={colors.inkSubtle} strokeWidth={1.6} />
           <Text style={styles.footerText}>{t("manual.nothingLookedUp")}</Text>
         </View>
       </KeyboardAvoidingView>
@@ -231,8 +259,10 @@ function FormatChip({
   );
 }
 
+const MONO = "ui-monospace";
+
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.night },
+  safe: { flex: 1, backgroundColor: colors.paper },
   fill: { flex: 1 },
   header: {
     flexDirection: "row",
@@ -242,10 +272,10 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 14,
   },
-  cancel: { fontSize: 13.5, fontWeight: "500", color: "rgba(255,255,255,0.6)" },
-  heading: { fontSize: 14, fontWeight: "600", color: "#fff" },
-  save: { fontSize: 13.5, fontWeight: "600", color: "#fff" },
-  saveOff: { fontSize: 13.5, fontWeight: "600", color: "rgba(255,255,255,0.28)" },
+  cancel: { fontSize: 13.5, fontWeight: "500", color: colors.inkMuted },
+  heading: { fontSize: 14, fontWeight: "600", color: colors.ink },
+  save: { fontSize: 13.5, fontWeight: "600", color: colors.accent },
+  saveOff: { fontSize: 13.5, fontWeight: "600", color: "rgba(25,23,19,0.28)" },
   body: { paddingHorizontal: 18, paddingBottom: 28 },
   topRow: { flexDirection: "row", gap: 14, alignItems: "flex-start" },
   coverWell: {
@@ -254,12 +284,13 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1.5,
     borderStyle: "dashed",
-    borderColor: "rgba(255,255,255,0.24)",
+    borderColor: "rgba(25,23,19,0.2)",
+    backgroundColor: colors.surface,
     alignItems: "center",
     justifyContent: "center",
   },
   /** The dashed frame is an invitation; once there is a picture in it, it is furniture. */
-  coverWellFilled: { borderStyle: "solid", borderColor: "rgba(255,255,255,0.14)" },
+  coverWellFilled: { borderStyle: "solid", borderColor: "rgba(25,23,19,0.12)" },
   coverImage: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, borderRadius: 8.5 },
   coverBadge: {
     position: "absolute",
@@ -268,7 +299,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.92)",
+    backgroundColor: colors.ink,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -278,47 +309,52 @@ const styles = StyleSheet.create({
     fontSize: 8.5,
     letterSpacing: 0.5,
     textTransform: "uppercase",
-    color: "rgba(255,255,255,0.45)",
+    color: colors.inkSubtle,
   },
   eyebrow: {
+    fontFamily: MONO,
     fontSize: 9.5,
     letterSpacing: 1,
     textTransform: "uppercase",
-    color: "rgba(255,255,255,0.4)",
+    color: colors.inkSubtle,
   },
   input: {
     marginTop: 5,
     paddingBottom: 9,
     fontSize: 16,
-    color: "#fff",
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(255,255,255,0.16)",
+    color: colors.ink,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(25,23,19,0.14)",
   },
   /** The field the screen opens on gets the solid rule the deck draws under it. */
-  inputLead: { fontSize: 17, fontWeight: "500", borderBottomWidth: 1.5, borderBottomColor: "#fff" },
+  inputLead: { fontSize: 17, fontWeight: "500", borderBottomWidth: 1.5, borderBottomColor: colors.ink },
   shelfRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 9 },
-  shelfText: { flex: 1, fontSize: 11.5, color: "rgba(255,255,255,0.5)" },
+  shelfText: { flex: 1, fontSize: 11.5, color: colors.inkMuted },
   field: { marginTop: 20 },
   pairRow: { flexDirection: "row", gap: 16, marginTop: 18 },
   yearField: { width: 88 },
   formatBlock: { marginTop: 22 },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 7, marginTop: 9 },
   chip: { paddingHorizontal: 13, paddingVertical: 7, borderRadius: 999 },
-  chipOn: { backgroundColor: "#fff" },
-  chipOff: { borderWidth: StyleSheet.hairlineWidth, borderColor: "rgba(255,255,255,0.18)" },
-  chipTextOn: { fontSize: 12.5, fontWeight: "600", color: colors.night },
-  chipTextOff: { fontSize: 12.5, fontWeight: "500", color: "rgba(255,255,255,0.65)" },
+  chipOn: { backgroundColor: colors.ink },
+  chipOff: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: "rgba(25,23,19,0.12)",
+  },
+  chipTextOn: { fontSize: 12.5, fontWeight: "600", color: "#ffffff" },
+  chipTextOff: { fontSize: 12.5, fontWeight: "500", color: colors.inkMuted },
   laterRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     marginTop: 24,
     paddingTop: 16,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "rgba(255,255,255,0.1)",
+    borderTopWidth: 1,
+    borderTopColor: "rgba(25,23,19,0.09)",
   },
-  laterLabel: { fontSize: 13.5, fontWeight: "500", color: "rgba(255,255,255,0.85)" },
-  laterAction: { fontSize: 12, fontWeight: "500", color: "rgba(255,255,255,0.45)" },
+  laterLabel: { fontSize: 13.5, fontWeight: "500", color: colors.ink },
+  laterAction: { fontSize: 12, fontWeight: "500", color: colors.inkMuted },
   footer: {
     flexDirection: "row",
     alignItems: "center",
@@ -326,8 +362,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingTop: 10,
     paddingBottom: 12,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "rgba(255,255,255,0.08)",
+    borderTopWidth: 1,
+    borderTopColor: "rgba(25,23,19,0.08)",
   },
-  footerText: { flex: 1, fontSize: 11.5, lineHeight: 16, color: "rgba(255,255,255,0.45)" },
+  footerText: { flex: 1, fontSize: 11.5, lineHeight: 16, color: colors.inkMuted },
+
+  /**
+   * 4b: the digits the scanner did read, kept at the top.
+   *
+   * Not stored on the copy — a hand-typed pressing is identified by what you typed, and a
+   * barcode field would invite the resolver to re-point it at a catalogue release and
+   * throw that away. It is here so the number does not have to be read off the sleeve
+   * twice, and so you can see the scan worked.
+   */
+  scanStrip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    padding: 10,
+    marginBottom: 4,
+    borderRadius: 10,
+    backgroundColor: "rgba(25,23,19,0.05)",
+    borderWidth: 1,
+    borderColor: "rgba(25,23,19,0.09)",
+  },
+  scanDigits: { flex: 1, fontFamily: MONO, fontSize: 11.5, color: "rgba(25,23,19,0.65)" },
+  scanNote: { fontSize: 11, color: colors.inkSubtle },
 });

@@ -67,7 +67,7 @@ export function CopyEditor({
               style={[styles.input, { color: chrome.ink }]}
             />
           </Labelled>
-          <Labelled label={t("manual.labelAndCatalog")} chrome={chrome}>
+          <Labelled label={t("manual.label")} chrome={chrome}>
             <TextInput
               value={editor.fields.label}
               onChangeText={(value) => editor.set("label", value)}
