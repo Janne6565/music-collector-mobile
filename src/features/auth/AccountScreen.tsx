@@ -15,6 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 import { friendsApi } from "@/api/friends";
 import { PictureRow } from "@/features/account/PictureRow";
+import { StorageMeterRow } from "@/features/account/StorageMeterRow";
 import { useProfilePictureLogic } from "@/features/account/useProfilePictureLogic";
 import { AuthForm } from "@/features/auth/AuthForm";
 import { FirstSyncPrompt } from "@/features/auth/FirstSyncPrompt";
@@ -183,20 +184,9 @@ function SignedIn({ logic }: { readonly logic: ReturnType<typeof useAccountLogic
 
       <Text style={styles.section}>{t("account.section.storage")}</Text>
       <View style={styles.card}>
-        {/* 20f: the two device toggles moved to Settings, because they describe this phone
-            rather than the account. One pointer row replaces them, so the sync switch stays
-            findable from the screen people already know it by. */}
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => router.push("/settings")}
-          style={styles.row}
-        >
-          <View style={styles.rowText}>
-            <Text style={styles.rowTitle}>{t("account.deviceSettings.title")}</Text>
-            <Text style={styles.rowBody}>{t("account.deviceSettings.body")}</Text>
-          </View>
-          <ChevronRight size={16} color={colors.inkSubtle} strokeWidth={1.75} />
-        </Pressable>
+        {/* 28b: the allowance goes first, above the exports. Everything below it is about
+            getting data out; this is the only row about what the account is holding. */}
+        <StorageMeterRow />
         {/* Two files, not one. The collection and the wishlist are different shapes — a
             copy has a price, a condition and a pressing; a wish has an album and a format
             — and a single sheet with half its columns blank on every other row is a sheet
@@ -219,8 +209,22 @@ function SignedIn({ logic }: { readonly logic: ReturnType<typeof useAccountLogic
           title={t("account.export.archive.title")}
           body={t("account.export.archive.body")}
           onPress={() => void logic.exportArchive()}
-          last
         />
+        {/* 20f: the two device toggles moved to Settings, because they describe this phone
+            rather than the account. One pointer row replaces them, so the sync switch stays
+            findable from the screen people already know it by. 28b puts it last: it is the
+            row that leaves this card, and those go at the bottom. */}
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push("/settings")}
+          style={[styles.row, styles.rowLast]}
+        >
+          <View style={styles.rowText}>
+            <Text style={styles.rowTitle}>{t("account.deviceSettings.title")}</Text>
+            <Text style={styles.rowBody}>{t("account.deviceSettings.body")}</Text>
+          </View>
+          <ChevronRight size={16} color={colors.inkSubtle} strokeWidth={1.75} />
+        </Pressable>
       </View>
 
       <Text style={styles.section}>{t("legal.title")}</Text>
