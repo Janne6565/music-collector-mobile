@@ -16,6 +16,20 @@ import { store } from "@/store";
 
 const queryClient = new QueryClient();
 
+/**
+ * How a record's sheet is presented — the one place both of them say it.
+ *
+ * A copy is something you open and close again, not a place you navigate to, and as a
+ * sheet the two gestures stop competing: dismissal moves to the vertical axis, where the
+ * platform provides it, which leaves the horizontal one entirely to moving between records.
+ */
+function sheet(reduced: boolean) {
+  return {
+    presentation: "modal",
+    animation: reduced ? "none" : "slide_from_bottom",
+  } as const;
+}
+
 export default function RootLayout() {
   const reduced = useReducedMotion();
 
@@ -58,21 +72,23 @@ export default function RootLayout() {
               <Stack
                 screenOptions={{ headerShown: false, animation: reduced ? "none" : "default" }}
               >
+                {/* Your own copy. As an ordinary page in the stack every sideways swipe
+                    was fighting the interactive back gesture, and that is not something you
+                    can tune your way out of. */}
+                <Stack.Screen name="copies/[copyId]" options={sheet(reduced)} />
                 {/*
-                  * A copy is something you open and close again, not a place you navigate
-                  * to -- and as a sheet the two gestures stop competing. Dismissal moves to
-                  * the vertical axis, where the platform provides it, which leaves the
-                  * horizontal one entirely to moving between copies. As a page in the stack
-                  * every sideways swipe was fighting the interactive back gesture, and that
-                  * is not something you can tune your way out of.
+                  * A record on somebody else's shelf, presented exactly the same way.
+                  *
+                  * It used to be an RN `<Modal presentationStyle="pageSheet">` drawn inside
+                  * the profile, and it dismissed badly: the native card ran its own drag,
+                  * cancelled it on release, and React tore the modal window down underneath
+                  * — the sheet sprang back up and then disappeared without an animation.
+                  * A sheet the navigator presents is dragged and dismissed by the navigator,
+                  * which is the only place those two can be one motion. The two record
+                  * sheets now share this, `CoverSheet` and `usePageFlip`; what differs is
+                  * only what is inside them, which is the part that genuinely differs.
                   */}
-                <Stack.Screen
-                  name="copies/[copyId]"
-                  options={{
-                    presentation: "modal",
-                    animation: reduced ? "none" : "slide_from_bottom",
-                  }}
-                />
+                <Stack.Screen name="profiles/[handle]/[open]" options={sheet(reduced)} />
               </Stack>
             </UndoProvider>
             </SyncProvider>

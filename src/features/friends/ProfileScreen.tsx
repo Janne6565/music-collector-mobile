@@ -1,10 +1,9 @@
-import type { SharedCopy, SharedWish } from "@/api/friends";
+import type { SharedCopy } from "@/api/friends";
 import { CopyTile } from "@/components/CopyTile";
 import { ReleaseArt } from "@/components/ReleaseArt";
 import { WishRow, wishCardStyle } from "@/components/WishRow";
 import { Avatar } from "@/features/friends/Avatar";
 import { useFriendProfileLogic } from "@/features/friends/useFriendsLogic";
-import { SharedDetailSheet } from "@/features/friends/SharedDetailSheet";
 import { useSharedCoverPhotos } from "@/features/friends/useSharedCoverPhotos";
 import { colors, fonts } from "@/theme/colors";
 import type { Format } from "@janne6565/rekordo-shared";
@@ -33,33 +32,37 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export function ProfileScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { handle, open, tab: initialTab } = useLocalSearchParams<{
+  const { handle, tab: initialTab } = useLocalSearchParams<{
     handle: string;
-    open?: string;
     tab?: string;
   }>();
   const logic = useFriendProfileLogic(handle ?? "");
   /*
-   * The tab is state, not an address — the sheet inside it is the thing worth linking to.
-   * The param only says which one to open on, so that a wishlist line in the feed lands on
-   * the wishlist instead of on the shelf beside it.
+   * The tab is state, not an address — the record opened off it is the thing worth linking
+   * to. The param only says which one to start on, so that a wishlist line in the feed
+   * lands on the wishlist instead of on the shelf beside it.
    */
   const [tab, setTab] = useState<"collection" | "wishlist">(
     initialTab === "wishlist" ? "wishlist" : "collection",
   );
 
+  const photos = useSharedCoverPhotos(logic.copies);
   /*
    * Which record the sheet is showing is an address, not a piece of state — the same
    * reasoning the web's version gives: a sheet somebody is looking at when they decide to
    * pass the link on has to be linkable, and one that only existed in memory is not.
+   *
+   * It is a *route* rather than a parameter on this one, so that the sheet is presented by
+   * the stack and not drawn inside this screen. That is what makes dragging it down feel
+   * like the library's: the platform owns the gesture, and the drag and the dismissal are
+   * one motion instead of a spring-back followed by an unmount. The tab travels with it,
+   * because it says which shelf the record was picked off and so what it flips through.
    */
-  // Hoisted so the sheet shows the same picture the tile did — and so the two do not each
-  // fetch it.
-  const photos = useSharedCoverPhotos(logic.copies);
-  const shelf = tab === "collection" ? logic.copies : logic.wishes;
-  const at = open === undefined ? -1 : shelf.findIndex((entry) => entry.id === open);
-  const show = (index: number) =>
-    router.setParams({ open: shelf[index]?.id ?? undefined });
+  const open = (id: string) =>
+    router.push({
+      pathname: "/profiles/[handle]/[open]",
+      params: { handle: handle ?? "", open: id, tab },
+    });
 
   const person = logic.person;
   const name = person?.displayName ?? person?.handle ?? "";
@@ -146,35 +149,14 @@ export function ProfileScreen() {
                   copies={logic.copies}
                   pricesVisible={person.pricesVisible === true}
                   photos={photos}
-                  onOpen={(copyId) => router.setParams({ open: copyId })}
+                  onOpen={open}
                 />
               </>
             ) : (
-              <WishRows logic={logic} onOpen={(wishId) => router.setParams({ open: wishId })} />
+              <WishRows logic={logic} onOpen={open} />
             )}
           </ScrollView>
         </>
-      )}
-
-      {at >= 0 && (
-        <SharedDetailSheet
-          copy={tab === "collection" ? (shelf[at] as SharedCopy) : undefined}
-          wish={tab === "wishlist" ? (shelf[at] as SharedWish) : undefined}
-          /*
-           * Resolved here rather than in the sheet: a copy carries its cover, a wish does
-           * not, and the lookups that answer for a wish are the profile's own.
-           */
-          coverArtUrl={
-            tab === "collection"
-              ? ((shelf[at] as SharedCopy).coverArtUrl ?? null)
-              : logic.wishCoverOf(shelf[at] as SharedWish)
-          }
-          pricesVisible={logic.person?.pricesVisible === true}
-          previewUri={open === undefined ? null : (photos.get(open) ?? null)}
-          onClose={() => router.setParams({ open: undefined })}
-          onPrev={at > 0 ? () => show(at - 1) : undefined}
-          onNext={at < shelf.length - 1 ? () => show(at + 1) : undefined}
-        />
       )}
     </SafeAreaView>
   );
