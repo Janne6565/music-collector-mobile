@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -76,6 +77,19 @@ export function AccountScreen() {
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
         automaticallyAdjustKeyboardInsets
+        /*
+         * Signed out this tab is a form, and a form has nothing to pull down for: the
+         * gesture would only fight the keyboard for the same drag.
+         */
+        refreshControl={
+          logic.user === null ? undefined : (
+            <RefreshControl
+              refreshing={logic.refreshing}
+              onRefresh={() => void logic.refresh()}
+              tintColor={colors.inkMuted}
+            />
+          )
+        }
       >
         {logic.user === null ? (
           <>

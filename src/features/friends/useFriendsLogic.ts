@@ -74,6 +74,25 @@ export function useFriendsLogic() {
   }, [queryClient]);
 
   /**
+   * Pull-to-refresh, which here means *refetch* rather than sync — the same reason the
+   * profile gives.
+   *
+   * Both panels are server data: a request appears on this screen because somebody else's
+   * phone wrote it, and no sync of your own shelf would ever bring it down. `sharing` comes
+   * along because a handle claimed on another device is what decides which screen this tab
+   * shows at all.
+   */
+  const [refreshing, setRefreshing] = useState(false);
+  const refetch = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([people.refetch(), feed.refetch(), sharing.refetch()]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [people, feed, sharing]);
+
+  /**
    * The collectors this device has looked at, for the field to offer when it is empty.
    *
    * The people rather than the words that found them: handing back what was typed saves a
@@ -137,6 +156,8 @@ export function useFriendsLogic() {
     incoming: people.data?.incoming ?? [],
     entries: feed.data?.entries ?? [],
     loading: people.isLoading || feed.isLoading,
+    refreshing,
+    refetch,
     query,
     setQuery,
     /** Empty until the query is long enough — never the start of a directory. */

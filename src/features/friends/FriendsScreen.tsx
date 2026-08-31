@@ -18,6 +18,7 @@ import {
   Animated,
   LayoutAnimation,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -194,7 +195,17 @@ export function FriendsScreen() {
        * down only to find it at the top is worse than any transition.
        */}
       <Animated.View style={[styles.bodyWrap, { opacity: body.opacity }]}>
-        <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          contentContainerStyle={styles.body}
+          keyboardShouldPersistTaps="handled"
+          refreshControl={
+            <RefreshControl
+              refreshing={logic.refreshing}
+              onRefresh={() => void logic.refetch()}
+              tintColor={colors.inkMuted}
+            />
+          }
+        >
           {body.shown === "recent" && (
             <>
               <View style={styles.recentHead}>

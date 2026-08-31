@@ -1,6 +1,7 @@
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSync } from "@/sync/SyncProvider";
 import { useCallback, useEffect, useState } from "react";
 import {
   type AuthProvider,
@@ -75,6 +76,7 @@ function errorsFrom(error: unknown): AuthError[] {
 export function useAccountLogic() {
   const { store, clock } = useStore();
   const queryClient = useQueryClient();
+  const { syncNow } = useSync();
   const dispatch = useAppDispatch();
   /*
    * The session is read from the store rather than held here, because this hook is mounted
@@ -416,6 +418,32 @@ export function useAccountLogic() {
     }
   }, [dispatch]);
 
+  /**
+   * Pull-to-refresh on the You tab, which is the one screen that needs both halves.
+   *
+   * The counts and the spend are read out of the local store, so they can only change once
+   * a sync has run -- the same trap the Library's pull fell into. Everything else here is
+   * the server's answer about the account itself: the name and mail address it holds, and
+   * how much room the pictures are using, which a picture taken on another device changes
+   * without this one hearing about it.
+   */
+  const [refreshing, setRefreshing] = useState(false);
+  const refresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await syncNow();
+      await Promise.all([
+        refreshAccount(),
+        queryClient.invalidateQueries({ queryKey: ["stats"] }),
+        queryClient.invalidateQueries({ queryKey: ["collectionSpend"] }),
+        queryClient.invalidateQueries({ queryKey: ["accountStorage"] }),
+        queryClient.invalidateQueries({ queryKey: ["emailConfirmation"] }),
+      ]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [syncNow, refreshAccount, queryClient]);
+
   const accountName = user?.displayName ?? "";
   const saveName = useCallback(async () => {
     const next = nameDraft;
@@ -505,6 +533,8 @@ export function useAccountLogic() {
     changingEmail,
     changeFailed,
     refreshAccount,
+    refreshing,
+    refresh,
     // Completeness only, except the terms box: that is a required acknowledgement rather
     // than a format rule, so it does gate the button.
     canSubmit:
