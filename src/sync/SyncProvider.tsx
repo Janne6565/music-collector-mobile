@@ -52,7 +52,7 @@ export function SyncProvider({ children }: { readonly children: ReactNode }) {
       return;
     }
     if (firstSyncPending) {
-      if (__DEV__) console.log("[rekordo] sync skipped — first sync not answered yet (You tab)");
+      if (__DEV__) console.log("[rekordo] sync skipped — the sign-in conflict has not been answered yet");
       return;
     }
     // A slow sync must not stack up behind itself on a flaky connection, and a pull-to-

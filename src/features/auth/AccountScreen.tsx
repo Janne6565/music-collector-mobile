@@ -19,7 +19,6 @@ import { PictureRow } from "@/features/account/PictureRow";
 import { StorageMeterRow } from "@/features/account/StorageMeterRow";
 import { useProfilePictureLogic } from "@/features/account/useProfilePictureLogic";
 import { AuthForm } from "@/features/auth/AuthForm";
-import { FirstSyncPrompt } from "@/features/auth/FirstSyncPrompt";
 import { useAccountLogic } from "@/features/auth/useAccountLogic";
 import { Avatar } from "@/features/friends/Avatar";
 import { CollectionStatsBlock } from "@/features/profile/CollectionStatsBlock";
@@ -58,10 +57,6 @@ export function AccountScreen() {
         <ActivityIndicator color={colors.ink} />
       </SafeAreaView>
     );
-  }
-
-  if (logic.firstSyncPending) {
-    return <FirstSyncPrompt onChoose={logic.resolveFirstSync} onExport={logic.exportCsv} busy={logic.busy} />;
   }
 
   return (

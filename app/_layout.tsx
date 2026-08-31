@@ -6,6 +6,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import "@/i18n/config";
 import { RestoreSession } from "@/features/auth/RestoreSession";
 import { PushInvite } from "@/features/notifications/PushInvite";
+import { SignInConflictSheet } from "@/features/auth/SignInConflictSheet";
 import { UploadRefusalSheet } from "@/features/photos/UploadRefusalSheet";
 import { UndoProvider } from "@/features/wishlist/UndoBar";
 import { StoreProvider } from "@/local/StoreProvider";
@@ -57,6 +58,9 @@ export default function RootLayout() {
                 learned during a sync, which lands long after the sheet that saved the copy
                 is gone. Hung off the editor it would reach nobody. */}
             <UploadRefusalSheet />
+            {/* 29, above the tabs for the same reason: the question is about the library,
+                and asked from the You tab it walked away with whoever left that tab. */}
+            <SignInConflictSheet />
             {/* Screen 16e's line lives above the stack: the entry that leaves on its own
                 does so wherever a record gets filed, which is rarely the wishlist. */}
             <UndoProvider>

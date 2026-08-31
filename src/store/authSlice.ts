@@ -3,6 +3,20 @@ import type { AccountUser } from "@/api/auth";
 
 export type AuthStatus = "unknown" | "anonymous" | "signedIn";
 
+/**
+ * What the sign-in conflict resolved to, kept only until the shelf has said so once.
+ *
+ * Mirrored from the web's slice. The banner is the only undo there is (29e-5), so it has
+ * to survive the sheet coming down — and it carries the ids, because a line that states a
+ * number and cannot show which records it means is decoration.
+ */
+export interface SyncOutcome {
+  readonly resolution: "MERGED" | "KEPT_LOCAL" | "KEPT_ACCOUNT" | "REVIEWED";
+  readonly arrived: number;
+  readonly edits: number;
+  readonly ids: string[];
+}
+
 interface AuthState {
   /**
    * Starts as "unknown" rather than "anonymous": until the keychain has been read and the
@@ -13,9 +27,15 @@ interface AuthState {
   readonly user: AccountUser | null;
   /** Set when a signed-in device still has a local collection that has never synced. */
   readonly firstSyncPending: boolean;
+  readonly syncOutcome: SyncOutcome | null;
 }
 
-const initialState: AuthState = { status: "unknown", user: null, firstSyncPending: false };
+const initialState: AuthState = {
+  status: "unknown",
+  user: null,
+  firstSyncPending: false,
+  syncOutcome: null,
+};
 
 /**
  * The session, mirrored from the web's slice of the same name.
@@ -37,6 +57,7 @@ const authSlice = createSlice({
       state.status = "anonymous";
       state.user = null;
       state.firstSyncPending = false;
+      state.syncOutcome = null;
     },
     /**
      * The account came back changed -- renamed, or its address confirmed. Nothing else
@@ -49,8 +70,22 @@ const authSlice = createSlice({
     firstSyncResolved(state) {
       state.firstSyncPending = false;
     },
+    syncOutcomeRecorded(state, action: PayloadAction<SyncOutcome | null>) {
+      state.syncOutcome = action.payload;
+    },
+    /** Dismissed, or acted on. Either way the shelf stops explaining itself. */
+    syncOutcomeCleared(state) {
+      state.syncOutcome = null;
+    },
   },
 });
 
-export const { signedIn, signedOut, accountChanged, firstSyncResolved } = authSlice.actions;
+export const {
+  signedIn,
+  signedOut,
+  accountChanged,
+  firstSyncResolved,
+  syncOutcomeRecorded,
+  syncOutcomeCleared,
+} = authSlice.actions;
 export default authSlice.reducer;

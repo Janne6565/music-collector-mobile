@@ -44,7 +44,7 @@ const enCommon = {
     showCatalogArt: "Show the catalogue's cover",
     deviceOnly: "on device",
     refusal: {
-      title: "Saved on this iPhone",
+      title: "Saved on this phone",
       /* 28d: each sentence names its own fix and rules the other one out. Deleting does not
          help a picture that is too big, and a smaller picture does not help a full account. */
       full: "Your photo space is full, {{quota}} of {{quota}} MB, so this photo was not uploaded. Delete a photo you can live without and this one goes up by itself. A smaller picture will not help.",
@@ -531,20 +531,131 @@ const enCommon = {
       generic: "Something went wrong. Try again in a moment.",
     },
   },
-  firstSync: {
-    title: "You already have {{count}} copies on this device",
-    body: "Your account holds {{count}}. Decide what happens to the local ones before we sync.",
-    merge: {
-      title: "Merge them",
-      body: "{{added}} new copies added, {{skipped}} already in your account. Nothing is overwritten.",
+  conflict: {
+    signedInAs: "Signed in as {{email}}",
+    untitled: "Untitled",
+    emptyValue: "Nothing",
+    never: "Never",
+    copies_one: "{{count}} copy",
+    copies_other: "{{count}} copies",
+    entries_one: "{{count}} entry",
+    entries_other: "{{count}} entries",
+    kind: { copy: "Copy", wish: "Wishlist" },
+    sides: {
+      local: "This iPhone",
+      account: "Your account",
+      localShort: "iPhone",
+      accountShort: "Account",
     },
-    keepAccount: {
-      title: "Keep the account version",
-      body: "The {{count}} local copies stay on this device, unsynced.",
+    field: {
+      rating: "Rating",
+      notes: "Note",
+      condition: "Condition",
+      sleeveCondition: "Sleeve",
+      pricePaidCents: "Price",
+      purchasedOn: "Bought on",
+      note: "Note",
+      desiredFormat: "Format",
     },
-    exportFirst: "Export the local copies as CSV first",
-    confirmMerge: "Merge and sync",
-    confirmKeep: "Keep the account version",
+    comparing: {
+      title: "Comparing your shelves",
+      body_one:
+        "{{count}} copy here. This takes a few seconds and nothing changes until you choose.",
+      body_other:
+        "{{count}} copies here. This takes a few seconds and nothing changes until you choose.",
+    },
+    unreachable: {
+      title: "Your shelf here is untouched",
+      body: "The server did not answer, so the account has not been read. You are signed in, sync is paused, and this phone keeps working as it did. Rekordo will ask again when it can compare.",
+      open: "Open library",
+      retry: "Try again",
+    },
+    uploading: {
+      title_one: "Your {{count}} copy is going up",
+      title_other: "Your {{count}} copies are going up",
+      body: "The account was empty, so there was nothing to compare. Nothing was replaced and nothing was deleted.",
+    },
+    noLoss: {
+      title_one: "Your account adds {{count}} entry",
+      title_other: "Your account adds {{count}} entries",
+      body: "Everything on this iPhone is already in the account. Nothing is replaced and nothing is deleted. You end up with {{copies}} copies and {{wishes}} wishlist entries.",
+      show_one: "Show the {{count}} entry",
+      show_other: "Show the {{count}} entries",
+      continue: "Continue",
+    },
+    conflict: {
+      title: "Both sides changed since you were last signed in",
+      body: "Neither one contains everything, so this is the one thing Rekordo cannot decide for you.",
+    },
+    rows: {
+      header: "Only on one side",
+      copies: "Copies",
+      wishes: "Wishlist entries",
+      values: "Ratings and notes",
+      valuesCount_one: "{{count}} differs",
+      valuesCount_other: "{{count}} differ",
+      valuesBody: "Same copy, edited on both sides. Merging keeps the later edit.",
+      photos_zero: "No choice here deletes a photo.",
+      photos_one:
+        "Your {{count}} sleeve photo stays on this iPhone whatever you choose. Photos are never deleted here.",
+      photos_other:
+        "Your {{count}} sleeve photos stay on this iPhone whatever you choose. Photos are never deleted here.",
+    },
+    seeDifference: "See what differs",
+    keepBoth: "Keep both",
+    keepBothBody_zero: "Nothing is deleted.",
+    keepBothBody_one: "Nothing is deleted. The later of the {{count}} edit wins.",
+    keepBothBody_other: "Nothing is deleted. The later of the {{count}} edits wins.",
+    keepLocal: "Keep this iPhone",
+    keepAccount: "Keep the account",
+    keepLocalCost: "{{copies}} copies. Drops {{drops}} from the account.",
+    keepAccountCost: "{{copies}} copies. Drops {{drops}} from here.",
+    decideMyself_one: "Decide the {{count}} edit myself",
+    decideMyself_other: "Decide the {{count}} edits myself",
+    difference: {
+      title: "What differs",
+      lede_one:
+        "{{count}} entry. The {{copies}} copies and {{wishes}} wishlist entries that are the same on both sides are not listed.",
+      lede_other:
+        "{{count}} entries. The {{copies}} copies and {{wishes}} wishlist entries that are the same on both sides are not listed.",
+      onlyLocalPhone: "Only on this iPhone · {{count}}",
+      onlyAccount: "Only in your account · {{count}}",
+      both: "On both, different values · {{count}}",
+      wins: "Keep both takes the {{side}} value",
+    },
+    review: {
+      title: "Decide each",
+      progress: "{{done}} / {{total}}",
+      undecided: "Undecided entries are kept, not dropped.",
+      keepAll: "Keep all",
+      values: "Ratings and notes · {{count}}",
+      oneSided: "On one side only · {{count}}",
+      keep: "Keep",
+      drop: "Drop",
+      apply: "Apply",
+      applyTotal: "{{copies}} copies, {{wishes}} wishlist",
+    },
+    drop: {
+      localTitle_one: "{{count}} entry leaves the account",
+      localTitle_other: "{{count}} entries leave the account",
+      accountTitle_one: "{{count}} entry leaves this iPhone",
+      accountTitle_other: "{{count}} entries leave this iPhone",
+      localBody:
+        "{{copies}} copies and {{wishes}} wishlist entries exist only in your account. Keeping this iPhone deletes them there, on every other device too. The {{edits}} differing values become this iPhone's.",
+      accountBody:
+        "{{copies}} copies and {{wishes}} wishlist entries exist only here. Keeping the account deletes them from this iPhone. Your {{photos}} sleeve photos stay, and reattach if their copy comes back.",
+      export_one: "Download the {{count}} entry as CSV first",
+      export_other: "Download the {{count}} entries as CSV first",
+    },
+    banner: {
+      MERGED: "Merged. {{arrived}} entries came in, {{edits}} values took their later edit.",
+      REVIEWED: "Done. {{arrived}} entries came in, and the rest went the way you decided.",
+      KEPT_LOCAL: "This iPhone was kept. The account now holds what is on this shelf.",
+      KEPT_ACCOUNT: "The account was kept. {{arrived}} entries came in.",
+      show: "Show them",
+      showAll: "Show everything",
+    },
+    failed: "That did not work. Nothing was changed, so you can try again.",
   },
   account: {
     title: "Account",
@@ -792,12 +903,12 @@ const enCommon = {
       heading: "Where push would arrive",
       none: "No devices yet",
       noneAskable: "Turn a push switch on above and this phone appears here.",
-      noneBlocked: "iOS has push switched off for Rekordo, so nothing can be added from here.",
+      noneBlocked: "Your phone has push switched off for Rekordo, so nothing can be added from here.",
     },
     pushBlocked: {
-      title: "iOS is not letting us send push",
-      body: "Turned off for Rekordo in the iOS settings, so the push column below cannot do anything. Mail is unaffected.",
-      open: "Open iOS Settings",
+      title: "Your phone is not letting us send push",
+      body: "Turned off for Rekordo in the system settings, so the push column below cannot do anything. Mail is unaffected.",
+      open: "Open system settings",
       footnote: "We cannot ask again from in here. Only you can, out there.",
     },
     category: {
@@ -813,7 +924,7 @@ const enCommon = {
       eyebrow: "You and {{name}} are friends now",
       eyebrowExisting: "You are collecting with friends now",
       title: "Want a nudge when a friend asks for you?",
-      lede: "iOS will ask once, and only we can ask it. So before it does: here is everything we would ever send.",
+      lede: "Your phone will ask once, and only we can ask it. So before it does: here is everything we would ever send.",
       request: {
         title: "A friend request",
         body: "Someone asks to follow your collection. Perhaps a handful a year.",
@@ -827,7 +938,7 @@ const enCommon = {
       allow: "Allow notifications",
       notNow: "Not now",
       footnote:
-        "Not now does not ask iOS anything, so the question stays available. You · Notifications turns it on whenever.",
+        "Not now asks your phone nothing, so the question stays available. You · Notifications turns it on whenever.",
     },
     devices: {
       thisPhone: "This phone",
@@ -1044,7 +1155,7 @@ const deCommon: CommonSchema = {
     showCatalogArt: "Katalog-Cover einblenden",
     deviceOnly: "nur hier",
     refusal: {
-      title: "Auf diesem iPhone gespeichert",
+      title: "Auf diesem Telefon gespeichert",
       full: "Dein Speicherplatz ist voll, {{quota}} von {{quota}} MB, darum wurde dieses Foto nicht hochgeladen. Lösche ein anderes Foto, dann lädt es von selbst hoch. Ein kleineres Bild hilft hier nicht.",
       fullPlain:
         "Dein Speicherplatz ist voll, darum wurde dieses Foto nicht hochgeladen. Lösche ein anderes Foto, dann lädt es von selbst hoch. Ein kleineres Bild hilft hier nicht.",
@@ -1529,20 +1640,134 @@ const deCommon: CommonSchema = {
       generic: "Da ist etwas schiefgegangen. Versuche es gleich noch einmal.",
     },
   },
-  firstSync: {
-    title: "Auf diesem Gerät liegen schon {{count}} Exemplare",
-    body: "In deinem Konto sind es {{count}}. Entscheide vor dem Sync, was mit den lokalen passiert.",
-    merge: {
-      title: "Zusammenführen",
-      body: "{{added}} neue Exemplare kommen dazu, {{skipped}} sind schon im Konto. Nichts wird überschrieben.",
+  conflict: {
+    signedInAs: "Angemeldet als {{email}}",
+    untitled: "Ohne Titel",
+    emptyValue: "Nichts",
+    never: "Nie",
+    copies_one: "{{count}} Exemplar",
+    copies_other: "{{count}} Exemplare",
+    entries_one: "{{count}} Eintrag",
+    entries_other: "{{count}} Einträge",
+    kind: { copy: "Exemplar", wish: "Wunschliste" },
+    sides: {
+      local: "Dieses iPhone",
+      account: "Dein Konto",
+      localShort: "iPhone",
+      accountShort: "Konto",
     },
-    keepAccount: {
-      title: "Version aus dem Konto behalten",
-      body: "Die {{count}} lokalen Exemplare bleiben auf diesem Gerät, ohne Sync.",
+    field: {
+      rating: "Bewertung",
+      notes: "Notiz",
+      condition: "Zustand",
+      sleeveCondition: "Hülle",
+      pricePaidCents: "Preis",
+      purchasedOn: "Gekauft am",
+      note: "Notiz",
+      desiredFormat: "Format",
     },
-    exportFirst: "Die lokalen Exemplare vorher als CSV exportieren",
-    confirmMerge: "Zusammenführen und synchronisieren",
-    confirmKeep: "Version aus dem Konto behalten",
+    comparing: {
+      title: "Deine Regale werden verglichen",
+      body_one:
+        "{{count}} Exemplar liegt hier. Das dauert ein paar Sekunden, und bis zu deiner Entscheidung ändert sich nichts.",
+      body_other:
+        "{{count}} Exemplare liegen hier. Das dauert ein paar Sekunden, und bis zu deiner Entscheidung ändert sich nichts.",
+    },
+    unreachable: {
+      title: "Dein Regal hier ist unberührt",
+      body: "Der Server hat nicht geantwortet, das Konto wurde also nicht gelesen. Du bist angemeldet, der Sync pausiert, und dieses iPhone arbeitet weiter wie bisher. Rekordo fragt erneut, sobald es vergleichen kann.",
+      open: "Bibliothek öffnen",
+      retry: "Erneut versuchen",
+    },
+    uploading: {
+      title_one: "Dein {{count}} Exemplar geht hoch",
+      title_other: "Deine {{count}} Exemplare gehen hoch",
+      body: "Das Konto war leer, es gab also nichts zu vergleichen. Nichts wurde ersetzt und nichts gelöscht.",
+    },
+    noLoss: {
+      title_one: "Dein Konto steuert {{count}} Eintrag bei",
+      title_other: "Dein Konto steuert {{count}} Einträge bei",
+      body: "Alles auf diesem iPhone ist bereits im Konto. Nichts wird ersetzt und nichts gelöscht. Am Ende hast du {{copies}} Exemplare und {{wishes}} Wunschlisteneinträge.",
+      show_one: "Den {{count}} Eintrag zeigen",
+      show_other: "Die {{count}} Einträge zeigen",
+      continue: "Weiter",
+    },
+    conflict: {
+      title: "Beide Seiten haben sich seit deiner letzten Anmeldung geändert",
+      body: "Keine der beiden enthält alles, und genau das ist das Einzige, was Rekordo nicht für dich entscheiden kann.",
+    },
+    rows: {
+      header: "Nur auf einer Seite",
+      copies: "Exemplare",
+      wishes: "Wunschlisteneinträge",
+      values: "Bewertungen und Notizen",
+      valuesCount_one: "{{count}} weicht ab",
+      valuesCount_other: "{{count}} weichen ab",
+      valuesBody:
+        "Dasselbe Exemplar, auf beiden Seiten bearbeitet. Beim Zusammenführen gilt die spätere Änderung.",
+      photos_zero: "Keine Wahl hier löscht ein Foto.",
+      photos_one:
+        "Dein {{count}} Hüllenfoto bleibt auf diesem iPhone, egal wie du dich entscheidest. Fotos werden hier nie gelöscht.",
+      photos_other:
+        "Deine {{count}} Hüllenfotos bleiben auf diesem iPhone, egal wie du dich entscheidest. Fotos werden hier nie gelöscht.",
+    },
+    seeDifference: "Unterschiede ansehen",
+    keepBoth: "Beides behalten",
+    keepBothBody_zero: "Nichts wird gelöscht.",
+    keepBothBody_one: "Nichts wird gelöscht. Von {{count}} Änderung gilt die spätere.",
+    keepBothBody_other: "Nichts wird gelöscht. Von den {{count}} Änderungen gilt jeweils die spätere.",
+    keepLocal: "Dieses iPhone behalten",
+    keepAccount: "Das Konto behalten",
+    keepLocalCost: "{{copies}} Exemplare. Verwirft {{drops}} aus dem Konto.",
+    keepAccountCost: "{{copies}} Exemplare. Verwirft {{drops}} von hier.",
+    decideMyself_one: "Die {{count}} Abweichung selbst entscheiden",
+    decideMyself_other: "Die {{count}} Abweichungen selbst entscheiden",
+    difference: {
+      title: "Was sich unterscheidet",
+      lede_one:
+        "{{count}} Eintrag. Die {{copies}} Exemplare und {{wishes}} Wunschlisteneinträge, die auf beiden Seiten gleich sind, werden nicht aufgeführt.",
+      lede_other:
+        "{{count}} Einträge. Die {{copies}} Exemplare und {{wishes}} Wunschlisteneinträge, die auf beiden Seiten gleich sind, werden nicht aufgeführt.",
+      onlyLocalPhone: "Nur auf diesem iPhone · {{count}}",
+      onlyAccount: "Nur in deinem Konto · {{count}}",
+      both: "Auf beiden, andere Werte · {{count}}",
+      wins: "Beides behalten nimmt den Wert aus: {{side}}",
+    },
+    review: {
+      title: "Einzeln entscheiden",
+      progress: "{{done}} / {{total}}",
+      undecided: "Nicht entschiedene Einträge werden behalten, nicht verworfen.",
+      keepAll: "Alle behalten",
+      values: "Bewertungen und Notizen · {{count}}",
+      oneSided: "Nur auf einer Seite · {{count}}",
+      keep: "Behalten",
+      drop: "Verwerfen",
+      apply: "Übernehmen",
+      applyTotal: "{{copies}} Exemplare, {{wishes}} Wunschliste",
+    },
+    drop: {
+      localTitle_one: "{{count}} Eintrag verlässt das Konto",
+      localTitle_other: "{{count}} Einträge verlassen das Konto",
+      accountTitle_one: "{{count}} Eintrag verlässt dieses iPhone",
+      accountTitle_other: "{{count}} Einträge verlassen dieses iPhone",
+      localBody:
+        "{{copies}} Exemplare und {{wishes}} Wunschlisteneinträge gibt es nur in deinem Konto. Dieses iPhone zu behalten löscht sie dort, und damit auch auf allen anderen Geräten. Die {{edits}} abweichenden Werte werden die dieses iPhones.",
+      accountBody:
+        "{{copies}} Exemplare und {{wishes}} Wunschlisteneinträge gibt es nur hier. Das Konto zu behalten löscht sie von diesem iPhone. Deine {{photos}} Hüllenfotos bleiben und hängen sich wieder an, falls ihr Exemplar zurückkommt.",
+      export_one: "Den {{count}} Eintrag vorher als CSV laden",
+      export_other: "Die {{count}} Einträge vorher als CSV laden",
+    },
+    banner: {
+      MERGED:
+        "Zusammengeführt. {{arrived}} Einträge sind dazugekommen, {{edits}} Werte haben ihre spätere Änderung übernommen.",
+      REVIEWED:
+        "Fertig. {{arrived}} Einträge sind dazugekommen, der Rest ist so ausgegangen, wie du entschieden hast.",
+      KEPT_LOCAL: "Dieses iPhone wurde behalten. Im Konto steht jetzt, was in diesem Regal liegt.",
+      KEPT_ACCOUNT: "Das Konto wurde behalten. {{arrived}} Einträge sind dazugekommen.",
+      show: "Zeigen",
+      showAll: "Alles zeigen",
+    },
+    failed: "Das hat nicht geklappt. Es wurde nichts geändert, du kannst es erneut versuchen.",
   },
   account: {
     title: "Konto",
@@ -1793,12 +2018,12 @@ const deCommon: CommonSchema = {
       heading: "Wo Push ankommen würde",
       none: "Noch keine Geräte",
       noneAskable: "Schalte oben einen Push-Schalter ein, dann erscheint dieses Telefon hier.",
-      noneBlocked: "iOS hat Push für Rekordo abgeschaltet, von hier aus lässt sich nichts hinzufügen.",
+      noneBlocked: "Dein Telefon hat Push für Rekordo abgeschaltet, von hier aus lässt sich nichts hinzufügen.",
     },
     pushBlocked: {
-      title: "iOS lässt uns kein Push senden",
-      body: "In den iOS-Einstellungen für Rekordo abgeschaltet, die Push-Spalte unten kann also nichts bewirken. Mail ist davon nicht betroffen.",
-      open: "iOS-Einstellungen öffnen",
+      title: "Dein Telefon lässt uns kein Push senden",
+      body: "In den Systemeinstellungen für Rekordo abgeschaltet, die Push-Spalte unten kann also nichts bewirken. Mail ist davon nicht betroffen.",
+      open: "Systemeinstellungen öffnen",
       footnote: "Von hier aus können wir nicht noch einmal fragen. Nur du kannst das, dort draußen.",
     },
     category: {
@@ -1814,7 +2039,7 @@ const deCommon: CommonSchema = {
       eyebrow: "Du und {{name}} seid jetzt befreundet",
       eyebrowExisting: "Du sammelst jetzt mit Freunden",
       title: "Einen Hinweis, wenn jemand nach dir fragt?",
-      lede: "iOS fragt einmal, und nur wir können es auslösen. Also vorher: das hier ist alles, was wir je senden würden.",
+      lede: "Dein Telefon fragt einmal, und nur wir können es auslösen. Also vorher: das hier ist alles, was wir je senden würden.",
       request: {
         title: "Eine Freundschaftsanfrage",
         body: "Jemand möchte deiner Sammlung folgen. Vielleicht eine Handvoll im Jahr.",
@@ -1828,7 +2053,7 @@ const deCommon: CommonSchema = {
       allow: "Benachrichtigungen erlauben",
       notNow: "Jetzt nicht",
       footnote:
-        "„Jetzt nicht“ fragt iOS gar nichts, die Frage bleibt also offen. Unter Du · Benachrichtigungen lässt sie sich jederzeit einschalten.",
+        "„Jetzt nicht“ fragt dein Telefon gar nichts, die Frage bleibt also offen. Unter Du · Benachrichtigungen lässt sie sich jederzeit einschalten.",
     },
     devices: {
       thisPhone: "Dieses Telefon",

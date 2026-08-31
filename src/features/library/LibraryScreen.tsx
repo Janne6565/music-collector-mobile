@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ConfirmStrip } from "@/features/auth/ConfirmStrip";
+import { SyncOutcomeStrip } from "@/features/auth/SyncOutcomeStrip";
 import { rememberCopyOrder } from "@/features/library/copyOrder";
 import { CopyTile } from "@/components/CopyTile";
 import { ReleaseArt } from "@/components/ReleaseArt";
@@ -53,6 +54,7 @@ export function LibraryScreen() {
           again. Above it the strip would have read as chrome rather than as a line about
           the shelf you are looking at. */}
       <ConfirmStrip />
+      <SyncOutcomeStrip logic={logic} />
 
       <View style={styles.filters}>
         {FILTERS.map((filter) => (

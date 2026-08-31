@@ -27,10 +27,8 @@ import { readPhotoBytes } from "@/local/photoBytes";
 import { encodeBase64 } from "@/local/sqliteStore";
 import { useStore } from "@/local/StoreProvider";
 import { readSyncEnabled, writeSyncEnabled } from "@/local/settings";
-import { accountChanged, firstSyncResolved, signedIn, signedOut } from "@/store/authSlice";
+import { accountChanged, signedIn, signedOut } from "@/store/authSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { createSyncEngine } from "@/sync/transport";
-import type { FirstSyncStrategy } from "@janne6565/rekordo-shared";
 import { MC_MIME_TYPE, exportMcArchive, mcFileName, passwordLongEnough } from "@janne6565/rekordo-shared";
 
 export type AuthMode = "SIGN_IN" | "REGISTER";
@@ -75,7 +73,7 @@ function errorsFrom(error: unknown): AuthError[] {
 /** Reconcile with the server this often while the app is open and signed in. */
 
 export function useAccountLogic() {
-  const { store, clock } = useStore();
+  const { store } = useStore();
   const queryClient = useQueryClient();
   const { syncNow } = useSync();
   const dispatch = useAppDispatch();
@@ -186,22 +184,6 @@ export function useAccountLogic() {
     setResetSent(true);
     setBusy(false);
   }, [email]);
-
-  const resolveFirstSync = useCallback(
-    async (strategy: FirstSyncStrategy) => {
-      setBusy(true);
-      try {
-        await createSyncEngine(store, clock).firstSync(strategy);
-        // The same reason as the interval sync: whichever way the first one resolved, the
-        // store underneath every screen has just changed.
-        await queryClient.invalidateQueries();
-        dispatch(firstSyncResolved());
-      } finally {
-        setBusy(false);
-      }
-    },
-    [store, clock, queryClient, dispatch],
-  );
 
   const leave = useCallback(async () => {
     setBusy(true);
@@ -567,7 +549,6 @@ export function useAccountLogic() {
     submit,
     busy,
     failed,
-    resolveFirstSync,
     signOut: leave,
     signOutEverywhere: leaveEverywhere,
   };

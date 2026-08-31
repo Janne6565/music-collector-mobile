@@ -4,6 +4,8 @@ import type { Copy, Format, Release } from "@janne6565/rekordo-shared";
 import type { LibraryFilter } from "@/local/LocalStore";
 import { readCatalogueGap } from "@/local/settings";
 import { useStore } from "@/local/StoreProvider";
+import { syncOutcomeCleared } from "@/store/authSlice";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { useSync } from "@/sync/SyncProvider";
 
 export type FormatFilter = Format | "ALL";
@@ -19,6 +21,15 @@ export function useLibraryLogic() {
   const [format, setFormat] = useState<FormatFilter>("ALL");
   const [refreshing, setRefreshing] = useState(false);
   const [sort] = useState<NonNullable<LibraryFilter["sort"]>>("ADDED_DESC");
+  /**
+   * 29e-5: the shelf filtered down to what the sign-in brought in.
+   *
+   * Not a filter chip and not a route — it is the second half of a sentence the strip
+   * above the grid is still saying, and it goes away with the strip.
+   */
+  const [showingArrived, setShowingArrived] = useState(false);
+  const dispatch = useAppDispatch();
+  const outcome = useAppSelector((state) => state.auth.syncOutcome);
 
   const statsQuery = useQuery({ queryKey: ["stats"], queryFn: () => store.stats() });
   /**
@@ -42,8 +53,18 @@ export function useLibraryLogic() {
     },
   });
 
+  const all = copiesQuery.data ?? [];
+  const arrived = new Set(outcome?.ids ?? []);
+
   return {
-    rows: copiesQuery.data ?? [],
+    rows: showingArrived && outcome !== null ? all.filter((row) => arrived.has(row.copy.id)) : all,
+    outcome,
+    showingArrived,
+    showArrived: () => setShowingArrived(true),
+    dismissOutcome: () => {
+      setShowingArrived(false);
+      dispatch(syncOutcomeCleared());
+    },
     stats: statsQuery.data,
     catalogueGap: gapQuery.data,
     loading: copiesQuery.isLoading,
