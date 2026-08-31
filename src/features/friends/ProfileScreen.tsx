@@ -252,6 +252,37 @@ function RelationshipAction({ logic }: { readonly logic: Logic }) {
       );
     case "REQUEST_SENT":
       return <Text style={styles.requestedLabel}>{t("friends.state.requested")}</Text>;
+    /*
+     * They asked first. Without this case the switch fell through to the ask button, which
+     * says nothing about the request waiting and, pressed, is refused by the server -- the
+     * row is already there. Decline before Accept, the order the request card uses.
+     */
+    case "REQUEST_RECEIVED": {
+      const requestId = logic.person?.pendingRequestId;
+      if (requestId === undefined) return null;
+      const busy = logic.accept.isPending || logic.decline.isPending;
+      return (
+        <View style={styles.answerRow}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => logic.decline.mutate(requestId)}
+            disabled={busy}
+            hitSlop={6}
+          >
+            <Text style={styles.declineLabel}>{t("friends.decline")}</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => logic.accept.mutate(requestId)}
+            disabled={busy}
+            style={[styles.askButton, styles.answerButton, busy && styles.askButtonOff]}
+          >
+            <UserCheck size={16} color={colors.paper} strokeWidth={1.9} />
+            <Text style={styles.askLabel}>{t("friends.accept")}</Text>
+          </Pressable>
+        </View>
+      );
+    }
     default:
       return (
         <Pressable
@@ -447,6 +478,10 @@ const styles = StyleSheet.create({
   },
   friendsChipLabel: { fontFamily: fonts.sans, fontSize: 12.5, color: colors.inkMuted },
   requestedLabel: { fontFamily: fonts.sans, fontSize: 12.5, color: colors.inkSubtle, marginTop: 14 },
+  answerRow: { flexDirection: "row", alignItems: "center", gap: 14, marginTop: 14 },
+  /** The button carries the row's top margin, so it does not add its own on top of it. */
+  answerButton: { marginTop: 0 },
+  declineLabel: { fontFamily: fonts.sans, fontSize: 13, color: colors.inkMuted },
   askButton: {
     flexDirection: "row",
     alignItems: "center",

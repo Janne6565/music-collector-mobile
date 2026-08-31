@@ -39,6 +39,11 @@ export interface Profile {
   /** Present even on a locked shelf: the picture is account data, not shelf data (27f). */
   avatarUrl?: string;
   relationship?: Relationship;
+  /**
+   * The request waiting for an answer, present only on REQUEST_RECEIVED. Accepting and
+   * declining name the request, while this screen was opened by handle.
+   */
+  pendingRequestId?: string;
   canSeeCollection?: boolean;
   canSeeWishlist?: boolean;
   pricesVisible?: boolean;

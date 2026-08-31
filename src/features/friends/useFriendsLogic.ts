@@ -178,6 +178,8 @@ export function useFriendsLogic() {
 /** Somebody else's shelf — 15c when it is open to you, 15d when it is not. */
 export function useFriendProfileLogic(handle: string) {
   const queryClient = useQueryClient();
+  const router = useRouter();
+  const { store } = useStore();
   const clean = handle.replace(/^@/, "");
   /*
    * A shelf can be looked at without an account, but a friendship cannot be asked for
@@ -265,6 +267,33 @@ export function useFriendProfileLogic(handle: string) {
   }, [person, copies, wishes]);
 
   const ask = useMutation({ mutationFn: () => friendsApi.ask(clean), onSuccess: refresh });
+
+  /*
+   * Answering from the shelf itself.
+   *
+   * Both endpoints name the request rather than the person, which is why the profile
+   * carries `pendingRequestId`: a handle is what opened this screen and it is not what they
+   * take. Accepting earns the push prompt on exactly the terms the Friends tab uses -- a
+   * friendship now exists, the OS must still be askable, and one showing per device.
+   */
+  const accept = useMutation({
+    mutationFn: (id: string) => friendsApi.accept(id),
+    onSuccess: async () => {
+      await refresh();
+      if (!(await canStillAskForPush())) return;
+      if (!(await claimPushPriming(store))) return;
+      router.push({
+        pathname: "/notifications/priming",
+        params: { friend: person.data?.displayName ?? person.data?.handle ?? "" },
+      });
+    },
+  });
+
+  const decline = useMutation({
+    mutationFn: (id: string) => friendsApi.decline(id),
+    onSuccess: refresh,
+  });
+
   const unfriend = useMutation({
     mutationFn: (userId: string) => friendsApi.unfriend(userId),
     onSuccess: refresh,
@@ -292,6 +321,8 @@ export function useFriendProfileLogic(handle: string) {
       (wish.albumId == null ? null : (wishAlbumCovers.data?.get(wish.albumId) ?? null)),
     loadingLists: copies.isLoading || wishes.isLoading,
     ask,
+    accept,
+    decline,
     unfriend,
   };
 }
