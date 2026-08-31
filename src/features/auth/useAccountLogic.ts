@@ -17,6 +17,7 @@ import {
   resendEmailConfirmation,
   signIn,
   signOut,
+  signOutEverywhere,
   updateDisplayName,
 } from "@/api/auth";
 import { signInWithProvider } from "@/features/auth/externalSignIn";
@@ -209,6 +210,28 @@ export function useAccountLogic() {
     setBusy(false);
     // The local collection deliberately stays: signing out returns the app to how it
     // behaves with no account, and wiping someone's records would be a way to lose data.
+  }, [dispatch]);
+
+  /**
+   * The deliberate version: every device, including this one.
+   *
+   * The session ends here whatever the server said, because a phone that stayed signed in
+   * after somebody pressed this would be the one outcome nobody wants. A failure is
+   * reported, though -- the other devices are the point, and this cannot promise them.
+   */
+  const leaveEverywhere = useCallback(async (): Promise<boolean> => {
+    setBusy(true);
+    try {
+      await signOutEverywhere();
+      return true;
+    } catch {
+      // The account keeps its other sessions, but this device must not keep one either.
+      await signOut();
+      return false;
+    } finally {
+      dispatch(signedOut());
+      setBusy(false);
+    }
   }, [dispatch]);
 
   /**
@@ -546,5 +569,6 @@ export function useAccountLogic() {
     failed,
     resolveFirstSync,
     signOut: leave,
+    signOutEverywhere: leaveEverywhere,
   };
 }

@@ -1,6 +1,6 @@
 import { useFocusEffect, useRouter } from "expo-router";
 import { ChevronRight, LogOut } from "lucide-react-native";
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
@@ -267,6 +267,8 @@ function SignedIn({ logic }: { readonly logic: ReturnType<typeof useAccountLogic
       </Pressable>
       <Text style={styles.footnote}>{t("auth.signOutKeepsData")}</Text>
 
+      <SignOutEverywhere logic={logic} />
+
       {/* Deletion lives on Your data with the rest of the DSGVO actions, behind the typed
           confirmation. Two ways to delete an account is one too many, and the one that
           asked less would be the one somebody hit by accident. */}
@@ -494,6 +496,51 @@ function Row({
   );
 }
 
+/**
+ * Ending every session, in two taps.
+ *
+ * Two because it reaches devices that are not in the room: a stray tap here signs out a
+ * phone somebody else is holding. Not a sheet, because this app has no alert of its own and
+ * one whole modal for a recoverable action would say it is graver than deleting a record.
+ * The armed state forgets itself, so a row left open on a table does not stay dangerous.
+ */
+function SignOutEverywhere({ logic }: { readonly logic: ReturnType<typeof useAccountLogic> }) {
+  const { t } = useTranslation();
+  const [armed, setArmed] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    if (!armed) return;
+    const timer = setTimeout(() => setArmed(false), 5000);
+    return () => clearTimeout(timer);
+  }, [armed]);
+
+  return (
+    <View style={styles.everywhere}>
+      <Pressable
+        accessibilityRole="button"
+        disabled={logic.busy}
+        onPress={() => {
+          if (!armed) {
+            setArmed(true);
+            return;
+          }
+          setArmed(false);
+          void logic.signOutEverywhere().then((ok) => setFailed(!ok));
+        }}
+        hitSlop={8}
+      >
+        <Text style={[styles.everywhereLabel, armed && styles.everywhereArmed]}>
+          {armed ? t("auth.signOutEverywhereConfirm") : t("auth.signOutEverywhere")}
+        </Text>
+      </Pressable>
+      <Text style={styles.footnote}>
+        {failed ? t("auth.signOutEverywhereFailed") : t("auth.signOutEverywhereBody")}
+      </Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.paper },
   centered: {
@@ -603,6 +650,10 @@ const styles = StyleSheet.create({
   },
   signOutText: { fontSize: 14, fontWeight: "600", color: colors.inkMuted },
   footnote: { fontSize: 11.5, color: colors.inkSubtle, textAlign: "center" },
+  everywhere: { marginTop: 14, alignItems: "center", gap: 4 },
+  everywhereLabel: { fontSize: 12.5, fontWeight: "600", color: colors.inkMuted },
+  /** Armed reads in the accent, which is the only place this screen uses it for an action. */
+  everywhereArmed: { color: colors.accent },
   delete: { marginTop: 10, alignItems: "center", padding: 6 },
   deleteText: { fontSize: 12.5, fontWeight: "500", color: colors.accentStrong },
   dim: { opacity: 0.5 },

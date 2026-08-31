@@ -216,6 +216,19 @@ export async function signOut(): Promise<void> {
 }
 
 /**
+ * Ends every session on the account, this phone's included.
+ *
+ * Not best effort, unlike the one above: somebody asking for this wants the other devices
+ * gone, and clearing only this one while telling them it worked would be a lie about a
+ * thing they may have asked for because a device was lost.
+ */
+export async function signOutEverywhere(): Promise<void> {
+  await request("/api/v1/auth/logout-all", { method: "POST" });
+  setAccessToken(null);
+  await writeRefreshToken(null);
+}
+
+/**
  * Deletes the account and everything synced to it.
  *
  * The local collection is deliberately untouched — it belongs to the device, not the
