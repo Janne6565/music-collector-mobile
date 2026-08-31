@@ -21,3 +21,9 @@ expo-env.d.ts
 *.ipa
 *.apk
 *.aab
+
+# Firebase client config for Android/FCM. Not a secret in the cryptographic sense --
+# it ships inside every APK -- but it is environment-specific, so it stays out of the
+# repo. EAS holds it as the file secret GOOGLE_SERVICES_JSON; app.config.ts resolves
+# either that or this local copy. See docs/RELEASING.md.
+google-services.json

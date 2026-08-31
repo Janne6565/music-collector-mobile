@@ -542,9 +542,9 @@ const enCommon = {
     entries_other: "{{count}} entries",
     kind: { copy: "Copy", wish: "Wishlist" },
     sides: {
-      local: "This iPhone",
+      local: "This phone",
       account: "Your account",
-      localShort: "iPhone",
+      localShort: "Phone",
       accountShort: "Account",
     },
     field: {
@@ -578,7 +578,7 @@ const enCommon = {
     noLoss: {
       title_one: "Your account adds {{count}} entry",
       title_other: "Your account adds {{count}} entries",
-      body: "Everything on this iPhone is already in the account. Nothing is replaced and nothing is deleted. You end up with {{copies}} copies and {{wishes}} wishlist entries.",
+      body: "Everything on this phone is already in the account. Nothing is replaced and nothing is deleted. You end up with {{copies}} copies and {{wishes}} wishlist entries.",
       show_one: "Show the {{count}} entry",
       show_other: "Show the {{count}} entries",
       continue: "Continue",
@@ -597,16 +597,16 @@ const enCommon = {
       valuesBody: "Same copy, edited on both sides. Merging keeps the later edit.",
       photos_zero: "No choice here deletes a photo.",
       photos_one:
-        "Your {{count}} sleeve photo stays on this iPhone whatever you choose. Photos are never deleted here.",
+        "Your {{count}} sleeve photo stays on this phone whatever you choose. Photos are never deleted here.",
       photos_other:
-        "Your {{count}} sleeve photos stay on this iPhone whatever you choose. Photos are never deleted here.",
+        "Your {{count}} sleeve photos stay on this phone whatever you choose. Photos are never deleted here.",
     },
     seeDifference: "See what differs",
     keepBoth: "Keep both",
     keepBothBody_zero: "Nothing is deleted.",
     keepBothBody_one: "Nothing is deleted. The later of the {{count}} edit wins.",
     keepBothBody_other: "Nothing is deleted. The later of the {{count}} edits wins.",
-    keepLocal: "Keep this iPhone",
+    keepLocal: "Keep this phone",
     keepAccount: "Keep the account",
     keepLocalCost: "{{copies}} copies. Drops {{drops}} from the account.",
     keepAccountCost: "{{copies}} copies. Drops {{drops}} from here.",
@@ -618,7 +618,7 @@ const enCommon = {
         "{{count}} entry. The {{copies}} copies and {{wishes}} wishlist entries that are the same on both sides are not listed.",
       lede_other:
         "{{count}} entries. The {{copies}} copies and {{wishes}} wishlist entries that are the same on both sides are not listed.",
-      onlyLocalPhone: "Only on this iPhone · {{count}}",
+      onlyLocalPhone: "Only on this phone · {{count}}",
       onlyAccount: "Only in your account · {{count}}",
       both: "On both, different values · {{count}}",
       wins: "Keep both takes the {{side}} value",
@@ -638,19 +638,19 @@ const enCommon = {
     drop: {
       localTitle_one: "{{count}} entry leaves the account",
       localTitle_other: "{{count}} entries leave the account",
-      accountTitle_one: "{{count}} entry leaves this iPhone",
-      accountTitle_other: "{{count}} entries leave this iPhone",
+      accountTitle_one: "{{count}} entry leaves this phone",
+      accountTitle_other: "{{count}} entries leave this phone",
       localBody:
-        "{{copies}} copies and {{wishes}} wishlist entries exist only in your account. Keeping this iPhone deletes them there, on every other device too. The {{edits}} differing values become this iPhone's.",
+        "{{copies}} copies and {{wishes}} wishlist entries exist only in your account. Keeping this phone deletes them there, on every other device too. The {{edits}} differing values become this phone's.",
       accountBody:
-        "{{copies}} copies and {{wishes}} wishlist entries exist only here. Keeping the account deletes them from this iPhone. Your {{photos}} sleeve photos stay, and reattach if their copy comes back.",
+        "{{copies}} copies and {{wishes}} wishlist entries exist only here. Keeping the account deletes them from this phone. Your {{photos}} sleeve photos stay, and reattach if their copy comes back.",
       export_one: "Download the {{count}} entry as CSV first",
       export_other: "Download the {{count}} entries as CSV first",
     },
     banner: {
       MERGED: "Merged. {{arrived}} entries came in, {{edits}} values took their later edit.",
       REVIEWED: "Done. {{arrived}} entries came in, and the rest went the way you decided.",
-      KEPT_LOCAL: "This iPhone was kept. The account now holds what is on this shelf.",
+      KEPT_LOCAL: "This phone was kept. The account now holds what is on this shelf.",
       KEPT_ACCOUNT: "The account was kept. {{arrived}} entries came in.",
       show: "Show them",
       showAll: "Show everything",
@@ -1651,9 +1651,9 @@ const deCommon: CommonSchema = {
     entries_other: "{{count}} Einträge",
     kind: { copy: "Exemplar", wish: "Wunschliste" },
     sides: {
-      local: "Dieses iPhone",
+      local: "Dieses Telefon",
       account: "Dein Konto",
-      localShort: "iPhone",
+      localShort: "Telefon",
       accountShort: "Konto",
     },
     field: {
@@ -1675,7 +1675,7 @@ const deCommon: CommonSchema = {
     },
     unreachable: {
       title: "Dein Regal hier ist unberührt",
-      body: "Der Server hat nicht geantwortet, das Konto wurde also nicht gelesen. Du bist angemeldet, der Sync pausiert, und dieses iPhone arbeitet weiter wie bisher. Rekordo fragt erneut, sobald es vergleichen kann.",
+      body: "Der Server hat nicht geantwortet, das Konto wurde also nicht gelesen. Du bist angemeldet, der Sync pausiert, und dieses Telefon arbeitet weiter wie bisher. Rekordo fragt erneut, sobald es vergleichen kann.",
       open: "Bibliothek öffnen",
       retry: "Erneut versuchen",
     },
@@ -1687,7 +1687,7 @@ const deCommon: CommonSchema = {
     noLoss: {
       title_one: "Dein Konto steuert {{count}} Eintrag bei",
       title_other: "Dein Konto steuert {{count}} Einträge bei",
-      body: "Alles auf diesem iPhone ist bereits im Konto. Nichts wird ersetzt und nichts gelöscht. Am Ende hast du {{copies}} Exemplare und {{wishes}} Wunschlisteneinträge.",
+      body: "Alles auf diesem Telefon ist bereits im Konto. Nichts wird ersetzt und nichts gelöscht. Am Ende hast du {{copies}} Exemplare und {{wishes}} Wunschlisteneinträge.",
       show_one: "Den {{count}} Eintrag zeigen",
       show_other: "Die {{count}} Einträge zeigen",
       continue: "Weiter",
@@ -1707,16 +1707,16 @@ const deCommon: CommonSchema = {
         "Dasselbe Exemplar, auf beiden Seiten bearbeitet. Beim Zusammenführen gilt die spätere Änderung.",
       photos_zero: "Keine Wahl hier löscht ein Foto.",
       photos_one:
-        "Dein {{count}} Hüllenfoto bleibt auf diesem iPhone, egal wie du dich entscheidest. Fotos werden hier nie gelöscht.",
+        "Dein {{count}} Hüllenfoto bleibt auf diesem Telefon, egal wie du dich entscheidest. Fotos werden hier nie gelöscht.",
       photos_other:
-        "Deine {{count}} Hüllenfotos bleiben auf diesem iPhone, egal wie du dich entscheidest. Fotos werden hier nie gelöscht.",
+        "Deine {{count}} Hüllenfotos bleiben auf diesem Telefon, egal wie du dich entscheidest. Fotos werden hier nie gelöscht.",
     },
     seeDifference: "Unterschiede ansehen",
     keepBoth: "Beides behalten",
     keepBothBody_zero: "Nichts wird gelöscht.",
     keepBothBody_one: "Nichts wird gelöscht. Von {{count}} Änderung gilt die spätere.",
     keepBothBody_other: "Nichts wird gelöscht. Von den {{count}} Änderungen gilt jeweils die spätere.",
-    keepLocal: "Dieses iPhone behalten",
+    keepLocal: "Dieses Telefon behalten",
     keepAccount: "Das Konto behalten",
     keepLocalCost: "{{copies}} Exemplare. Verwirft {{drops}} aus dem Konto.",
     keepAccountCost: "{{copies}} Exemplare. Verwirft {{drops}} von hier.",
@@ -1728,7 +1728,7 @@ const deCommon: CommonSchema = {
         "{{count}} Eintrag. Die {{copies}} Exemplare und {{wishes}} Wunschlisteneinträge, die auf beiden Seiten gleich sind, werden nicht aufgeführt.",
       lede_other:
         "{{count}} Einträge. Die {{copies}} Exemplare und {{wishes}} Wunschlisteneinträge, die auf beiden Seiten gleich sind, werden nicht aufgeführt.",
-      onlyLocalPhone: "Nur auf diesem iPhone · {{count}}",
+      onlyLocalPhone: "Nur auf diesem Telefon · {{count}}",
       onlyAccount: "Nur in deinem Konto · {{count}}",
       both: "Auf beiden, andere Werte · {{count}}",
       wins: "Beides behalten nimmt den Wert aus: {{side}}",
@@ -1748,12 +1748,12 @@ const deCommon: CommonSchema = {
     drop: {
       localTitle_one: "{{count}} Eintrag verlässt das Konto",
       localTitle_other: "{{count}} Einträge verlassen das Konto",
-      accountTitle_one: "{{count}} Eintrag verlässt dieses iPhone",
-      accountTitle_other: "{{count}} Einträge verlassen dieses iPhone",
+      accountTitle_one: "{{count}} Eintrag verlässt dieses Telefon",
+      accountTitle_other: "{{count}} Einträge verlassen dieses Telefon",
       localBody:
-        "{{copies}} Exemplare und {{wishes}} Wunschlisteneinträge gibt es nur in deinem Konto. Dieses iPhone zu behalten löscht sie dort, und damit auch auf allen anderen Geräten. Die {{edits}} abweichenden Werte werden die dieses iPhones.",
+        "{{copies}} Exemplare und {{wishes}} Wunschlisteneinträge gibt es nur in deinem Konto. Dieses Telefon zu behalten löscht sie dort, und damit auch auf allen anderen Geräten. Die {{edits}} abweichenden Werte werden die dieses Telefons.",
       accountBody:
-        "{{copies}} Exemplare und {{wishes}} Wunschlisteneinträge gibt es nur hier. Das Konto zu behalten löscht sie von diesem iPhone. Deine {{photos}} Hüllenfotos bleiben und hängen sich wieder an, falls ihr Exemplar zurückkommt.",
+        "{{copies}} Exemplare und {{wishes}} Wunschlisteneinträge gibt es nur hier. Das Konto zu behalten löscht sie von diesem Telefon. Deine {{photos}} Hüllenfotos bleiben und hängen sich wieder an, falls ihr Exemplar zurückkommt.",
       export_one: "Den {{count}} Eintrag vorher als CSV laden",
       export_other: "Die {{count}} Einträge vorher als CSV laden",
     },
@@ -1762,7 +1762,7 @@ const deCommon: CommonSchema = {
         "Zusammengeführt. {{arrived}} Einträge sind dazugekommen, {{edits}} Werte haben ihre spätere Änderung übernommen.",
       REVIEWED:
         "Fertig. {{arrived}} Einträge sind dazugekommen, der Rest ist so ausgegangen, wie du entschieden hast.",
-      KEPT_LOCAL: "Dieses iPhone wurde behalten. Im Konto steht jetzt, was in diesem Regal liegt.",
+      KEPT_LOCAL: "Dieses Telefon wurde behalten. Im Konto steht jetzt, was in diesem Regal liegt.",
       KEPT_ACCOUNT: "Das Konto wurde behalten. {{arrived}} Einträge sind dazugekommen.",
       show: "Zeigen",
       showAll: "Alles zeigen",

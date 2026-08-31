@@ -17,7 +17,7 @@ import { colors, fonts } from "@/theme/colors";
  *
  * The photo was saved and attached before the server ever answered, so this reports a fact
  * rather than a failure: nothing to retry, nothing lost, and the picture is on this phone
- * and perfectly usable. That is why the heading is "Saved on this iPhone" and not an
+ * and perfectly usable. That is why the heading is "Saved on this phone" and not an
  * apology, and why the only button is OK.
  *
  * **The two refusals must not read alike.** A full account is fixed by deleting a photo; a

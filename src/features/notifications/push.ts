@@ -14,6 +14,27 @@ import type { LocalStore } from "@janne6565/rekordo-shared";
  * added — only from the priming screen, and only after a friendship exists.
  */
 
+/**
+ * The Android channel every push of ours lands in.
+ *
+ * Android has no concept of "a notification from this app" on its own: a push with no
+ * channel is filed under a fallback whose importance is low, which means it arrives
+ * silently and without a banner. iOS needs nothing of the sort, so this is the one piece
+ * of push that is genuinely platform-shaped rather than merely worded differently.
+ *
+ * Idempotent by design — Android replaces the channel description on every call but leaves
+ * the importance alone once somebody has changed it in system settings, which is the
+ * behaviour we want: their choice outranks ours.
+ */
+export async function ensureAndroidChannel(): Promise<void> {
+  if (Platform.OS !== "android") return;
+  await Notifications.setNotificationChannelAsync("default", {
+    name: "Rekordo",
+    importance: Notifications.AndroidImportance.DEFAULT,
+    lockscreenVisibility: Notifications.AndroidNotificationVisibility.PRIVATE,
+  });
+}
+
 /** True when the OS has already been asked and said yes. Never asks anything itself. */
 export async function pushAlreadyGranted(): Promise<boolean> {
   if (!Device.isDevice) return false;
@@ -35,6 +56,7 @@ export async function canStillAskForPush(): Promise<boolean> {
 
 /** Opens the OS dialog. Only ever called from the priming screen's dark button. */
 export async function askForPush(): Promise<boolean> {
+  await ensureAndroidChannel();
   const { status } = await Notifications.requestPermissionsAsync();
   return status === "granted";
 }
@@ -47,6 +69,7 @@ export async function askForPush(): Promise<boolean> {
  */
 export async function syncPushRegistration(store: LocalStore): Promise<boolean> {
   if (!(await pushAlreadyGranted())) return false;
+  await ensureAndroidChannel();
 
   const projectId =
     Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
