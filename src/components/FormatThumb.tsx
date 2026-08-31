@@ -137,14 +137,53 @@ function Disc() {
   );
 }
 
-/** The shell seen end-on. Straight edges, which is what holds it together at 44px. */
+/**
+ * The shell seen end-on, which is how a cassette sits on a shelf.
+ *
+ * Only the strip to the right of the cover is ever visible, so every part here is placed by
+ * where it lands in it. The two winds are deliberately different sizes — a played tape is
+ * wound onto one hub, and equal spools are what make a cassette look like an icon of one.
+ *
+ * Two flattenings, both in the deck's favour. The shell's and the label's ramps are real
+ * gradients, because the shell's is the whole of its roundness and the label's is the light
+ * on the edge that faces you. The winds' radial gradient is not: it is a brown disc barely
+ * a millimetre across at the size this is read, and a solid at its mean is indistinguishable
+ * from it. The hubs keep their hard stop, which is a ring rather than a gradient anyway, and
+ * so is drawn as one.
+ */
 function Cassette() {
   return (
     <>
-      <View style={styles.shell} />
-      <View style={styles.shellWindow} />
-      <View style={[styles.hub, styles.hubTop]} />
-      <View style={[styles.hub, styles.hubBottom]} />
+      <View style={styles.shell}>
+        <LinearGradient
+          colors={["#211e18", "#211e18", "#2b2721", "#332e26", "#262219"]}
+          locations={[0, 0.55, 0.82, 0.94, 1]}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+          style={styles.shellFace}
+        />
+      </View>
+      <View style={styles.label}>
+        <LinearGradient
+          colors={["#ddd6c8", "#ddd6c8", "#e9e3d6"]}
+          locations={[0, 0.7, 1]}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+          style={styles.labelFace}
+        />
+      </View>
+      <View style={styles.spine} />
+      <View style={styles.window} />
+      <View style={[styles.wind, styles.windTop]} />
+      <View style={[styles.wind, styles.windBottom]} />
+      <View style={[styles.hub, styles.hubTop]}>
+        <View style={styles.hubCentre} />
+      </View>
+      <View style={[styles.hub, styles.hubBottom]}>
+        <View style={styles.hubCentre} />
+      </View>
+      <View style={[styles.screw, styles.screwTop]} />
+      <View style={[styles.screw, styles.screwBottom]} />
     </>
   );
 }
@@ -247,38 +286,111 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.6)",
   },
 
+  /*
+   * The shell casts the mark's drop shadow, so it carries a background of its own: iOS
+   * derives a shadow from the view's own paint, and a view whose colour lives entirely in a
+   * gradient child casts nothing. The gradient then covers it.
+   */
   shell: {
     position: "absolute",
     right: 0,
     top: "13%",
     width: "33%",
     height: "74%",
-    borderRadius: 3,
-    backgroundColor: "#26231d",
+    borderTopLeftRadius: 2,
+    borderTopRightRadius: 4,
+    borderBottomRightRadius: 4,
+    borderBottomLeftRadius: 2,
+    backgroundColor: "#211e18",
+    shadowColor: "#191713",
+    shadowOpacity: 0.3,
+    shadowRadius: 7,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+  },
+  shellFace: {
+    ...StyleSheet.absoluteFill,
+    borderTopLeftRadius: 2,
+    borderTopRightRadius: 4,
+    borderBottomRightRadius: 4,
+    borderBottomLeftRadius: 2,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(0,0,0,0.4)",
+    borderColor: "rgba(0,0,0,0.42)",
   },
-  shellWindow: {
+
+  label: {
     position: "absolute",
-    right: "8%",
-    top: "22%",
-    width: "17%",
-    height: "56%",
-    borderRadius: 2,
-    backgroundColor: "rgba(250,248,245,0.34)",
+    right: "3%",
+    top: "17%",
+    width: "27%",
+    height: "66%",
+    borderTopLeftRadius: 1,
+    borderTopRightRadius: 3,
+    borderBottomRightRadius: 3,
+    borderBottomLeftRadius: 1,
+    backgroundColor: "#ddd6c8",
   },
+  labelFace: {
+    ...StyleSheet.absoluteFill,
+    borderTopLeftRadius: 1,
+    borderTopRightRadius: 3,
+    borderBottomRightRadius: 3,
+    borderBottomLeftRadius: 1,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(25,23,19,0.22)",
+  },
+  /** The spine the label wraps around. */
+  spine: {
+    position: "absolute",
+    right: "3%",
+    top: "17%",
+    width: "2.6%",
+    height: "66%",
+    borderTopRightRadius: 3,
+    borderBottomRightRadius: 3,
+    backgroundColor: "#8b8880",
+  },
+  window: {
+    position: "absolute",
+    right: "7%",
+    top: "29%",
+    width: "12%",
+    height: "42%",
+    borderRadius: 5,
+    backgroundColor: "#14120f",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(25,23,19,0.5)",
+  },
+  /** The tape, wound unevenly: the top spool is full, the bottom one nearly spent. */
+  wind: { position: "absolute", borderRadius: 999, backgroundColor: "#352822" },
+  windTop: { right: "7.5%", top: "33.4%", width: "11%", height: "13.2%" },
+  windBottom: { right: "8.75%", top: "54.9%", width: "8.5%", height: "10.2%" },
   hub: {
     position: "absolute",
-    right: "11.5%",
-    width: "10%",
-    height: "14%",
+    right: "9.25%",
+    width: "7.5%",
+    height: "9%",
     borderRadius: 999,
-    backgroundColor: "#191713",
-    borderWidth: 1.5,
-    borderColor: "rgba(250,248,245,0.55)",
+    backgroundColor: "#e8e3d8",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(25,23,19,0.4)",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  hubTop: { top: "28%" },
-  hubBottom: { top: "58%" },
+  hubTop: { top: "35.5%" },
+  hubBottom: { top: "55.5%" },
+  /** The deck's hard stop at 32% of the radius, which is a disc rather than a gradient. */
+  hubCentre: { width: "32%", height: "32%", borderRadius: 999, backgroundColor: "#14120f" },
+  screw: {
+    position: "absolute",
+    right: "1%",
+    width: "2%",
+    height: "2.4%",
+    borderRadius: 999,
+    backgroundColor: "#0e0d0b",
+  },
+  screwTop: { top: "15%" },
+  screwBottom: { top: "82.6%" },
 
   plugBody: {
     position: "absolute",
