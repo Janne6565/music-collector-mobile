@@ -1,5 +1,5 @@
 import type { NativeLocalStore } from "@/local/LocalStore";
-import { SqliteLocalStore } from "@/local/sqliteStore";
+import { openLocalStore } from "@/local/sqliteStore";
 import type { ClockSource } from "@janne6565/rekordo-shared";
 import { hlcDecode, hlcEncode, hlcInitial, hlcTick } from "@janne6565/rekordo-shared";
 import { type ReactNode, createContext, useContext, useEffect, useState } from "react";
@@ -24,8 +24,7 @@ export function StoreProvider({ children }: { readonly children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const store = new SqliteLocalStore();
-      await store.open();
+      const store = await openLocalStore();
       const node = await store.deviceId();
       const persisted = await store.readClock();
       let current = persisted === undefined ? hlcInitial(node) : hlcDecode(persisted);

@@ -68,6 +68,35 @@ const PENDING_KEY = "pendingIds";
 const SETTING_PREFIX = "setting:";
 
 /**
+ * The one open database this runtime gets, whoever asks for it.
+ *
+ * Opening the same file a second time does not give a second connection: expo-sqlite
+ * hands both handles the same native database, and whichever handle is collected first
+ * closes it for the other one. A single remount of the provider is enough to create that
+ * second handle — Fast Refresh does it in development — and the collection then happens
+ * the moment the app is backgrounded, which on Android is exactly what signing in through
+ * the browser does. What comes back is an app whose every query fails with a
+ * NullPointerException until it is restarted. So the handle is opened once and shared.
+ */
+let opening: Promise<SqliteLocalStore> | null = null;
+
+export function openLocalStore(): Promise<SqliteLocalStore> {
+  if (opening === null) {
+    const store = new SqliteLocalStore();
+    // A failed open is not remembered: the next caller should get to try again rather
+    // than be handed the same rejection for the rest of the session.
+    opening = store.open().then(
+      () => store,
+      (error: unknown) => {
+        opening = null;
+        throw error;
+      },
+    );
+  }
+  return opening;
+}
+
+/**
  * SQLite-backed store for the mobile app — the same interface the web app implements over
  * IndexedDB, so a screen written against LocalStore ports between them unchanged.
  *
