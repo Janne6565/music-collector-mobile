@@ -9,14 +9,15 @@ import {
   useLibraryLogic,
 } from "@/features/library/useLibraryLogic";
 import { useCoverPhotos } from "@/features/photos/useCoverPhotos";
+import { RollSheet } from "@/features/roll/RollSheet";
 import type { CatalogueGap } from "@/local/settings";
 import { colors, fonts } from "@/theme/colors";
 import type { Format } from "@janne6565/rekordo-shared";
 import { catalogArtShown, copyFormat, copyPreviewSrc } from "@janne6565/rekordo-shared";
 import { FORMAT_LABELS } from "@janne6565/rekordo-shared";
 import { useRouter } from "expo-router";
-import { Plus } from "lucide-react-native";
-import { useEffect, useMemo } from "react";
+import { Dices, Plus } from "lucide-react-native";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -27,6 +28,14 @@ export function LibraryScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const logic = useLibraryLogic();
+  /**
+   * 26a — the roll, over the shelf rather than instead of it.
+   *
+   * Local state and not a route: the sheet carries its own pool and the library keeps its
+   * filter, its scroll and its place in the stack underneath, which is the whole reason
+   * the dice can live in the toolbar.
+   */
+  const [rolling, setRolling] = useState(false);
   const copyIds = useMemo(() => logic.rows.map((row) => row.copy.id), [logic.rows]);
   const covers = useCoverPhotos(copyIds);
   // Left here on the way past so the detail screen can be swiped through *this* order --
@@ -43,6 +52,24 @@ export function LibraryScreen() {
           <Text style={styles.count}>
             {t("library.itemCount", { count: logic.stats?.copyCount ?? 0 })}
           </Text>
+          {/* Beside Add rather than among the format chips: both are things you do to
+              the shelf, and the chips are what the shelf currently is. */}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t("roll.openLabel")}
+            onPress={() => setRolling(true)}
+            disabled={logic.collectionEmpty}
+            style={[styles.rollButton, logic.collectionEmpty && styles.rollButtonOff]}
+          >
+            <Dices
+              size={15}
+              color={logic.collectionEmpty ? colors.inkSubtle : colors.accent}
+              strokeWidth={1.75}
+            />
+            <Text style={[styles.rollText, logic.collectionEmpty && styles.rollTextOff]}>
+              {t("roll.open")}
+            </Text>
+          </Pressable>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t("library.addItem")}
@@ -106,6 +133,8 @@ export function LibraryScreen() {
           }
         />
       )}
+
+      {rolling && <RollSheet onClose={() => setRolling(false)} />}
     </SafeAreaView>
   );
 }
@@ -182,6 +211,20 @@ const styles = StyleSheet.create({
   title: { fontFamily: fonts.serif, fontSize: 30, color: colors.ink },
   headerRight: { flexDirection: "row", alignItems: "center", gap: 8 },
   count: { fontSize: 11.5, color: colors.inkSubtle },
+  rollButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    height: 32,
+    paddingHorizontal: 11,
+    borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.line,
+    backgroundColor: colors.surface,
+  },
+  rollButtonOff: { opacity: 0.5 },
+  rollText: { fontSize: 11.5, fontWeight: "600", color: colors.accent },
+  rollTextOff: { color: colors.inkSubtle },
   addButton: {
     width: 32,
     height: 32,
