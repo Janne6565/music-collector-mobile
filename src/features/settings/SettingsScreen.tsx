@@ -8,15 +8,7 @@ import { useRouter } from "expo-router";
 import { Check, ChevronLeft, ChevronRight } from "lucide-react-native";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  View,
-} from "react-native";
+import { Modal, Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 /**
@@ -58,7 +50,9 @@ export function SettingsScreen() {
                 ? undefined
                 : values.appLanguage === "system"
                   ? t("settings.appLanguage.following", {
-                      language: t(`settings.language.${i18n.language.startsWith("en") ? "en" : "de"}`),
+                      language: t(
+                        `settings.language.${i18n.language.startsWith("en") ? "en" : "de"}`,
+                      ),
                     })
                   : t("settings.appLanguage.chosen")
             }
@@ -93,7 +87,9 @@ export function SettingsScreen() {
           <PickerRow
             title={t("settings.currency.title")}
             body={
-              values === undefined ? undefined : t("settings.currency.body", { count: logic.copyCount })
+              values === undefined
+                ? undefined
+                : t("settings.currency.body", { count: logic.copyCount })
             }
             value={values?.currency ?? ""}
             state={logic.state("currency")}
@@ -232,7 +228,8 @@ export function SettingsScreen() {
         }
         onChoose={(value) => {
           if (picking === "currency") logic.setCurrency(value as CurrencyCode);
-          if (picking === "documentLanguage") logic.setDocumentLanguage(value === "en" ? "en" : "de");
+          if (picking === "documentLanguage")
+            logic.setDocumentLanguage(value === "en" ? "en" : "de");
           if (picking === "appLanguage") logic.setAppLanguage(value as AppLanguage);
           setPicking(null);
         }}
@@ -307,7 +304,7 @@ function PickerSheet({
     <Modal visible={open} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.scrim} onPress={onClose} accessibilityRole="button" />
       <View style={styles.sheetHolder} pointerEvents="box-none">
-        <RisingSheet visible={open} style={styles.sheet}>
+        <RisingSheet visible={open} style={styles.sheet} onDismiss={onClose}>
           <View style={styles.grabber} />
           <Text style={styles.sheetTitle}>{title}</Text>
           <Text style={styles.sheetNote}>{note}</Text>

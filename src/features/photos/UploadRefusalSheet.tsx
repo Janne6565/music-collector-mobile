@@ -1,16 +1,13 @@
+import { accountStorage } from "@/api/storage";
+import { RisingSheet } from "@/components/RisingSheet";
+import { formatMegabytes } from "@/features/account/storageReading";
+import { useStore } from "@/local/StoreProvider";
+import { markRefusalSeen, readUploadRefusal } from "@/local/uploadRefusal";
+import { colors, fonts } from "@/theme/colors";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
-import {
-  markRefusalSeen,
-  readUploadRefusal,
-} from "@/local/uploadRefusal";
-import { useStore } from "@/local/StoreProvider";
-import { accountStorage } from "@/api/storage";
-import { formatMegabytes } from "@/features/account/storageReading";
-import { RisingSheet } from "@/components/RisingSheet";
-import { colors, fonts } from "@/theme/colors";
 
 /**
  * What a refused upload says, once (design 28d).
@@ -80,7 +77,11 @@ export function UploadRefusalSheet() {
       onRequestClose={() => void dismiss()}
     >
       <View style={styles.scrim}>
-        <RisingSheet visible={pending !== null} style={styles.sheet}>
+        <RisingSheet
+          visible={pending !== null}
+          style={styles.sheet}
+          onDismiss={() => void dismiss()}
+        >
           <View style={styles.grabber} />
           <Text style={styles.title}>{t("photos.refusal.title")}</Text>
           <Text style={styles.body}>
@@ -123,7 +124,13 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(25,23,19,0.16)",
     alignSelf: "center",
   },
-  title: { fontFamily: fonts.serif, fontSize: 23, lineHeight: 27, color: colors.ink, marginTop: 18 },
+  title: {
+    fontFamily: fonts.serif,
+    fontSize: 23,
+    lineHeight: 27,
+    color: colors.ink,
+    marginTop: 18,
+  },
   body: {
     fontFamily: fonts.sans,
     fontSize: 13,

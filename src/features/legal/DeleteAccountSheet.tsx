@@ -48,7 +48,7 @@ export function DeleteAccountSheet({
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.sheetHolder}
       >
-        <RisingSheet style={styles.sheet}>
+        <RisingSheet style={styles.sheet} onDismiss={onCancel}>
           <View style={styles.grabber} />
           <Text style={styles.title}>{t("legal.delete.title")}</Text>
           <Text style={styles.body}>{t("legal.delete.body", { count: copyCount ?? 0 })}</Text>

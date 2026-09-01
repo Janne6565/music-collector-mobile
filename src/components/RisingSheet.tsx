@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AccessibilityInfo,
   Animated,
   Easing,
   type LayoutChangeEvent,
+  PanResponder,
   type ViewStyle,
 } from "react-native";
 
@@ -21,6 +22,29 @@ import {
  */
 const RISE_MS = 260;
 
+/** How far the panel drops back into place when a drag is let go short of dismissing. */
+const SETTLE_MS = 180;
+
+/**
+ * How far down the panel has to be dragged before letting go dismisses it.
+ *
+ * A flick counts too, at `DISMISS_VELOCITY`, because the gesture people actually make is
+ * a short fast swipe rather than a long slow haul.
+ */
+const DISMISS_DISTANCE = 110;
+const DISMISS_VELOCITY = 0.8;
+
+/**
+ * The strip at the top of the panel where a drag starts, measured from its own top edge.
+ *
+ * The gesture is deliberately not attached to the whole panel. Two of these sheets hold a
+ * ScrollView, and a pan that claimed the panel would take the scroll away from it -- so the
+ * handle is where the grabber already promises it is, and everything below it scrolls as
+ * before. Kept to the grabber and its surrounding padding, no further, because the touch is
+ * claimed the moment it lands here.
+ */
+const GRAB_ZONE = 32;
+
 /**
  * Sheets that are kept mounted behind a `visible` prop have to replay the rise every time
  * they reopen; ones that are mounted only while open get it from the first layout. Both go
@@ -29,10 +53,19 @@ const RISE_MS = 260;
 interface RisingSheetProps {
   readonly visible?: boolean;
   readonly style?: ViewStyle | readonly ViewStyle[];
+  /**
+   * Called when the panel has been dragged down far enough to dismiss.
+   *
+   * Passing it is what turns the grabber into a real handle. Without it the panel is not
+   * draggable at all, which is the right answer for a sheet whose only way out is a
+   * decision -- but every sheet that draws a grabber should pass it, because the grabber
+   * is otherwise an affordance for a gesture that does nothing.
+   */
+  readonly onDismiss?: () => void;
   readonly children: React.ReactNode;
 }
 
-export function RisingSheet({ visible = true, style, children }: RisingSheetProps) {
+export function RisingSheet({ visible = true, style, onDismiss, children }: RisingSheetProps) {
   const translateY = useRef(new Animated.Value(0)).current;
   const height = useRef(0);
   // Held invisible until the first layout has been measured, otherwise the panel shows for
@@ -71,9 +104,78 @@ export function RisingSheet({ visible = true, style, children }: RisingSheetProp
   }, [reduceMotion, translateY]);
 
   useEffect(() => {
-    if (visible) play();
-    else setReady(false);
+    if (visible) {
+      dismissing.current = false;
+      play();
+    } else setReady(false);
   }, [visible, play]);
+
+  /*
+   * The drag rides the same value as the rise.
+   *
+   * They never run together -- the rise has finished before a finger can be on the panel --
+   * and sharing the value means a dismissal continues from wherever the drag left off
+   * rather than snapping back to nought first.
+   */
+  const dismissing = useRef(false);
+
+  const settle = useCallback(() => {
+    Animated.timing(translateY, {
+      toValue: 0,
+      duration: SETTLE_MS,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [translateY]);
+
+  const leave = useCallback(() => {
+    if (onDismiss === undefined) return;
+    dismissing.current = true;
+    if (reduceMotion || height.current === 0) {
+      onDismiss();
+      return;
+    }
+    Animated.timing(translateY, {
+      toValue: height.current,
+      duration: 200,
+      easing: Easing.in(Easing.cubic),
+      useNativeDriver: true,
+    }).start(() => onDismiss());
+  }, [onDismiss, reduceMotion, translateY]);
+
+  const pan = useMemo(
+    () =>
+      PanResponder.create({
+        /*
+         * Claimed on touch-down, inside the grab strip only.
+         *
+         * The obvious shape -- refuse the touch and claim later, once the finger has moved
+         * far enough to prove it is a downward drag -- does not work here. Android only
+         * runs that negotiation for a touch some view is already tracking, so a handle that
+         * declines the press never hears about the movement that follows: the start
+         * callbacks fire, the move callbacks never do, and the sheet sits there.
+         *
+         * Claiming up front is safe because the strip is the grabber and the padding around
+         * it, where nothing is tappable. A press that turns out to be a tap moves nothing
+         * and settles back where it was.
+         */
+        onStartShouldSetPanResponder: (event) =>
+          onDismiss !== undefined &&
+          !dismissing.current &&
+          event.nativeEvent.locationY <= GRAB_ZONE,
+        onPanResponderMove: (_event, gesture) => {
+          // Clamped at nought: the panel is already at the bottom of the screen, and
+          // letting it be dragged upward would open a gap under it.
+          translateY.setValue(Math.max(0, gesture.dy));
+        },
+        onPanResponderRelease: (_event, gesture) => {
+          if (gesture.dy > DISMISS_DISTANCE || gesture.vy > DISMISS_VELOCITY) leave();
+          else settle();
+        },
+        onPanResponderTerminate: () => settle(),
+      }),
+    [leave, onDismiss, settle, translateY],
+  );
 
   const onLayout = (event: LayoutChangeEvent) => {
     const next = event.nativeEvent.layout.height;
@@ -87,6 +189,7 @@ export function RisingSheet({ visible = true, style, children }: RisingSheetProp
   return (
     <Animated.View
       onLayout={onLayout}
+      {...(onDismiss === undefined ? {} : pan.panHandlers)}
       style={[style, { opacity: ready ? 1 : 0, transform: [{ translateY }] }]}
     >
       {children}

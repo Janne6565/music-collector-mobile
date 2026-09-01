@@ -88,7 +88,10 @@ export function WishSheet({ onClose, release = null, entry = null }: WishSheetPr
 
   const heading =
     entry !== null
-      ? { title: entry.title, subtitle: `${entry.artistName}${entry.year === null ? "" : ` · ${entry.year}`}` }
+      ? {
+          title: entry.title,
+          subtitle: `${entry.artistName}${entry.year === null ? "" : ` · ${entry.year}`}`,
+        }
       : release !== null
         ? {
             title: release.title,
@@ -139,7 +142,8 @@ export function WishSheet({ onClose, release = null, entry = null }: WishSheetPr
   const ownPhoto = useQuery({
     queryKey: ["wish-photo", entry?.id ?? ""],
     enabled: entry !== null,
-    queryFn: async () => (await store.listWishPhotos([entry?.id ?? ""])).get(entry?.id ?? "") ?? null,
+    queryFn: async () =>
+      (await store.listWishPhotos([entry?.id ?? ""])).get(entry?.id ?? "") ?? null,
   });
 
   /**
@@ -150,8 +154,7 @@ export function WishSheet({ onClose, release = null, entry = null }: WishSheetPr
    * outrank the catalogue, whose answer is one pressing's sleeve among several.
    */
   const previewUri =
-    picked?.uri ??
-    (dropped || ownPhoto.data == null ? null : store.photoUri(ownPhoto.data.id));
+    picked?.uri ?? (dropped || ownPhoto.data == null ? null : store.photoUri(ownPhoto.data.id));
   const hasPicture = previewUri !== null;
 
   const choose = useMutation({
@@ -235,9 +238,7 @@ export function WishSheet({ onClose, release = null, entry = null }: WishSheetPr
 
       // One entry per release. A second heart reopens this sheet rather than adding a row,
       // checked against the live list because the entry may have synced in from elsewhere.
-      const already = (await store.listWishlist()).find(
-        (item) => item.albumId === subject.albumId,
-      );
+      const already = (await store.listWishlist()).find((item) => item.albumId === subject.albumId);
       if (already !== undefined) {
         await store.putWishlistItem(
           applyWishPatch(already, { desiredFormat: format, note: cleaned }, clock),
@@ -278,7 +279,7 @@ export function WishSheet({ onClose, release = null, entry = null }: WishSheetPr
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.sheetWrap}
       >
-        <RisingSheet style={styles.sheet}>
+        <RisingSheet style={styles.sheet} onDismiss={onClose}>
           <View style={styles.grabber} />
           <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
             {heading !== null ? (
@@ -464,7 +465,13 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   spaced: { marginTop: 18 },
-  coverRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 14, marginTop: 10 },
+  coverRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: 14,
+    marginTop: 10,
+  },
   coverThumb: { width: 44, height: 44, borderRadius: 8, backgroundColor: colors.surface },
   coverAction: { flexDirection: "row", alignItems: "center", gap: 6 },
   coverActionText: { fontSize: 12, color: colors.inkMuted, fontWeight: "500" },
