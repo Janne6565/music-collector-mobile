@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { Platform } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Provider } from "react-redux";
 import "@/i18n/config";
@@ -17,16 +18,35 @@ import { SyncProvider } from "@/sync/SyncProvider";
 
 const queryClient = new QueryClient();
 
+/** How round the card's top edge is on Android, in the absence of a system default. */
+const SHEET_RADIUS = 28;
+
 /**
  * How a record's sheet is presented — the one place both of them say it.
  *
  * A copy is something you open and close again, not a place you navigate to, and as a
  * sheet the two gestures stop competing: dismissal moves to the vertical axis, where the
  * platform provides it, which leaves the horizontal one entirely to moving between records.
+ *
+ * The two platforms need different words for the same thing. `modal` is a page sheet on
+ * iOS and gets the card, the rounded top and the drag for free; on Android it is an
+ * ordinary full-screen destination that happens to slide up, and no amount of styling
+ * inside the screen would add the drag. `formSheet` is the presentation Android backs with
+ * a real bottom sheet, and there the card has to be described rather than inherited.
  */
 function sheet(reduced: boolean) {
   return {
-    presentation: "modal",
+    ...Platform.select({
+      ios: { presentation: "modal" } as const,
+      // A single full-height detent, which stops short of the status bar rather than
+      // under it: `sheetShouldOverflowTopInset` is false, so the card is measured inside
+      // the top inset and the shelf stays visible above it, as it is on iOS.
+      default: {
+        presentation: "formSheet",
+        sheetAllowedDetents: [1] as number[],
+        sheetCornerRadius: SHEET_RADIUS,
+      } as const,
+    }),
     animation: reduced ? "none" : "slide_from_bottom",
   } as const;
 }
