@@ -47,6 +47,15 @@ const DEBOUNCE_MS = 350;
 /** Below this, a title search matches most of the archive and tells you nothing. */
 const MIN_TERM_LENGTH = 2;
 
+/**
+ * How many copies a library needs before the sample plate gives up its place.
+ *
+ * Three is where the shelf answers the plate's question by itself: the person has seen
+ * what a result looks like, three times, and put it where they wanted it. The wishlist
+ * takes the space instead, which is theirs rather than the app's.
+ */
+const EXAMPLES_UNTIL = 3;
+
 export function useAddLogic(seedTerm = "") {
   const { store } = useStore();
   const queryClient = useQueryClient();
@@ -156,7 +165,8 @@ export function useAddLogic(seedTerm = "") {
     queryKey: ["ownedReleases"],
     queryFn: async () => {
       const map = new Map<string, { condition: Copy["condition"]; addedAt: number }>();
-      for (const copy of await store.listCopies()) {
+      const copies = await store.listCopies();
+      for (const copy of copies) {
         const seen = map.get(catalogueKeyOf(copy) ?? "");
         // The oldest is the copy somebody thinks of as "the one I have".
         if (seen === undefined || copy.createdAt < seen.addedAt) {
@@ -166,7 +176,9 @@ export function useAddLogic(seedTerm = "") {
           });
         }
       }
-      return map;
+      // Counted as copies, not as map entries: somebody with three pressings of one record
+      // has a library, and the map would report one.
+      return { byRelease: map, copyCount: copies.length };
     },
   });
 
@@ -320,6 +332,15 @@ export function useAddLogic(seedTerm = "") {
       add(release);
     },
     addingMbid,
-    ownedCopy: (release: Release) => owned.data?.get(release.id) ?? null,
+    ownedCopy: (release: Release) => owned.data?.byRelease.get(release.id) ?? null,
+    /**
+     * Whether the sample plate still earns its place, and so whether the wishlist gets it.
+     *
+     * The two are exclusive on purpose: they answer the same question -- "what could I add
+     * from here?" -- and the better answer is whichever one the person owns. Undefined
+     * while the count loads, which reads as a full library, so an established shelf never
+     * flashes the plate on the way in.
+     */
+    showExamples: owned.data !== undefined && owned.data.copyCount < EXAMPLES_UNTIL,
   };
 }

@@ -418,7 +418,12 @@ function BeforeTyping({
         </>
       )}
 
-      {logic.wishlist.length > 0 && (
+      {/*
+        Only once the plate has stepped aside. The two answer the same question -- what
+        could I add from here -- and they are exclusive so the screen gives one answer
+        rather than stacking the app's suggestion under the person's own.
+      */}
+      {!logic.showExamples && logic.wishlist.length > 0 && (
         <>
           <Text style={[styles.section, styles.sectionSpaced]}>{t("add.onWishlist")}</Text>
           {logic.wishlist.map((item: WishlistItem) => (
@@ -456,34 +461,37 @@ function BeforeTyping({
       )}
 
       {/*
-        Last, deliberately. Anything the account actually owns -- a search it ran, a record
-        it wants -- outranks the app's sample page, so the plate fills the space that is
-        left rather than taking the space at the top.
+        Last, and only while the shelf has not made the point by itself. The plate is here
+        to show a newcomer what a result looks like; once a few records are on the shelf
+        that is answered, and it would just be the app talking about itself underneath the
+        things the person actually put there.
       */}
-      <ExamplePlate
-        coverOf={logic.exampleCoverOf}
-        /* Nothing to wait for any more, so no tile is ever in the opening state. */
-        openingAlbumId={null}
-        onOpen={(example) => {
-          /* Opens on the album itself. This used to fetch the album's pressings first and
+      {logic.showExamples && (
+        <ExamplePlate
+          coverOf={logic.exampleCoverOf}
+          /* Nothing to wait for any more, so no tile is ever in the opening state. */
+          openingAlbumId={null}
+          onOpen={(example) => {
+            /* Opens on the album itself. This used to fetch the album's pressings first and
              open on the first of them -- a paced request nobody asked for, in front of a
              tap, to answer a question the sheet is perfectly able to ask later. */
-          const release = albumAsRelease(
-            {
-              albumId: example.albumId,
-              title: example.title,
-              artistName: example.artistName,
-              year: null,
-              primaryType: null,
-              coverArtUrl: logic.exampleCoverOf(example.albumId),
-            },
-            Date.now(),
-          );
-          /* The shelf is only where the sheet starts here. Nobody pressed a destination
+            const release = albumAsRelease(
+              {
+                albumId: example.albumId,
+                title: example.title,
+                artistName: example.artistName,
+                year: null,
+                primaryType: null,
+                coverArtUrl: logic.exampleCoverOf(example.albumId),
+              },
+              Date.now(),
+            );
+            /* The shelf is only where the sheet starts here. Nobody pressed a destination
              to get in, so the sheet must not report one back. */
-          onConfirm({ release, destination, chosen: false, pressingChosen: false });
-        }}
-      />
+            onConfirm({ release, destination, chosen: false, pressingChosen: false });
+          }}
+        />
+      )}
     </ScrollView>
   );
 }
