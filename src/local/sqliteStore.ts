@@ -98,6 +98,54 @@ export function openLocalStore(): Promise<SqliteLocalStore> {
 }
 
 /**
+ * How many rows a table holds, or zero when it is not there at all.
+ *
+ * Used only by the repair below, where "the table does not exist" and "the table is empty"
+ * lead to the same decision and neither is worth an exception.
+ */
+async function rowCount(db: SQLite.SQLiteDatabase, table: string): Promise<number> {
+  const row = await db.getFirstAsync<{ found: number }>(
+    "SELECT count(*) AS found FROM sqlite_master WHERE type = 'table' AND name = ?",
+    table,
+  );
+  if ((row?.found ?? 0) === 0) return 0;
+  const counted = await db.getFirstAsync<{ rows: number }>(`SELECT count(*) AS rows FROM ${table}`);
+  return counted?.rows ?? 0;
+}
+
+/**
+ * Clears what an interrupted table rebuild left standing.
+ *
+ * Relaxing a NOT NULL means building the table again under a working name and renaming it
+ * over the old one, and a run cut short between those two leaves that working table behind.
+ * Every later launch then failed on `table ... already exists` before the store had opened,
+ * which is a blank screen and no way back — the rebuilds below are transactional now, so
+ * this cannot happen again, but a database that has already been through it still has to be
+ * repaired on the way past.
+ *
+ * Which table holds the records depends on where the run stopped, so it is asked rather
+ * than assumed: before the copy was made the records are in the live table and the debris
+ * is an empty shell, and after the drop it is the other way round and the shell is the one
+ * `CREATE TABLE IF NOT EXISTS` has just put back.
+ */
+async function clearRebuildDebris(
+  db: SQLite.SQLiteDatabase,
+  live: string,
+  working: string,
+): Promise<void> {
+  const carried = await rowCount(db, working);
+  if (carried === 0) {
+    await db.execAsync(`DROP TABLE IF EXISTS ${working}`);
+    return;
+  }
+  if ((await rowCount(db, live)) > 0) {
+    await db.execAsync(`DROP TABLE ${working}`);
+    return;
+  }
+  await db.execAsync(`DROP TABLE IF EXISTS ${live}; ALTER TABLE ${working} RENAME TO ${live};`);
+}
+
+/**
  * SQLite-backed store for the mobile app — the same interface the web app implements over
  * IndexedDB, so a screen written against LocalStore ports between them unchanged.
  *
@@ -214,6 +262,8 @@ export class SqliteLocalStore implements LocalStore {
         value TEXT NOT NULL
       );
     `);
+    await clearRebuildDebris(db, "copies", "copies_optional_pressing");
+
     // `CREATE TABLE IF NOT EXISTS` leaves an existing database on its old shape, so a column
     // added later has to be added explicitly. PRAGMA rather than a version number: it asks
     // the database what it actually has, which cannot drift the way a stored version can.
@@ -266,8 +316,10 @@ export class SqliteLocalStore implements LocalStore {
     // move the photos table needed, and for the same reason: without it the insert fails
     // silently, as one row of a sync batch.
     if (columns.some((column) => column.name === "releaseId" && column.notnull === 1)) {
-      await db.execAsync(`
-        BEGIN;
+      // One transaction, run by the driver rather than written into the statement, so that
+      // a rebuild which does not finish leaves the old table and nothing else.
+      await db.withTransactionAsync(async () => {
+        await db.execAsync(`
         CREATE TABLE copies_optional_pressing (
           id              TEXT PRIMARY KEY NOT NULL,
           releaseId       TEXT,
@@ -303,8 +355,9 @@ export class SqliteLocalStore implements LocalStore {
         ALTER TABLE copies_optional_pressing RENAME TO copies;
         CREATE INDEX IF NOT EXISTS copies_release_idx ON copies (releaseId);
         CREATE INDEX IF NOT EXISTS copies_album_idx ON copies (albumId);
-        COMMIT;
+        CREATE INDEX IF NOT EXISTS copies_alive_idx ON copies (deletedAt);
       `);
+      });
     }
 
     // Indexed here rather than beside the other two: on an existing database the column
@@ -351,6 +404,8 @@ export class SqliteLocalStore implements LocalStore {
    * version number, matching how every other migration here decides whether it has run.
    */
   private async widenPhotoOwner(db: SQLite.SQLiteDatabase): Promise<void> {
+    await clearRebuildDebris(db, "photos", "photos_widened");
+
     const columns = await db.getAllAsync<{ name: string; notnull: number }>(
       "PRAGMA table_info(photos)",
     );
@@ -367,8 +422,8 @@ export class SqliteLocalStore implements LocalStore {
 
     // Rebuild, copying every row across. A wish's photo would otherwise fail to insert on
     // the next sync — and it would fail silently, as one row of a batch.
-    await db.execAsync(`
-      BEGIN;
+    await db.withTransactionAsync(async () => {
+      await db.execAsync(`
       CREATE TABLE photos_widened (
         id            TEXT PRIMARY KEY NOT NULL,
         copyId        TEXT,
@@ -389,8 +444,8 @@ export class SqliteLocalStore implements LocalStore {
       ALTER TABLE photos_widened RENAME TO photos;
       CREATE INDEX IF NOT EXISTS photos_copy_idx ON photos (copyId);
       CREATE INDEX IF NOT EXISTS photos_wish_idx ON photos (wishId);
-      COMMIT;
     `);
+    });
   }
 
   /**
