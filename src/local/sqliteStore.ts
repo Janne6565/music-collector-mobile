@@ -153,7 +153,6 @@ export class SqliteLocalStore implements LocalStore {
         fieldClocks     TEXT NOT NULL
       );
       CREATE INDEX IF NOT EXISTS copies_release_idx ON copies (releaseId);
-      CREATE INDEX IF NOT EXISTS copies_album_idx ON copies (albumId);
       CREATE INDEX IF NOT EXISTS copies_alive_idx ON copies (deletedAt);
 
       CREATE TABLE IF NOT EXISTS releases (
@@ -259,7 +258,6 @@ export class SqliteLocalStore implements LocalStore {
         -- release already is.
         UPDATE copies SET albumId = releaseId
          WHERE albumId IS NULL AND releaseId LIKE 'local:%';
-        CREATE INDEX IF NOT EXISTS copies_album_idx ON copies (albumId);
       `);
     }
 
@@ -308,6 +306,12 @@ export class SqliteLocalStore implements LocalStore {
         COMMIT;
       `);
     }
+
+    // Indexed here rather than beside the other two: on an existing database the column
+    // does not exist until the ALTER above has run, and on a fresh one the branch holding
+    // that ALTER is skipped because the CREATE TABLE already had it. This is the only
+    // point both paths have passed through.
+    await db.execAsync("CREATE INDEX IF NOT EXISTS copies_album_idx ON copies (albumId)");
 
     // Why a not-yet-pushed copy exists, so the server can keep imports out of the feed.
     // Local-only and never merged: it is the reason for one push, not a fact about the
