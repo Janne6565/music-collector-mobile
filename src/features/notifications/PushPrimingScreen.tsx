@@ -1,11 +1,11 @@
+import { askForPush, syncPushRegistration } from "@/features/notifications/push";
+import { useStore } from "@/local/StoreProvider";
+import { colors, fonts } from "@/theme/colors";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { askForPush, syncPushRegistration } from "@/features/notifications/push";
-import { useStore } from "@/local/StoreProvider";
-import { colors, fonts } from "@/theme/colors";
 
 /**
  * Screen 22b — asking for the OS prompt before spending it.
@@ -111,7 +111,13 @@ const styles = StyleSheet.create({
   item: { gap: 3 },
   itemTitle: { fontFamily: fonts.sans, fontSize: 14, fontWeight: "600", color: colors.ink },
   itemBody: { fontFamily: fonts.sans, fontSize: 12.5, lineHeight: 18, color: colors.inkMuted },
-  notThis: { fontFamily: fonts.sans, fontSize: 12.5, lineHeight: 18, color: colors.inkSubtle, marginTop: 10 },
+  notThis: {
+    fontFamily: fonts.sans,
+    fontSize: 12.5,
+    lineHeight: 18,
+    color: colors.inkSubtle,
+    marginTop: 10,
+  },
   footer: { paddingHorizontal: 22, paddingBottom: 28, gap: 6 },
   primary: {
     height: 50,

@@ -1,11 +1,11 @@
-import { Camera, CloudOff, EyeOff, ImagePlus, Star, Trash2 } from "lucide-react-native";
-import { useTranslation } from "react-i18next";
-import { type ReactNode, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Animated, Pressable, StyleSheet, Text, View } from "react-native";
-import type { DetailChrome } from "@janne6565/rekordo-shared";
 import type { PhotoStripLogic } from "@/features/photos/usePhotoStripLogic";
 import { curve, useReducedMotion } from "@/lib/motion";
+import type { DetailChrome } from "@janne6565/rekordo-shared";
 import { DURATION } from "@janne6565/rekordo-shared";
+import { Camera, CloudOff, EyeOff, ImagePlus, Star, Trash2 } from "lucide-react-native";
+import { type ReactNode, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { ActivityIndicator, Animated, Pressable, StyleSheet, Text, View } from "react-native";
 
 /**
  * One thumbnail, over a tile that holds its place until the file has decoded.
@@ -271,5 +271,7 @@ function PhotoTile({ children }: { readonly children: ReactNode }) {
     }).start();
   }, [scale, reduced]);
 
-  return <Animated.View style={[styles.tile, { transform: [{ scale }] }]}>{children}</Animated.View>;
+  return (
+    <Animated.View style={[styles.tile, { transform: [{ scale }] }]}>{children}</Animated.View>
+  );
 }

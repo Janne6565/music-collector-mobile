@@ -1,4 +1,4 @@
-import { fetchTracklist, type Tracklist } from "@/api/tracklist";
+import { type Tracklist, fetchTracklist } from "@/api/tracklist";
 import { isManualReleaseId } from "@janne6565/rekordo-shared";
 import { useQuery } from "@tanstack/react-query";
 

@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
-import { Animated, StyleSheet, View, type ViewStyle } from "react-native";
 import { FormatThumb } from "@/components/FormatThumb";
 import { usePulse } from "@/components/Skeleton";
 import type { Format } from "@janne6565/rekordo-shared";
+import { useEffect, useRef, useState } from "react";
+import { Animated, StyleSheet, View, type ViewStyle } from "react-native";
 /**
  * Everything the art actually needs: a URL to try, and a format to fall back to.
  *

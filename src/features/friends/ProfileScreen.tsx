@@ -83,7 +83,9 @@ export function ProfileScreen() {
       ) : person === undefined ? (
         <View style={styles.centred}>
           <Text style={styles.emptyTitle}>{t("friendProfile.notFound.title")}</Text>
-          <Text style={styles.emptyBody}>{t("friendProfile.notFound.body", { handle: logic.handle })}</Text>
+          <Text style={styles.emptyBody}>
+            {t("friendProfile.notFound.body", { handle: logic.handle })}
+          </Text>
         </View>
       ) : (
         <>
@@ -117,10 +119,18 @@ export function ProfileScreen() {
              * inside it, so the number reads as a quantity and not as part of the name.
              */}
             <View style={styles.tabs}>
-              <Tab active={tab === "collection"} count={person.copyCount} onPress={() => setTab("collection")}>
+              <Tab
+                active={tab === "collection"}
+                count={person.copyCount}
+                onPress={() => setTab("collection")}
+              >
                 {t("friendProfile.tab.collection")}
               </Tab>
-              <Tab active={tab === "wishlist"} count={person.wishlistCount} onPress={() => setTab("wishlist")}>
+              <Tab
+                active={tab === "wishlist"}
+                count={person.wishlistCount}
+                onPress={() => setTab("wishlist")}
+              >
                 {t("friendProfile.tab.wishlist")}
               </Tab>
             </View>
@@ -459,7 +469,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   friendsChipLabel: { fontFamily: fonts.sans, fontSize: 12.5, color: colors.inkMuted },
-  requestedLabel: { fontFamily: fonts.sans, fontSize: 12.5, color: colors.inkSubtle, marginTop: 14 },
+  requestedLabel: {
+    fontFamily: fonts.sans,
+    fontSize: 12.5,
+    color: colors.inkSubtle,
+    marginTop: 14,
+  },
   answerRow: { flexDirection: "row", alignItems: "center", gap: 14, marginTop: 14 },
   /** The button carries the row's top margin, so it does not add its own on top of it. */
   answerButton: { marginTop: 0 },

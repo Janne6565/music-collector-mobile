@@ -1,16 +1,16 @@
+import { ReleaseArt } from "@/components/ReleaseArt";
+import { CopyEditor } from "@/features/detail/CopyEditor";
+import { useStore } from "@/local/StoreProvider";
+import { useAppSelector } from "@/store/hooks";
+import { colors, fonts } from "@/theme/colors";
+import type { Copy, CopyPatch, Release } from "@janne6565/rekordo-shared";
+import { FORMAT_LABELS, applyCopyPatch, chromeFor, copyFormat } from "@janne6565/rekordo-shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ReleaseArt } from "@/components/ReleaseArt";
-import { CopyEditor } from "@/features/detail/CopyEditor";
-import { useStore } from "@/local/StoreProvider";
-import { useAppSelector } from "@/store/hooks";
-import type { Copy, CopyPatch, Release } from "@janne6565/rekordo-shared";
-import { FORMAT_LABELS, applyCopyPatch, copyFormat, chromeFor } from "@janne6565/rekordo-shared";
-import { colors, fonts } from "@/theme/colors";
 
 /**
  * Details, one copy at a time, over the batch that was just saved.
@@ -105,19 +105,13 @@ export function DetailsRunScreen() {
 
       <ScrollView contentContainerStyle={styles.body}>
         <View style={styles.head}>
-          <ReleaseArt
-            release={release}
-            format={copyFormat(copy, release)}
-            style={styles.art}
-          />
+          <ReleaseArt release={release} format={copyFormat(copy, release)} style={styles.art} />
           <View style={styles.headText}>
             <Text style={styles.title}>{release?.title ?? ""}</Text>
             <Text style={styles.meta}>
               {[
                 release?.artistName,
-                release?.year === null || release?.year === undefined
-                  ? null
-                  : String(release.year),
+                release?.year === null || release?.year === undefined ? null : String(release.year),
                 FORMAT_LABELS[copyFormat(copy, release)],
                 t("scan.details.savedAlready"),
               ]

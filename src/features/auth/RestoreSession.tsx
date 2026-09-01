@@ -1,10 +1,10 @@
-import { useEffect } from "react";
-import { refreshSession } from "@/api/client";
 import { fetchAccount } from "@/api/auth";
+import { refreshSession } from "@/api/client";
 import { syncPushRegistration } from "@/features/notifications/push";
 import { useStore } from "@/local/StoreProvider";
-import { useAppDispatch } from "@/store/hooks";
 import { signedIn, signedOut } from "@/store/authSlice";
+import { useAppDispatch } from "@/store/hooks";
+import { useEffect } from "react";
 
 /**
  * Reads the session back out of the keychain, once, when the app starts.
@@ -33,9 +33,7 @@ export function RestoreSession() {
         const me = await fetchAccount();
         const hasLocalCollection = (await store.listCopies()).length > 0;
         const hasSyncedBefore = (await store.readSyncCursor()) > 0;
-        dispatch(
-          signedIn({ user: me, firstSyncPending: hasLocalCollection && !hasSyncedBefore }),
-        );
+        dispatch(signedIn({ user: me, firstSyncPending: hasLocalCollection && !hasSyncedBefore }));
         // Re-hands the server this device's token if the OS has already granted permission.
         // It asks the OS nothing -- a token is reissued on reinstall and after some OS
         // updates, so a device that never re-registers quietly stops being reachable.

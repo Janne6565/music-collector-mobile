@@ -1,8 +1,8 @@
 import type { AvatarCrop } from "@/api/avatar";
 import type { ChosenPicture } from "@/features/account/useProfilePictureLogic";
+import type { ImageStyle } from "react-native";
 import { Gesture } from "react-native-gesture-handler";
 import type { ComposedGesture } from "react-native-gesture-handler";
-import type { ImageStyle } from "react-native";
 import {
   type SharedValue,
   useAnimatedStyle,

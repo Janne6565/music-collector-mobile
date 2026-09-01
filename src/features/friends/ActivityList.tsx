@@ -3,13 +3,13 @@ import { ReleaseArt } from "@/components/ReleaseArt";
 import { Skeleton } from "@/components/Skeleton";
 import { formatRelativeTime } from "@/domain/relativeTime";
 import { Avatar } from "@/features/friends/Avatar";
+import { EmptyPanel } from "@/features/friends/EmptyPanel";
 import { colors, fonts } from "@/theme/colors";
 import type { Format } from "@janne6565/rekordo-shared";
 import { FORMAT_LABELS } from "@janne6565/rekordo-shared";
 import { useRouter } from "expo-router";
 import i18n from "i18next";
 import { Trans, useTranslation } from "react-i18next";
-import { EmptyPanel } from "@/features/friends/EmptyPanel";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 /**
@@ -35,9 +35,7 @@ export function ActivityList({
   }
 
   if (entries.length === 0) {
-    return (
-      <EmptyPanel title={t("friends.feedEmpty.title")} body={t("friends.feedEmpty.body")} />
-    );
+    return <EmptyPanel title={t("friends.feedEmpty.title")} body={t("friends.feedEmpty.body")} />;
   }
 
   return (
@@ -249,5 +247,11 @@ const styles = StyleSheet.create({
   line: { fontFamily: fonts.sans, fontSize: 13.5, lineHeight: 19, color: colors.ink },
   strong: { fontWeight: "700" },
   meta: { fontFamily: fonts.sans, fontSize: 12, color: colors.inkMuted, marginTop: 2 },
-  seeAll: { fontFamily: fonts.sans, fontSize: 12, fontWeight: "600", color: colors.accent, marginTop: 4 },
+  seeAll: {
+    fontFamily: fonts.sans,
+    fontSize: 12,
+    fontWeight: "600",
+    color: colors.accent,
+    marginTop: 4,
+  },
 });

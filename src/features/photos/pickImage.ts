@@ -1,7 +1,7 @@
+import type { NativeLocalStore } from "@/local/LocalStore";
 import * as FileSystem from "expo-file-system/legacy";
 import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
-import type { NativeLocalStore } from "@/local/LocalStore";
 
 /**
  * The long edge a stored sleeve photo is cut to.
@@ -50,11 +50,13 @@ export async function pickImage(source: PhotoSource): Promise<PickedImage | null
   // Scaled and re-encoded before the caller ever sees it, so that what is copied into the
   // app's storage is what is uploaded and what every device eventually holds — one photo id
   // is one picture, at one size, everywhere.
-  return (await scaled(asset.uri)) ?? {
-    uri: asset.uri,
-    contentType: asset.mimeType ?? "image/jpeg",
-    byteSize: asset.fileSize ?? 0,
-  };
+  return (
+    (await scaled(asset.uri)) ?? {
+      uri: asset.uri,
+      contentType: asset.mimeType ?? "image/jpeg",
+      byteSize: asset.fileSize ?? 0,
+    }
+  );
 }
 
 /**
@@ -75,7 +77,9 @@ async function scaled(uri: string): Promise<PickedImage | null> {
     const rendered = await context.renderAsync();
     const longest = Math.max(rendered.width, rendered.height);
     if (longest > MAX_EDGE) {
-      context.resize(rendered.width >= rendered.height ? { width: MAX_EDGE } : { height: MAX_EDGE });
+      context.resize(
+        rendered.width >= rendered.height ? { width: MAX_EDGE } : { height: MAX_EDGE },
+      );
     }
     const image = longest > MAX_EDGE ? await context.renderAsync() : rendered;
     const saved = await image.saveAsync({ format: SaveFormat.JPEG, compress: JPEG_QUALITY });

@@ -1,19 +1,19 @@
+import { releaseDisambiguation } from "@/api/releases";
+import { ReleaseArt } from "@/components/ReleaseArt";
+import { useSaveBatch } from "@/features/scan/useSaveBatch";
+import { SCAN_FORMATS, scanFormat } from "@/features/scan/useScannerLogic";
+import { useStore } from "@/local/StoreProvider";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { type KeptScan, countByDestination, scanActions } from "@/store/scanSlice";
+import { colors, fonts } from "@/theme/colors";
+import type { Format } from "@janne6565/rekordo-shared";
+import { FORMAT_LABELS, formatBarcode, wishSatisfiedBy } from "@janne6565/rekordo-shared";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { Disc3, HardDrive, Heart, LibraryBig, X } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ReleaseArt } from "@/components/ReleaseArt";
-import { SCAN_FORMATS, scanFormat } from "@/features/scan/useScannerLogic";
-import { useSaveBatch } from "@/features/scan/useSaveBatch";
-import { useStore } from "@/local/StoreProvider";
-import { useQuery } from "@tanstack/react-query";
-import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { type KeptScan, countByDestination, scanActions } from "@/store/scanSlice";
-import { releaseDisambiguation } from "@/api/releases";
-import type { Format } from "@janne6565/rekordo-shared";
-import { FORMAT_LABELS, formatBarcode, wishSatisfiedBy } from "@janne6565/rekordo-shared";
-import { colors, fonts } from "@/theme/colors";
 
 /**
  * The tray, opened up: everything kept this visit, still changeable.
@@ -157,11 +157,11 @@ function ReviewRow({ scan }: { readonly scan: KeptScan }) {
         {/* A pending scan has no catalogue answer to disagree with, so its format chips
             are the only statement about it there is — and they still matter, because the
             resolver picks the pressing that matches. */}
-        {SCAN_FORMATS.filter(
-          (format) => format !== "DIGITAL" || scan.format === "DIGITAL",
-        ).map((format) => (
-          <FormatChip key={format} scan={scan} format={format} />
-        ))}
+        {SCAN_FORMATS.filter((format) => format !== "DIGITAL" || scan.format === "DIGITAL").map(
+          (format) => (
+            <FormatChip key={format} scan={scan} format={format} />
+          ),
+        )}
         <View style={styles.spacer} />
         <Pressable
           accessibilityRole="button"
@@ -221,7 +221,13 @@ const styles = StyleSheet.create({
 
   body: { padding: 18 },
   title: { fontFamily: fonts.serif, fontSize: 24, lineHeight: 29, color: colors.ink },
-  lede: { fontFamily: fonts.sans, fontSize: 12.5, lineHeight: 19, color: colors.inkMuted, marginTop: 6 },
+  lede: {
+    fontFamily: fonts.sans,
+    fontSize: 12.5,
+    lineHeight: 19,
+    color: colors.inkMuted,
+    marginTop: 6,
+  },
 
   row: {
     marginTop: 10,
@@ -276,7 +282,12 @@ const styles = StyleSheet.create({
     borderColor: "rgba(25,23,19,0.12)",
   },
   destinationWished: { backgroundColor: colors.accent, borderColor: colors.accent },
-  destinationText: { fontFamily: fonts.sans, fontSize: 11.5, fontWeight: "600", color: colors.inkMuted },
+  destinationText: {
+    fontFamily: fonts.sans,
+    fontSize: 11.5,
+    fontWeight: "600",
+    color: colors.inkMuted,
+  },
   destinationTextOn: { color: "#ffffff" },
 
   footer: {

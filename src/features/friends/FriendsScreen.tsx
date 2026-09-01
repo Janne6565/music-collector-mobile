@@ -1,14 +1,14 @@
-import { Avatar } from "@/features/friends/Avatar";
+import type { ProfileSummary } from "@/api/friends";
+import { formatRelativeTime } from "@/domain/relativeTime";
 import { ActivityList } from "@/features/friends/ActivityList";
+import { Avatar } from "@/features/friends/Avatar";
+import { ClaimHandlePanel } from "@/features/friends/ClaimHandlePanel";
 import { EmptyPanel } from "@/features/friends/EmptyPanel";
 import { Segments } from "@/features/friends/Segments";
-import { useSwap } from "@/features/friends/useSwap";
-import { ClaimHandlePanel } from "@/features/friends/ClaimHandlePanel";
 import { useFriendsLogic } from "@/features/friends/useFriendsLogic";
-import { colors, fonts } from "@/theme/colors";
-import type { ProfileSummary } from "@/api/friends";
+import { useSwap } from "@/features/friends/useSwap";
 import type { RecentCollector } from "@/local/settings";
-import { formatRelativeTime } from "@/domain/relativeTime";
+import { colors, fonts } from "@/theme/colors";
 import { useRouter } from "expo-router";
 import { AtSign, ChevronRight, Lock, Search, X } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
@@ -267,7 +267,6 @@ export function FriendsScreen() {
           )}
         </ScrollView>
       </Animated.View>
-
     </SafeAreaView>
   );
 }
@@ -316,9 +315,7 @@ function SignedOutFind({ logic }: { readonly logic: Logic }) {
         {logic.results.map((person) => (
           <PersonRow key={person.id} person={person} logic={logic} />
         ))}
-        {nothingFound && (
-          <Text style={styles.guestNote}>{t("friends.signedOut.noMatches")}</Text>
-        )}
+        {nothingFound && <Text style={styles.guestNote}>{t("friends.signedOut.noMatches")}</Text>}
 
         {/* The offer as a footnote rather than the screen: what a visitor came here to do
             is above it, and this is what staying would add. */}
@@ -535,7 +532,15 @@ interface RequestCardProps {
  * a request from activity is that it is addressed to you and waits — the card is the same
  * material as everything else, outlined.
  */
-function RequestCard({ name, avatarUrl, handle, mutual, busy, onAccept, onDecline }: RequestCardProps) {
+function RequestCard({
+  name,
+  avatarUrl,
+  handle,
+  mutual,
+  busy,
+  onAccept,
+  onDecline,
+}: RequestCardProps) {
   const { t } = useTranslation();
   return (
     <View style={styles.requestCard}>
@@ -602,7 +607,6 @@ const styles = StyleSheet.create({
   handleFieldFill: { flex: 1 },
   handleInput: { flex: 1, fontFamily: fonts.sans, fontSize: 14, color: colors.ink, padding: 0 },
   cancel: { fontFamily: fonts.sans, fontSize: 13.5, fontWeight: "500", color: colors.inkMuted },
-
 
   bodyWrap: { flex: 1 },
   body: { paddingHorizontal: 18, paddingTop: 16, paddingBottom: 24 },
@@ -709,7 +713,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.ink,
   },
   acceptLabel: { fontFamily: fonts.sans, fontSize: 12, fontWeight: "600", color: colors.paper },
-  declineLabel: { fontFamily: fonts.sans, fontSize: 12, fontWeight: "500", color: colors.inkSubtle },
+  declineLabel: {
+    fontFamily: fonts.sans,
+    fontSize: 12,
+    fontWeight: "500",
+    color: colors.inkSubtle,
+  },
 
   guestLede: {
     fontFamily: fonts.sans,
@@ -744,5 +753,4 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: colors.ink,
   },
-
 });

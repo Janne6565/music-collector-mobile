@@ -1,9 +1,9 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef } from "react";
-import { AppState } from "react-native";
 import { lookupByBarcode } from "@/api/releases";
 import { useStore } from "@/local/StoreProvider";
 import { resolvePendingScans } from "@janne6565/rekordo-shared";
+import { useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
+import { AppState } from "react-native";
 
 /**
  * How often the scans that could not be looked up are asked about again.

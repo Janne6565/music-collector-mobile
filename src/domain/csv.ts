@@ -1,10 +1,4 @@
-import type {
-  Condition,
-  Copy,
-  Format,
-  Release,
-  WishlistItem,
-} from "@janne6565/rekordo-shared";
+import type { Condition, Copy, Format, Release, WishlistItem } from "@janne6565/rekordo-shared";
 import {
   CONDITIONS,
   DEFAULT_WISH_SORT,

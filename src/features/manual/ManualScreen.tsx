@@ -1,3 +1,7 @@
+import { useManualEntryLogic } from "@/features/manual/useManualEntryLogic";
+import { colors } from "@/theme/colors";
+import type { Format } from "@janne6565/rekordo-shared";
+import { FORMATS, FORMAT_LABELS, formatBarcode } from "@janne6565/rekordo-shared";
 import { useRouter } from "expo-router";
 import { Camera, ImagePlus, LibraryBig, ScanBarcode, X } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
@@ -14,10 +18,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import type { Format } from "@janne6565/rekordo-shared";
-import { FORMATS, FORMAT_LABELS, formatBarcode } from "@janne6565/rekordo-shared";
-import { useManualEntryLogic } from "@/features/manual/useManualEntryLogic";
-import { colors } from "@/theme/colors";
 
 /**
  * Screen 14a — entering a copy no database has.
@@ -327,7 +327,12 @@ const styles = StyleSheet.create({
     borderBottomColor: "rgba(25,23,19,0.14)",
   },
   /** The field the screen opens on gets the solid rule the deck draws under it. */
-  inputLead: { fontSize: 17, fontWeight: "500", borderBottomWidth: 1.5, borderBottomColor: colors.ink },
+  inputLead: {
+    fontSize: 17,
+    fontWeight: "500",
+    borderBottomWidth: 1.5,
+    borderBottomColor: colors.ink,
+  },
   shelfRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 9 },
   shelfText: { flex: 1, fontSize: 11.5, color: colors.inkMuted },
   field: { marginTop: 20 },

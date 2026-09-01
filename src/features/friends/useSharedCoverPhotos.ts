@@ -1,8 +1,8 @@
+import type { SharedCopy } from "@/api/friends";
+import { downloadPhotoBytes } from "@/api/photos";
+import { encodeBase64 } from "@/local/sqliteStore";
 import { useQuery } from "@tanstack/react-query";
 import * as FileSystem from "expo-file-system/legacy";
-import { downloadPhotoBytes } from "@/api/photos";
-import type { SharedCopy } from "@/api/friends";
-import { encodeBase64 } from "@/local/sqliteStore";
 
 /**
  * Where somebody else's pictures are kept.
@@ -26,9 +26,7 @@ const SHARED_DIR = `${FileSystem.cacheDirectory ?? ""}shared-covers/`;
  * shelf needs the viewer's token on the request, and an Image source cannot carry one.
  * Only copies the server named a photo for cost anything.
  */
-export function useSharedCoverPhotos(
-  copies: readonly SharedCopy[],
-): ReadonlyMap<string, string> {
+export function useSharedCoverPhotos(copies: readonly SharedCopy[]): ReadonlyMap<string, string> {
   // Keyed on the pairs rather than the array, so the query re-runs when the set of photos
   // on screen changes rather than on every render.
   const pairs = copies

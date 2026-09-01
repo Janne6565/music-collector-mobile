@@ -1,14 +1,14 @@
+import { Skeleton } from "@/components/Skeleton";
+import { artistSubtitle } from "@/domain/artist";
+import { useArtistImage } from "@/features/add/useArtistImage";
+import type { useArtistSearchLogic } from "@/features/add/useArtistSearchLogic";
+import { colors } from "@/theme/colors";
+import type { Artist } from "@janne6565/rekordo-shared";
 import { ChevronDown, ChevronRight } from "lucide-react-native";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import Svg, { Defs, Line, Pattern, Rect } from "react-native-svg";
-import { artistSubtitle } from "@/domain/artist";
-import { Skeleton } from "@/components/Skeleton";
-import type { Artist } from "@janne6565/rekordo-shared";
-import { useArtistImage } from "@/features/add/useArtistImage";
-import { colors } from "@/theme/colors";
-import type { useArtistSearchLogic } from "@/features/add/useArtistSearchLogic";
 
 /**
  * An artist's portrait, or the striped disc they get until there is one.

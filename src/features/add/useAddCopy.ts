@@ -1,14 +1,14 @@
+import { lookupRelease } from "@/api/releases";
+import { useSatisfyWishes } from "@/features/wishlist/useSatisfyWishes";
+import type { LocalStore } from "@/local/LocalStore";
+import { useStore } from "@/local/StoreProvider";
+import { readDefaultCurrency } from "@/local/settings";
+import type { Release } from "@janne6565/rekordo-shared";
+import { createCopy } from "@janne6565/rekordo-shared";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import * as Crypto from "expo-crypto";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { lookupRelease } from "@/api/releases";
-import type { Release } from "@janne6565/rekordo-shared";
-import { createCopy } from "@janne6565/rekordo-shared";
-import type { LocalStore } from "@/local/LocalStore";
-import { useSatisfyWishes } from "@/features/wishlist/useSatisfyWishes";
-import { useStore } from "@/local/StoreProvider";
-import { readDefaultCurrency } from "@/local/settings";
 
 /**
  * Taking a release out of the catalogue and making it a copy you own.

@@ -1,7 +1,7 @@
-import { friendsApi, type SharedWish } from "@/api/friends";
+import { type SharedWish, friendsApi } from "@/api/friends";
 import { lookupAlbumCovers, lookupPressingCovers } from "@/api/releases";
-import { isManualReleaseId } from "@janne6565/rekordo-shared";
 import { canStillAskForPush } from "@/features/notifications/push";
+import { useStore } from "@/local/StoreProvider";
 import {
   type RecentCollector,
   claimPushPriming,
@@ -10,8 +10,8 @@ import {
   readRecentCollectors,
   rememberCollector,
 } from "@/local/settings";
-import { useStore } from "@/local/StoreProvider";
 import { useAppSelector } from "@/store/hooks";
+import { isManualReleaseId } from "@janne6565/rekordo-shared";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";

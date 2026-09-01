@@ -1,21 +1,13 @@
-import { StatusBar } from "expo-status-bar";
-import { useRouter } from "expo-router";
-import { Pencil, Star, Trash2 } from "lucide-react-native";
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import {
-  ActivityIndicator,
-  Animated,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { ReleaseArt } from "@/components/ReleaseArt";
+import { CopyEditor } from "@/features/detail/CopyEditor";
 import { CoverSheet } from "@/features/detail/CoverSheet";
-import { Tracklist } from "@/features/tracklist/Tracklist";
 import { useCopySwipe } from "@/features/detail/useCopySwipe";
+import { useCoverWash } from "@/features/detail/useCoverWash";
+import { useDetailLogic } from "@/features/detail/useDetailLogic";
+import { PhotoStrip } from "@/features/photos/PhotoStrip";
+import { usePhotoStripLogic } from "@/features/photos/usePhotoStripLogic";
+import { Tracklist } from "@/features/tracklist/Tracklist";
+import { fonts } from "@/theme/colors";
 import type { Copy, DetailChrome, Release } from "@janne6565/rekordo-shared";
 import {
   CONDITION_LABELS,
@@ -24,12 +16,13 @@ import {
   copyFormat,
   copyPreviewSrc,
 } from "@janne6565/rekordo-shared";
-import { CopyEditor } from "@/features/detail/CopyEditor";
-import { useCoverWash } from "@/features/detail/useCoverWash";
-import { useDetailLogic } from "@/features/detail/useDetailLogic";
-import { PhotoStrip } from "@/features/photos/PhotoStrip";
-import { usePhotoStripLogic } from "@/features/photos/usePhotoStripLogic";
-import { fonts } from "@/theme/colors";
+import { useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { Pencil, Star, Trash2 } from "lucide-react-native";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { ActivityIndicator, Animated, Pressable, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 /**
  * A copy's page (screens 1j, 3a and 3b).
@@ -177,142 +170,144 @@ function DetailBody({
         />
       }
     >
-        <View style={styles.body}>
-          <View style={styles.badges}>
-            {/* The copy's format, not the release's: a tape of a record listed as vinyl
+      <View style={styles.body}>
+        <View style={styles.badges}>
+          {/* The copy's format, not the release's: a tape of a record listed as vinyl
                 is still a tape on your shelf. */}
-            <Badge chrome={chrome} strong>
-              {FORMAT_LABELS[copyFormat(copy, release)]}
-            </Badge>
-            {copy.condition !== null && <Badge chrome={chrome}>{CONDITION_SHORT[copy.condition]}</Badge>}
-          </View>
-
-          <Text style={[styles.title, { color: chrome.ink }]}>{release?.title ?? "—"}</Text>
-          <Text style={[styles.subtitle, { color: chrome.muted }]}>
-            {release?.artistName}
-            {release?.year == null ? "" : ` · ${release.year}`}
-          </Text>
-
-          {/*
-           * The accent lands last, 120ms after the words have swapped. Until then the
-           * stars are drawn in a colour that was chosen against a chrome the screen has
-           * already left, so they are simply not shown yet.
-           */}
-          <Animated.View style={[styles.stars, { opacity: accent }]}>
-            {[1, 2, 3, 4, 5].map((star) => (
-              <Star
-                key={star}
-                size={15}
-                strokeWidth={1.5}
-                // An empty star is a secondary glyph, so it takes the tone every other
-                // secondary glyph on this screen takes. `line` is 9% -- a hairline weight
-                // for 1px rules, which left the unearned stars all but invisible.
-                color={star <= (copy.rating ?? 0) ? chrome.accent : chrome.muted}
-                fill={star <= (copy.rating ?? 0) ? chrome.accent : "transparent"}
-              />
-            ))}
-          </Animated.View>
-
-          {editing ? (
-            <CopyEditor
-              copy={copy}
-              catalogFormat={release?.format}
-              chrome={chrome}
-              saving={logic.saving}
-              onSave={(patch) => {
-                logic.save(patch);
-                setEditing(false);
-              }}
-              onCancel={() => setEditing(false)}
-            />
-          ) : (
-            <>
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => setEditing(true)}
-                style={[styles.edit, { backgroundColor: chrome.ink }]}
-              >
-                <Pencil size={15} color={chrome.background} strokeWidth={1.75} />
-                <Text style={[styles.editText, { color: chrome.background }]}>{t("detail.edit")}</Text>
-              </Pressable>
-              <Fields copy={copy} chrome={chrome} />
-            </>
+          <Badge chrome={chrome} strong>
+            {FORMAT_LABELS[copyFormat(copy, release)]}
+          </Badge>
+          {copy.condition !== null && (
+            <Badge chrome={chrome}>{CONDITION_SHORT[copy.condition]}</Badge>
           )}
+        </View>
 
-          <PhotoStrip
-            logic={photos}
+        <Text style={[styles.title, { color: chrome.ink }]}>{release?.title ?? "—"}</Text>
+        <Text style={[styles.subtitle, { color: chrome.muted }]}>
+          {release?.artistName}
+          {release?.year == null ? "" : ` · ${release.year}`}
+        </Text>
+
+        {/*
+         * The accent lands last, 120ms after the words have swapped. Until then the
+         * stars are drawn in a colour that was chosen against a chrome the screen has
+         * already left, so they are simply not shown yet.
+         */}
+        <Animated.View style={[styles.stars, { opacity: accent }]}>
+          {[1, 2, 3, 4, 5].map((star) => (
+            <Star
+              key={star}
+              size={15}
+              strokeWidth={1.5}
+              // An empty star is a secondary glyph, so it takes the tone every other
+              // secondary glyph on this screen takes. `line` is 9% -- a hairline weight
+              // for 1px rules, which left the unearned stars all but invisible.
+              color={star <= (copy.rating ?? 0) ? chrome.accent : chrome.muted}
+              fill={star <= (copy.rating ?? 0) ? chrome.accent : "transparent"}
+            />
+          ))}
+        </Animated.View>
+
+        {editing ? (
+          <CopyEditor
+            copy={copy}
+            catalogFormat={release?.format}
             chrome={chrome}
-            hasCatalogArt={release?.coverArtUrl != null}
+            saving={logic.saving}
+            onSave={(patch) => {
+              logic.save(patch);
+              setEditing(false);
+            }}
+            onCancel={() => setEditing(false)}
           />
+        ) : (
+          <>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => setEditing(true)}
+              style={[styles.edit, { backgroundColor: chrome.ink }]}
+            >
+              <Pencil size={15} color={chrome.background} strokeWidth={1.75} />
+              <Text style={[styles.editText, { color: chrome.background }]}>
+                {t("detail.edit")}
+              </Text>
+            </Pressable>
+            <Fields copy={copy} chrome={chrome} />
+          </>
+        )}
 
-          {/* The photo strip ends flush against whatever follows it, so the notes card
+        <PhotoStrip logic={photos} chrome={chrome} hasCatalogArt={release?.coverArtUrl != null} />
+
+        {/* The photo strip ends flush against whatever follows it, so the notes card
               carries the gap rather than the strip -- the strip is also used where nothing
               comes after it. */}
-          <View style={[styles.card, styles.notesCard, { backgroundColor: chrome.surface }]}>
-            <Text style={[styles.fieldKey, { color: chrome.muted }]}>{t("detail.notes")}</Text>
-            <Text style={[styles.notes, { color: copy.notes === null ? chrome.muted : chrome.ink }]}>
-              {copy.notes ?? t("detail.notesEmpty")}
-            </Text>
-          </View>
-
-          {copy.notesConflict !== null && (
-            <NotesConflict
-              copy={copy}
-              chrome={chrome}
-              saving={logic.saving}
-              onKeep={(notes) => logic.save({ notes })}
-            />
-          )}
-
-          {otherCopies.length > 0 && (
-            <>
-              <Text style={[styles.sectionTitle, { color: chrome.ink }]}>{t("detail.otherCopies")}</Text>
-              <View style={styles.otherRow}>
-                {otherCopies.map(({ copy: sibling, release: siblingRelease }) => (
-                  <Pressable
-                    key={sibling.id}
-                    onPress={() => router.push(`/copies/${sibling.id}`)}
-                    style={[styles.card, styles.otherCard, { backgroundColor: chrome.surface }]}
-                  >
-                    <Text style={[styles.fieldKey, { color: chrome.muted }]}>
-                      {siblingRelease === undefined && sibling.manualFormat === null
-                        ? "—"
-                        : FORMAT_LABELS[copyFormat(sibling, siblingRelease)]}
-                    </Text>
-                    <Text style={[styles.otherValue, { color: chrome.ink }]}>
-                      {siblingRelease?.year ?? ""}
-                      {sibling.condition === null ? "" : ` · ${CONDITION_SHORT[sibling.condition]}`}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-            </>
-          )}
-
-          {/* 26a on the phone: the last section of the screen, under everything the copy
-              says about itself and above the one action that ends it. */}
-          <Tracklist
-            releaseId={release?.id}
-            chrome={chrome}
-            trackCount={release?.trackCount}
-            discCount={release?.discCount}
-          />
-
-          <Pressable
-            accessibilityRole="button"
-            onPress={logic.remove}
-            disabled={logic.removing}
-            style={[styles.remove, { backgroundColor: chrome.surface }]}
-          >
-            {logic.removing ? (
-              <ActivityIndicator size="small" color={chrome.muted} />
-            ) : (
-              <Trash2 size={15} color={chrome.muted} strokeWidth={1.75} />
-            )}
-            <Text style={[styles.removeText, { color: chrome.muted }]}>{t("detail.remove")}</Text>
-          </Pressable>
+        <View style={[styles.card, styles.notesCard, { backgroundColor: chrome.surface }]}>
+          <Text style={[styles.fieldKey, { color: chrome.muted }]}>{t("detail.notes")}</Text>
+          <Text style={[styles.notes, { color: copy.notes === null ? chrome.muted : chrome.ink }]}>
+            {copy.notes ?? t("detail.notesEmpty")}
+          </Text>
         </View>
-      </CoverSheet>
+
+        {copy.notesConflict !== null && (
+          <NotesConflict
+            copy={copy}
+            chrome={chrome}
+            saving={logic.saving}
+            onKeep={(notes) => logic.save({ notes })}
+          />
+        )}
+
+        {otherCopies.length > 0 && (
+          <>
+            <Text style={[styles.sectionTitle, { color: chrome.ink }]}>
+              {t("detail.otherCopies")}
+            </Text>
+            <View style={styles.otherRow}>
+              {otherCopies.map(({ copy: sibling, release: siblingRelease }) => (
+                <Pressable
+                  key={sibling.id}
+                  onPress={() => router.push(`/copies/${sibling.id}`)}
+                  style={[styles.card, styles.otherCard, { backgroundColor: chrome.surface }]}
+                >
+                  <Text style={[styles.fieldKey, { color: chrome.muted }]}>
+                    {siblingRelease === undefined && sibling.manualFormat === null
+                      ? "—"
+                      : FORMAT_LABELS[copyFormat(sibling, siblingRelease)]}
+                  </Text>
+                  <Text style={[styles.otherValue, { color: chrome.ink }]}>
+                    {siblingRelease?.year ?? ""}
+                    {sibling.condition === null ? "" : ` · ${CONDITION_SHORT[sibling.condition]}`}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </>
+        )}
+
+        {/* 26a on the phone: the last section of the screen, under everything the copy
+              says about itself and above the one action that ends it. */}
+        <Tracklist
+          releaseId={release?.id}
+          chrome={chrome}
+          trackCount={release?.trackCount}
+          discCount={release?.discCount}
+        />
+
+        <Pressable
+          accessibilityRole="button"
+          onPress={logic.remove}
+          disabled={logic.removing}
+          style={[styles.remove, { backgroundColor: chrome.surface }]}
+        >
+          {logic.removing ? (
+            <ActivityIndicator size="small" color={chrome.muted} />
+          ) : (
+            <Trash2 size={15} color={chrome.muted} strokeWidth={1.75} />
+          )}
+          <Text style={[styles.removeText, { color: chrome.muted }]}>{t("detail.remove")}</Text>
+        </Pressable>
+      </View>
+    </CoverSheet>
   );
 }
 
@@ -334,7 +329,13 @@ function NotesConflict({
 }) {
   const { t } = useTranslation();
   return (
-    <View style={[styles.card, styles.conflict, { backgroundColor: chrome.surface, borderColor: chrome.accent }]}>
+    <View
+      style={[
+        styles.card,
+        styles.conflict,
+        { backgroundColor: chrome.surface, borderColor: chrome.accent },
+      ]}
+    >
       <Text style={[styles.fieldKey, { color: chrome.accent }]}>{t("detail.conflict.title")}</Text>
       <Text style={[styles.notes, { color: chrome.ink }]}>{copy.notesConflict}</Text>
       <View style={styles.conflictActions}>
@@ -378,7 +379,10 @@ function Fields({ copy, chrome }: { readonly copy: Copy; readonly chrome: Detail
   return (
     <View style={styles.fields}>
       {rows.map(([key, value]) => (
-        <View key={key} style={[styles.card, styles.fieldCard, { backgroundColor: chrome.surface }]}>
+        <View
+          key={key}
+          style={[styles.card, styles.fieldCard, { backgroundColor: chrome.surface }]}
+        >
           <Text style={[styles.fieldKey, { color: chrome.muted }]}>{key}</Text>
           <Text style={[styles.fieldValue, { color: chrome.ink }]}>{value}</Text>
         </View>
@@ -398,7 +402,9 @@ function Badge({
 }) {
   return (
     <View style={[styles.badge, { backgroundColor: chrome.surface }]}>
-      <Text style={[styles.badgeText, { color: strong ? chrome.ink : chrome.muted }]}>{children}</Text>
+      <Text style={[styles.badgeText, { color: strong ? chrome.ink : chrome.muted }]}>
+        {children}
+      </Text>
     </View>
   );
 }
@@ -441,7 +447,14 @@ const styles = StyleSheet.create({
   notes: { fontSize: 13.5, lineHeight: 21, marginTop: 6 },
   conflict: { marginTop: 10, borderWidth: 1 },
   conflictActions: { flexDirection: "row", gap: 8, marginTop: 12 },
-  conflictButton: { height: 32, paddingHorizontal: 12, borderRadius: 999, borderWidth: StyleSheet.hairlineWidth, alignItems: "center", justifyContent: "center" },
+  conflictButton: {
+    height: 32,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   conflictButtonText: { fontSize: 12, fontWeight: "600" },
   dim: { opacity: 0.5 },
   sectionTitle: { fontSize: 13, fontWeight: "600", marginTop: 22, marginBottom: 10 },

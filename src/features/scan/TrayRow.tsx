@@ -1,11 +1,11 @@
-import { Disc3, Heart } from "lucide-react-native";
-import { useTranslation } from "react-i18next";
-import { StyleSheet, Text, View } from "react-native";
 import { ReleaseArt } from "@/components/ReleaseArt";
 import { scanFormat } from "@/features/scan/useScannerLogic";
 import type { KeptScan } from "@/store/scanSlice";
-import { FORMAT_LABELS, formatBarcode } from "@janne6565/rekordo-shared";
 import { colors, fonts } from "@/theme/colors";
+import { FORMAT_LABELS, formatBarcode } from "@janne6565/rekordo-shared";
+import { Disc3, Heart } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
+import { StyleSheet, Text, View } from "react-native";
 
 /**
  * One line of the tray under the camera window.
@@ -32,11 +32,7 @@ export function TrayRow({
             <Disc3 size={20} color="rgba(25,23,19,0.3)" strokeWidth={1.6} />
           </View>
         ) : (
-          <ReleaseArt
-            release={scan.release}
-            format={scanFormat(scan)}
-            style={styles.art}
-          />
+          <ReleaseArt release={scan.release} format={scanFormat(scan)} style={styles.art} />
         )}
         {wished && (
           <View style={styles.badge}>

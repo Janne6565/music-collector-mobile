@@ -1,5 +1,5 @@
-import { useLocalSearchParams } from "expo-router";
 import { SharedDetailScreen } from "@/features/friends/SharedDetailScreen";
+import { useLocalSearchParams } from "expo-router";
 
 /**
  * A record on somebody else's shelf, as its own screen.

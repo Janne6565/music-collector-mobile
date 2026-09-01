@@ -1,14 +1,21 @@
-import * as FileSystem from "expo-file-system/legacy";
-import * as SQLite from "expo-sqlite";
-import * as Crypto from "expo-crypto";
-import type { CollectionStats, Copy, Format, Photo, Release, WishlistItem } from "@janne6565/rekordo-shared";
+import type { LibraryFilter, LocalStore } from "@/local/LocalStore";
+import type {
+  CollectionStats,
+  Copy,
+  Format,
+  Photo,
+  Release,
+  WishlistItem,
+} from "@janne6565/rekordo-shared";
 import {
   FORMATS,
   isManualReleaseId,
   manualRelease,
   manualReleaseCopyId,
 } from "@janne6565/rekordo-shared";
-import type { LibraryFilter, LocalStore } from "@/local/LocalStore";
+import * as Crypto from "expo-crypto";
+import * as FileSystem from "expo-file-system/legacy";
+import * as SQLite from "expo-sqlite";
 
 // The on-device SQLite file, deliberately still the pre-Rekordo name. It holds the
 // collection itself, and this app is local-first: without an account there is no copy
@@ -28,7 +35,7 @@ export function encodeBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
   let out = "";
   for (let i = 0; i < bytes.length; i += 3) {
-    const chunk = (bytes[i] as number) << 16 | ((bytes[i + 1] ?? 0) << 8) | (bytes[i + 2] ?? 0);
+    const chunk = ((bytes[i] as number) << 16) | ((bytes[i + 1] ?? 0) << 8) | (bytes[i + 2] ?? 0);
     out += BASE64[(chunk >> 18) & 63];
     out += BASE64[(chunk >> 12) & 63];
     out += i + 1 < bytes.length ? BASE64[(chunk >> 6) & 63] : "=";
@@ -368,7 +375,9 @@ export class SqliteLocalStore implements LocalStore {
   }
 
   async getCopyIncludingDeleted(id: string): Promise<Copy | undefined> {
-    const row = await this.handle().getFirstAsync<CopyRow>("SELECT * FROM copies WHERE id = ?", [id]);
+    const row = await this.handle().getFirstAsync<CopyRow>("SELECT * FROM copies WHERE id = ?", [
+      id,
+    ]);
     return row === null ? undefined : toCopy(row);
   }
 
@@ -518,7 +527,10 @@ export class SqliteLocalStore implements LocalStore {
       ]);
       return row === null ? undefined : manualRelease(toCopy(row));
     }
-    const row = await this.handle().getFirstAsync<ReleaseRow>("SELECT * FROM releases WHERE id = ?", [releaseId]);
+    const row = await this.handle().getFirstAsync<ReleaseRow>(
+      "SELECT * FROM releases WHERE id = ?",
+      [releaseId],
+    );
     return row === null ? undefined : toRelease(row);
   }
 
@@ -527,9 +539,7 @@ export class SqliteLocalStore implements LocalStore {
     if (unique.length === 0) return new Map();
     const found = new Map<string, Release>();
 
-    const manualCopyIds = unique
-      .map(manualReleaseCopyId)
-      .filter((id): id is string => id !== null);
+    const manualCopyIds = unique.map(manualReleaseCopyId).filter((id): id is string => id !== null);
     if (manualCopyIds.length > 0) {
       const copies = await this.handle().getAllAsync<CopyRow>(
         `SELECT * FROM copies WHERE id IN (${manualCopyIds.map(() => "?").join(",")})`,
@@ -603,7 +613,9 @@ export class SqliteLocalStore implements LocalStore {
   }
 
   async getPhotoIncludingDeleted(id: string): Promise<Photo | undefined> {
-    const row = await this.handle().getFirstAsync<PhotoRow>("SELECT * FROM photos WHERE id = ?", [id]);
+    const row = await this.handle().getFirstAsync<PhotoRow>("SELECT * FROM photos WHERE id = ?", [
+      id,
+    ]);
     return row === null ? undefined : toPhoto(row);
   }
 
@@ -721,7 +733,9 @@ export class SqliteLocalStore implements LocalStore {
   }
 
   async getWishlistItemIncludingDeleted(id: string): Promise<WishlistItem | undefined> {
-    const row = await this.handle().getFirstAsync<WishRow>("SELECT * FROM wishlist WHERE id = ?", [id]);
+    const row = await this.handle().getFirstAsync<WishRow>("SELECT * FROM wishlist WHERE id = ?", [
+      id,
+    ]);
     return row === null ? undefined : toWish(row);
   }
 
@@ -785,7 +799,10 @@ export class SqliteLocalStore implements LocalStore {
        WHERE c.deletedAt IS NULL GROUP BY COALESCE(c.manualFormat, r.format)`,
     );
 
-    const byFormat = Object.fromEntries(FORMATS.map((format) => [format, 0])) as Record<Format, number>;
+    const byFormat = Object.fromEntries(FORMATS.map((format) => [format, 0])) as Record<
+      Format,
+      number
+    >;
     for (const row of perFormat) {
       if ((FORMATS as readonly string[]).includes(row.format)) {
         byFormat[row.format as Format] = row.n;
@@ -854,7 +871,10 @@ export class SqliteLocalStore implements LocalStore {
   }
 
   private async writeMeta(key: string, value: string): Promise<void> {
-    await this.handle().runAsync("INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)", [key, value]);
+    await this.handle().runAsync("INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)", [
+      key,
+      value,
+    ]);
   }
 }
 
@@ -915,7 +935,8 @@ function toRelease(row: ReleaseRow): Release {
   return {
     ...row,
     format: row.format as Format,
-    coverTheme: row.coverTheme === null ? null : (JSON.parse(row.coverTheme) as Release["coverTheme"]),
+    coverTheme:
+      row.coverTheme === null ? null : (JSON.parse(row.coverTheme) as Release["coverTheme"]),
   };
 }
 

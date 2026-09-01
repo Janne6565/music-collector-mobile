@@ -1,7 +1,7 @@
+import { colors } from "@/theme/colors";
 import { Tabs } from "expo-router";
 import { CircleUser, Heart, LibraryBig, Users } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
-import { colors } from "@/theme/colors";
 
 export default function TabsLayout() {
   const { t } = useTranslation();

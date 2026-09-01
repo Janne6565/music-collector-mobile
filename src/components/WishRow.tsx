@@ -1,6 +1,6 @@
+import { colors } from "@/theme/colors";
 import type { ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { colors } from "@/theme/colors";
 
 /**
  * One entry in a wishlist — yours, and a friend's.

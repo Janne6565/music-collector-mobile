@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
 import { findArtistImage } from "@/api/releases";
+import { useQuery } from "@tanstack/react-query";
 
 /**
  * The portrait for one artist, fetched behind the row that is already on screen.

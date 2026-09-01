@@ -1,6 +1,6 @@
+import { colors } from "@/theme/colors";
 import type { ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View, type ViewStyle } from "react-native";
-import { colors } from "@/theme/colors";
 
 /**
  * One record in a grid of them — your shelf, and a friend's.

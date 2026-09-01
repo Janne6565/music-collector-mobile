@@ -1,6 +1,6 @@
-import { useRouter } from "expo-router";
-import { neighboursOf } from "@/features/library/copyOrder";
 import { usePageFlip } from "@/features/detail/usePageFlip";
+import { neighboursOf } from "@/features/library/copyOrder";
+import { useRouter } from "expo-router";
 
 /**
  * Swiping left and right between the copies the shelf was showing.

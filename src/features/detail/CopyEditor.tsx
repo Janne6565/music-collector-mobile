@@ -1,7 +1,4 @@
-import { Eye, EyeOff, Star } from "lucide-react-native";
 import { fonts } from "@/theme/colors";
-import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import type { Condition, Copy, CopyPatch, DetailChrome, Format } from "@janne6565/rekordo-shared";
 import {
   CONDITIONS,
@@ -10,6 +7,17 @@ import {
   FORMAT_LABELS,
   useCopyEditorLogic,
 } from "@janne6565/rekordo-shared";
+import { Eye, EyeOff, Star } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 interface CopyEditorProps {
   readonly copy: Copy;
   /** What the archive says this pressing is, so the chips start where it stands. */
@@ -84,7 +92,11 @@ export function CopyEditor({
           as vinyl — and picking the catalogue's format again puts the copy back to
           following it. */}
       <Text style={[styles.legend, { color: chrome.muted }]}>{t("manual.format")}</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.chips}
+      >
         {FORMATS.map((format) => (
           <Chip
             key={format}
@@ -225,7 +237,9 @@ export function CopyEditor({
           {saving ? (
             <ActivityIndicator size="small" color={chrome.background} />
           ) : (
-            <Text style={[styles.primaryText, { color: chrome.background }]}>{t("common.save")}</Text>
+            <Text style={[styles.primaryText, { color: chrome.background }]}>
+              {t("common.save")}
+            </Text>
           )}
         </Pressable>
         <Pressable
@@ -258,7 +272,11 @@ function GradeRow({
   return (
     <>
       <Text style={[styles.legend, { color: chrome.muted }]}>{label}</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.chips}
+      >
         <Chip
           label={t("editor.unset")}
           active={value === ""}
@@ -296,7 +314,9 @@ function Chip({
       onPress={onPress}
       style={[styles.chip, { backgroundColor: active ? chrome.ink : chrome.surface }]}
     >
-      <Text style={[styles.chipText, { color: active ? chrome.background : chrome.muted }]}>{label}</Text>
+      <Text style={[styles.chipText, { color: active ? chrome.background : chrome.muted }]}>
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -333,9 +353,21 @@ const styles = StyleSheet.create({
   hideRow: { flexDirection: "row", alignItems: "center", gap: 7, paddingVertical: 12 },
   hideLabel: { fontFamily: fonts.sans, fontSize: 13 },
   actions: { flexDirection: "row", gap: 10, marginTop: 4 },
-  primary: { flex: 1, height: 46, borderRadius: 999, alignItems: "center", justifyContent: "center" },
+  primary: {
+    flex: 1,
+    height: 46,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   primaryText: { fontSize: 14, fontWeight: "600" },
-  secondary: { paddingHorizontal: 20, height: 46, borderRadius: 999, alignItems: "center", justifyContent: "center" },
+  secondary: {
+    paddingHorizontal: 20,
+    height: 46,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   secondaryText: { fontSize: 14, fontWeight: "600" },
   dim: { opacity: 0.6 },
 });

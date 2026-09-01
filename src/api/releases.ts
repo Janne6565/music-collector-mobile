@@ -7,11 +7,7 @@ import type {
   LocalStore,
   Release,
 } from "@janne6565/rekordo-shared";
-import {
-  FORMATS,
-  readArchivedAlbumCovers,
-  withArchivedCovers,
-} from "@janne6565/rekordo-shared";
+import { FORMATS, readArchivedAlbumCovers, withArchivedCovers } from "@janne6565/rekordo-shared";
 /**
  * Thin client over the metadata proxy.
  *

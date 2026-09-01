@@ -1,12 +1,12 @@
+import { useStore } from "@/local/StoreProvider";
+import { claimConfirmStrip } from "@/local/settings";
+import { useAppSelector } from "@/store/hooks";
+import { colors } from "@/theme/colors";
 import { useRouter } from "expo-router";
+import { X } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { X } from "lucide-react-native";
-import { claimConfirmStrip } from "@/local/settings";
-import { useStore } from "@/local/StoreProvider";
-import { useAppSelector } from "@/store/hooks";
-import { colors } from "@/theme/colors";
 
 /**
  * Screen 21b — the one time verification is allowed to speak unprompted.

@@ -1,9 +1,9 @@
+import { type PhotoSource, pickImage, storePhotoBytes } from "@/features/photos/pickImage";
 import { useStore } from "@/local/StoreProvider";
 import type { Photo } from "@janne6565/rekordo-shared";
 import { createPhoto, tombstonePhoto } from "@janne6565/rekordo-shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Crypto from "expo-crypto";
-import { type PhotoSource, pickImage, storePhotoBytes } from "@/features/photos/pickImage";
 
 /** Where a wish's picture comes from on a phone. The camera is first for the same reason
  * it is on a copy: you are often standing in front of the record. */

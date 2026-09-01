@@ -67,10 +67,7 @@ export function UndoProvider({ children }: { readonly children: ReactNode }) {
   );
 }
 
-function UndoLine({
-  undo,
-  onDone,
-}: { readonly undo: WishUndo; readonly onDone: () => void }) {
+function UndoLine({ undo, onDone }: { readonly undo: WishUndo; readonly onDone: () => void }) {
   const { t, i18n } = useTranslation();
   const { store, clock } = useStore();
   const queryClient = useQueryClient();
@@ -120,6 +117,11 @@ const styles = StyleSheet.create({
   body: { flex: 1, minWidth: 0 },
   title: { fontFamily: fonts.sans, fontSize: 13, fontWeight: "600", color: colors.nightInk },
   since: { fontFamily: fonts.sans, fontSize: 11.5, color: colors.nightMuted, marginTop: 1 },
-  action: { borderRadius: 8, backgroundColor: "rgba(255,255,255,0.15)", paddingHorizontal: 10, paddingVertical: 6 },
+  action: {
+    borderRadius: 8,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
   actionText: { fontFamily: fonts.sans, fontSize: 12, fontWeight: "600", color: colors.nightInk },
 });

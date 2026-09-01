@@ -1,12 +1,9 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import * as Crypto from "expo-crypto";
-import { useCallback } from "react";
 import { useSatisfyWishes } from "@/features/wishlist/useSatisfyWishes";
 import { useStore } from "@/local/StoreProvider";
 import { readDefaultCurrency } from "@/local/settings";
+import { useAppDispatch } from "@/store/hooks";
 import type { KeptScan } from "@/store/scanSlice";
 import { scanActions } from "@/store/scanSlice";
-import { useAppDispatch } from "@/store/hooks";
 import type { Copy, WishlistItem } from "@janne6565/rekordo-shared";
 import {
   asWishFormat,
@@ -16,6 +13,9 @@ import {
   tombstoneCopy,
   tombstoneWishlistItem,
 } from "@janne6565/rekordo-shared";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import * as Crypto from "expo-crypto";
+import { useCallback } from "react";
 
 export interface SavedBatch {
   readonly copyIds: string[];
@@ -102,7 +102,8 @@ export function useSaveBatch() {
       }
       for (const id of batch.wishIds) {
         const wish = await store.getWishlistItemIncludingDeleted(id);
-        if (wish !== undefined) await store.putWishlistItem(tombstoneWishlistItem(wish, clock, now));
+        if (wish !== undefined)
+          await store.putWishlistItem(tombstoneWishlistItem(wish, clock, now));
       }
       return kept;
     },

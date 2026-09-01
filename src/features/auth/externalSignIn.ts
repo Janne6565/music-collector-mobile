@@ -1,7 +1,7 @@
+import { type AccountUser, completeExternalSignIn } from "@/api/auth";
+import { API_BASE } from "@/api/config";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
-import { API_BASE } from "@/api/config";
-import { type AccountUser, completeExternalSignIn } from "@/api/auth";
 
 /**
  * Where the server sends the phone once a provider has finished with it.

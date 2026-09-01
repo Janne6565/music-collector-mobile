@@ -226,9 +226,7 @@ async function asJpeg(uri: string): Promise<{
   const rendered = await context.renderAsync();
   const longest = Math.max(rendered.width, rendered.height);
   if (longest > MAX_EDGE) {
-    context.resize(
-      rendered.width >= rendered.height ? { width: MAX_EDGE } : { height: MAX_EDGE },
-    );
+    context.resize(rendered.width >= rendered.height ? { width: MAX_EDGE } : { height: MAX_EDGE });
   }
   const saved = await (longest > MAX_EDGE ? context.renderAsync() : Promise.resolve(rendered)).then(
     (image) => image.saveAsync({ format: SaveFormat.JPEG, compress: 0.92 }),

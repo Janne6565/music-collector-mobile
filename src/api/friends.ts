@@ -151,7 +151,8 @@ export const friendsApi = {
   ask: (handle: string) =>
     request<void>("/api/v1/friends/requests", { method: "POST", body: { handle } }),
 
-  accept: (id: string) => request<void>(`/api/v1/friends/requests/${id}/accept`, { method: "POST" }),
+  accept: (id: string) =>
+    request<void>(`/api/v1/friends/requests/${id}/accept`, { method: "POST" }),
 
   decline: (id: string) =>
     request<void>(`/api/v1/friends/requests/${id}/decline`, { method: "POST" }),
@@ -174,11 +175,19 @@ export const friendsApi = {
 
   sharing: () => request<SharingSettings>("/api/v1/sharing"),
 
-  updateSharing: (settings: Required<Pick<SharingSettings, "collectionVisibility" | "wishlistVisibility" | "pricesPublic" | "findable">>) =>
-    request<SharingSettings>("/api/v1/sharing", { method: "PUT", body: settings }),
+  updateSharing: (
+    settings: Required<
+      Pick<
+        SharingSettings,
+        "collectionVisibility" | "wishlistVisibility" | "pricesPublic" | "findable"
+      >
+    >,
+  ) => request<SharingSettings>("/api/v1/sharing", { method: "PUT", body: settings }),
 
   handleAvailability: (handle: string) =>
-    request<HandleAvailability>(`/api/v1/handles/availability?handle=${encodeURIComponent(handle)}`),
+    request<HandleAvailability>(
+      `/api/v1/handles/availability?handle=${encodeURIComponent(handle)}`,
+    ),
 
   claimHandle: (handle: string) =>
     request<SharingSettings>("/api/v1/handles", { method: "POST", body: { handle } }),

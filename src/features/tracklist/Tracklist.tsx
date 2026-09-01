@@ -1,9 +1,9 @@
-import type { Tracklist as TracklistData, TrackMedium } from "@/api/tracklist";
+import type { TrackMedium, Tracklist as TracklistData } from "@/api/tracklist";
 import {
+  TRACK_ROW_CAP,
   capMedia,
   durationParts,
   knownDurationMs,
-  TRACK_ROW_CAP,
   trackDuration,
   trackTotal,
 } from "@/features/tracklist/tracklistFormat";
@@ -251,7 +251,9 @@ function Unreachable({
 }) {
   const { t } = useTranslation();
   return (
-    <View style={[styles.unreachable, { borderColor: chrome.accent, backgroundColor: chrome.surface }]}>
+    <View
+      style={[styles.unreachable, { borderColor: chrome.accent, backgroundColor: chrome.surface }]}
+    >
       <CloudOff size={16} color={chrome.accent} strokeWidth={1.75} />
       <View style={styles.unreachableBody}>
         <Text style={[styles.absentText, { color: chrome.ink }]}>
@@ -295,7 +297,14 @@ const styles = StyleSheet.create({
     textAlign: "right",
     fontVariant: ["tabular-nums"],
   },
-  more: { flexDirection: "row", alignItems: "center", gap: 7, borderTopWidth: 1, paddingTop: 12, marginTop: 4 },
+  more: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    borderTopWidth: 1,
+    paddingTop: 12,
+    marginTop: 4,
+  },
   moreText: { fontFamily: fonts.sans, fontSize: 12.5, fontWeight: "600" },
   bar: { height: 8, borderRadius: 3 },
   absent: { marginTop: 12, borderWidth: 1, borderStyle: "dashed", borderRadius: 10, padding: 14 },

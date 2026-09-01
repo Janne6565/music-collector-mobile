@@ -1,5 +1,5 @@
-import { type PayloadAction, createSlice } from "@reduxjs/toolkit";
 import type { Format, Release } from "@janne6565/rekordo-shared";
+import { type PayloadAction, createSlice } from "@reduxjs/toolkit";
 
 /** Where a kept scan is headed. Both are equal answers, which is the whole point. */
 export type ScanDestination = "SHELF" | "WISHLIST";
@@ -62,10 +62,7 @@ const scanSlice = createSlice({
       state.kept = state.kept.filter((scan) => scan.key !== action.payload);
     },
     /** The heart chip on a review row: a mis-tap in the shop is fixed here. */
-    redirected(
-      state,
-      action: PayloadAction<{ key: string; destination: ScanDestination }>,
-    ) {
+    redirected(state, action: PayloadAction<{ key: string; destination: ScanDestination }>) {
       const scan = state.kept.find((kept) => kept.key === action.payload.key);
       if (scan !== undefined) scan.destination = action.payload.destination;
     },

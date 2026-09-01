@@ -50,7 +50,9 @@ export function YourDataScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.body}>
-        <Text style={styles.lede}>{signedIn ? t("legal.data.lede") : t("legal.data.ledeLocal")}</Text>
+        <Text style={styles.lede}>
+          {signedIn ? t("legal.data.lede") : t("legal.data.ledeLocal")}
+        </Text>
 
         <Card title={t("legal.data.export.title")} article="ART. 15 · 20">
           <Text style={styles.cardBody}>

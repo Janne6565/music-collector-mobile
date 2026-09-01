@@ -1,5 +1,5 @@
-import { type PayloadAction, createSlice } from "@reduxjs/toolkit";
 import type { AccountUser } from "@/api/auth";
+import { type PayloadAction, createSlice } from "@reduxjs/toolkit";
 
 export type AuthStatus = "unknown" | "anonymous" | "signedIn";
 

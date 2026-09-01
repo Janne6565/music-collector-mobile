@@ -60,7 +60,9 @@ export function Avatar({
         },
       ]}
     >
-      <Text style={[styles.initials, { fontSize: Math.round(size * 0.36) }]}>{initials || "?"}</Text>
+      <Text style={[styles.initials, { fontSize: Math.round(size * 0.36) }]}>
+        {initials || "?"}
+      </Text>
       {source !== null && (
         <Animated.Image
           source={{ uri: source }}

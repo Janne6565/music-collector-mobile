@@ -1,13 +1,22 @@
-import { Check, CopyPlus, Disc3, Heart, LibraryBig, Layers, PencilLine, Search } from "lucide-react-native";
-import { useTranslation } from "react-i18next";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { releaseDisambiguation } from "@/api/releases";
 import { ReleaseArt } from "@/components/ReleaseArt";
 import { SCAN_FORMATS, type useScannerLogic } from "@/features/scan/useScannerLogic";
 import { useAppSelector } from "@/store/hooks";
-import type { Format, Release } from "@janne6565/rekordo-shared";
-import { releaseDisambiguation } from "@/api/releases";
-import { CONDITION_LABELS, FORMAT_LABELS, formatBarcode } from "@janne6565/rekordo-shared";
 import { colors, fonts } from "@/theme/colors";
+import type { Format, Release } from "@janne6565/rekordo-shared";
+import { CONDITION_LABELS, FORMAT_LABELS, formatBarcode } from "@janne6565/rekordo-shared";
+import {
+  Check,
+  CopyPlus,
+  Disc3,
+  Heart,
+  Layers,
+  LibraryBig,
+  PencilLine,
+  Search,
+} from "lucide-react-native";
+import { useTranslation } from "react-i18next";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 type Logic = ReturnType<typeof useScannerLogic>;
 
@@ -209,11 +218,11 @@ function Missing({ logic }: { readonly logic: Logic }) {
 function Offline({ logic }: { readonly logic: Logic }) {
   const { t } = useTranslation();
   const card = logic.card;
-  const waiting = useAppSelector((state) =>
-    state.scan.kept.filter((scan) => scan.release === null).length,
+  const waiting = useAppSelector(
+    (state) => state.scan.kept.filter((scan) => scan.release === null).length,
   );
-  const ready = useAppSelector((state) =>
-    state.scan.kept.filter((scan) => scan.release !== null).length,
+  const ready = useAppSelector(
+    (state) => state.scan.kept.filter((scan) => scan.release !== null).length,
   );
   if (card === null) return null;
 
@@ -240,9 +249,7 @@ function Offline({ logic }: { readonly logic: Logic }) {
       {waiting + ready > 0 && (
         <View style={styles.waitingLine}>
           <Layers size={14} color={colors.inkMuted} strokeWidth={1.8} />
-          <Text style={styles.waitingText}>
-            {t("scan.waitingAndReady", { waiting, ready })}
-          </Text>
+          <Text style={styles.waitingText}>{t("scan.waitingAndReady", { waiting, ready })}</Text>
         </View>
       )}
     </>
@@ -261,11 +268,7 @@ function ReleaseHead({
   const line = releaseDisambiguation(release);
   return (
     <View style={styles.head}>
-      <ReleaseArt
-        release={release}
-        format={format ?? release.format}
-        style={styles.headArt}
-      />
+      <ReleaseArt release={release} format={format ?? release.format} style={styles.headArt} />
       <View style={styles.headText}>
         <Text style={styles.serif}>{release.title}</Text>
         <Text style={styles.headMeta}>
@@ -459,7 +462,13 @@ const styles = StyleSheet.create({
   headMeta: { fontFamily: fonts.sans, fontSize: 13, color: colors.inkMuted, marginTop: 4 },
   headMono: { fontFamily: MONO, fontSize: 10.5, color: colors.inkSubtle, marginTop: 4 },
   serif: { fontFamily: fonts.serif, fontSize: 22, lineHeight: 26, color: colors.ink },
-  body: { fontFamily: fonts.sans, fontSize: 12.5, lineHeight: 19, color: colors.inkMuted, marginTop: 6 },
+  body: {
+    fontFamily: fonts.sans,
+    fontSize: 12.5,
+    lineHeight: 19,
+    color: colors.inkMuted,
+    marginTop: 6,
+  },
   digits: { fontFamily: MONO, fontSize: 15, color: colors.ink },
 
   pendingArt: {
@@ -535,7 +544,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(25,23,19,0.09)",
   },
-  asideText: { fontFamily: fonts.sans, fontSize: 12.5, lineHeight: 19, color: "rgba(25,23,19,0.65)" },
+  asideText: {
+    fontFamily: fonts.sans,
+    fontSize: 12.5,
+    lineHeight: 19,
+    color: "rgba(25,23,19,0.65)",
+  },
 
   pressingHead: {
     flexDirection: "row",

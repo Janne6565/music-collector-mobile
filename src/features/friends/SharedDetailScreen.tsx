@@ -1,18 +1,18 @@
+import type { SharedCopy, SharedWish } from "@/api/friends";
+import { ReleaseArt } from "@/components/ReleaseArt";
+import { formatMoney } from "@/domain/currency";
+import { CoverSheet } from "@/features/detail/CoverSheet";
+import { usePageFlip } from "@/features/detail/usePageFlip";
+import { useFriendProfileLogic } from "@/features/friends/useFriendsLogic";
+import { useSharedCoverPhotos } from "@/features/friends/useSharedCoverPhotos";
+import { Tracklist } from "@/features/tracklist/Tracklist";
+import { colors, fonts } from "@/theme/colors";
+import type { Format } from "@janne6565/rekordo-shared";
+import { CONDITION_SHORT, FORMAT_LABELS, chromeFor } from "@janne6565/rekordo-shared";
 import { useRouter } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { usePageFlip } from "@/features/detail/usePageFlip";
-import type { Format } from "@janne6565/rekordo-shared";
-import { CONDITION_SHORT, FORMAT_LABELS, chromeFor } from "@janne6565/rekordo-shared";
-import type { SharedCopy, SharedWish } from "@/api/friends";
-import { ReleaseArt } from "@/components/ReleaseArt";
-import { CoverSheet } from "@/features/detail/CoverSheet";
-import { useFriendProfileLogic } from "@/features/friends/useFriendsLogic";
-import { useSharedCoverPhotos } from "@/features/friends/useSharedCoverPhotos";
-import { Tracklist } from "@/features/tracklist/Tracklist";
-import { formatMoney } from "@/domain/currency";
-import { colors, fonts } from "@/theme/colors";
 
 interface Fact {
   readonly label: string;
@@ -219,5 +219,11 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     color: colors.inkSubtle,
   },
-  factValue: { fontFamily: fonts.sans, fontSize: 14, fontWeight: "600", color: colors.ink, marginTop: 4 },
+  factValue: {
+    fontFamily: fonts.sans,
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.ink,
+    marginTop: 4,
+  },
 });

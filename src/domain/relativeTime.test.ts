@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import "@/i18n/config";
 import { formatRelativeTime } from "@/domain/relativeTime";
@@ -51,7 +51,9 @@ describe("Hermes", () => {
 
   for (const api of unsupported) {
     it(`has no ${api}, so nothing may reference it`, () => {
-      const offenders = sources("src").filter((path) => readFileSync(path, "utf8").includes(`new ${api}`));
+      const offenders = sources("src").filter((path) =>
+        readFileSync(path, "utf8").includes(`new ${api}`),
+      );
       expect(offenders).toEqual([]);
     });
   }

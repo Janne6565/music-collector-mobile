@@ -100,7 +100,9 @@ export async function readRecentCollectors(store: LocalStore): Promise<RecentCol
     return Array.isArray(parsed)
       ? parsed.filter(
           (entry): entry is RecentCollector =>
-            typeof entry === "object" && entry !== null && typeof (entry as RecentCollector).handle === "string",
+            typeof entry === "object" &&
+            entry !== null &&
+            typeof (entry as RecentCollector).handle === "string",
         )
       : [];
   } catch {

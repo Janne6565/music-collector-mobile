@@ -1,14 +1,14 @@
 import type { AvatarCrop } from "@/api/avatar";
 import { type Framing, useFraming, usePreviewStyle } from "@/features/account/useFraming";
-import type { SharedValue } from "react-native-reanimated";
 import type { ChosenPicture } from "@/features/account/useProfilePictureLogic";
 import { colors, fonts } from "@/theme/colors";
 import { RotateCcw } from "lucide-react-native";
-import { GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
-import Animated, { FadeIn, runOnJS, useAnimatedReaction } from "react-native-reanimated";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Dimensions, Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
+import type { SharedValue } from "react-native-reanimated";
+import Animated, { FadeIn, runOnJS, useAnimatedReaction } from "react-native-reanimated";
 
 /**
  * Screen 27c — framing, full screen and against dark.
@@ -60,7 +60,10 @@ export function FramingScreen({
           <GestureDetector gesture={framing.gesture}>
             {/* `collapsable` off: an Android view with no drawing of its own can be folded
                 away at the native level, and a folded view has nothing to attach to. */}
-            <View style={[styles.stage, { width: stageSize, height: stageSize }]} collapsable={false}>
+            <View
+              style={[styles.stage, { width: stageSize, height: stageSize }]}
+              collapsable={false}
+            >
               <Animated.Image
                 source={{ uri: picture.uri }}
                 style={[
@@ -182,7 +185,13 @@ function Scrim({ diameter, stage }: { readonly diameter: number; readonly stage:
       <View
         style={[
           styles.lit,
-          { left: (stage - diameter) / 2, top: (stage - diameter) / 2, width: diameter, height: diameter, borderRadius: diameter / 2 },
+          {
+            left: (stage - diameter) / 2,
+            top: (stage - diameter) / 2,
+            width: diameter,
+            height: diameter,
+            borderRadius: diameter / 2,
+          },
         ]}
       />
     </View>
@@ -216,7 +225,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  cancel: { fontFamily: fonts.sans, fontSize: 15, fontWeight: "500", color: "rgba(255,255,255,0.7)" },
+  cancel: {
+    fontFamily: fonts.sans,
+    fontSize: 15,
+    fontWeight: "500",
+    color: "rgba(255,255,255,0.7)",
+  },
   barTitle: {
     fontFamily: "Menlo",
     fontSize: 10,

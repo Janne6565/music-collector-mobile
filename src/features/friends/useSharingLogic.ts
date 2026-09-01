@@ -1,4 +1,4 @@
-import { friendsApi, type SharingSettings, type Visibility } from "@/api/friends";
+import { type SharingSettings, type Visibility, friendsApi } from "@/api/friends";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
 

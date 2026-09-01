@@ -1,9 +1,9 @@
-import * as Device from "expo-device";
-import * as Notifications from "expo-notifications";
-import Constants from "expo-constants";
-import { Platform } from "react-native";
 import { registerDevice } from "@/api/devices";
 import type { LocalStore } from "@janne6565/rekordo-shared";
+import Constants from "expo-constants";
+import * as Device from "expo-device";
+import * as Notifications from "expo-notifications";
+import { Platform } from "react-native";
 
 /**
  * Everything that touches the OS permission, in one place.
@@ -71,8 +71,7 @@ export async function syncPushRegistration(store: LocalStore): Promise<boolean> 
   if (!(await pushAlreadyGranted())) return false;
   await ensureAndroidChannel();
 
-  const projectId =
-    Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
+  const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
   if (typeof projectId !== "string") return false;
 
   try {

@@ -1,5 +1,5 @@
-import { SafeAreaView, StyleSheet, Text, View } from "react-native";
 import { colors, fonts } from "@/theme/colors";
+import { SafeAreaView, StyleSheet, Text, View } from "react-native";
 
 interface PlaceholderScreenProps {
   readonly title: string;

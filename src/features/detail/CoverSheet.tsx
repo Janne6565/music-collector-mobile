@@ -1,5 +1,7 @@
+import type { DetailChrome } from "@janne6565/rekordo-shared";
 import { X } from "lucide-react-native";
 import { type ReactNode, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Animated,
   type GestureResponderHandlers,
@@ -8,8 +10,6 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useTranslation } from "react-i18next";
-import type { DetailChrome } from "@janne6565/rekordo-shared";
 
 /**
  * How much of the sleeve survives the crop once the header has closed up — a band across
@@ -102,7 +102,10 @@ export function CoverSheet({
   return (
     // No background of its own: the layers behind it own the colour, which is what lets a
     // wash run underneath while this stays put.
-    <Animated.View style={[styles.root, fade === undefined ? null : { opacity: fade }]} {...handlers}>
+    <Animated.View
+      style={[styles.root, fade === undefined ? null : { opacity: fade }]}
+      {...handlers}
+    >
       <Animated.ScrollView
         contentContainerStyle={[styles.scroll, { paddingTop: coverMax }]}
         scrollEventThrottle={16}

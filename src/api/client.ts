@@ -1,5 +1,5 @@
-import * as SecureStore from "expo-secure-store";
 import { API_BASE } from "@/api/config";
+import * as SecureStore from "expo-secure-store";
 
 /**
  * The app's HTTP client.
@@ -107,11 +107,14 @@ export async function refreshSession(): Promise<string | null> {
   const stored = await readRefreshToken();
   if (stored === null) return null;
   try {
-    const session = await request<{ accessToken?: string; refreshToken?: string }>("/api/v1/auth/refresh", {
-      method: "POST",
-      headers: { "X-Refresh-Token": stored },
-      noRetry: true,
-    });
+    const session = await request<{ accessToken?: string; refreshToken?: string }>(
+      "/api/v1/auth/refresh",
+      {
+        method: "POST",
+        headers: { "X-Refresh-Token": stored },
+        noRetry: true,
+      },
+    );
     if (session.accessToken === undefined) return null;
     setAccessToken(session.accessToken);
     // The server rotates the refresh token on every exchange, so store the new one or the

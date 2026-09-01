@@ -1,5 +1,5 @@
-import { useEffect } from "react";
 import { router } from "expo-router";
+import { useEffect } from "react";
 
 /**
  * Where the provider's redirect lands on Android, and nowhere else.

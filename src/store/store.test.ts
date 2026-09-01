@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import type { AccountUser } from "@/api/auth";
-import reducer, { accountChanged, signedIn, signedOut } from "@/store/authSlice";
 import { store } from "@/store";
+import reducer, { accountChanged, signedIn, signedOut } from "@/store/authSlice";
 
 const user: AccountUser = {
   id: "u1",
@@ -36,7 +36,10 @@ describe("the auth slice", () => {
   });
 
   it("goes anonymous, not back to unknown, on sign-out", () => {
-    const state = reducer(reducer(undefined, signedIn({ user, firstSyncPending: true })), signedOut());
+    const state = reducer(
+      reducer(undefined, signedIn({ user, firstSyncPending: true })),
+      signedOut(),
+    );
     expect(state.status).toBe("anonymous");
     expect(state.user).toBeNull();
     expect(state.firstSyncPending).toBe(false);

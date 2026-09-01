@@ -1,7 +1,6 @@
 import { request } from "@/api/client";
 import type { Copy, Photo, Release, SyncPage, WishlistItem } from "@janne6565/rekordo-shared";
 
-
 interface SyncPayload {
   copies?: unknown[];
   wishes?: unknown[];
@@ -117,7 +116,9 @@ function toPhoto(raw: unknown): Photo | null {
 function toPage(payload: SyncPayload): SyncPage {
   return {
     copies: (payload.copies ?? []).map(toCopy).filter((copy): copy is Copy => copy !== null),
-    wishes: (payload.wishes ?? []).map(toWish).filter((wish): wish is WishlistItem => wish !== null),
+    wishes: (payload.wishes ?? [])
+      .map(toWish)
+      .filter((wish): wish is WishlistItem => wish !== null),
     photos: (payload.photos ?? []).map(toPhoto).filter((photo): photo is Photo => photo !== null),
     cursor: payload.cursor ?? 0,
     hasMore: payload.hasMore === true,

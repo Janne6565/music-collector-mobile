@@ -1,6 +1,6 @@
+import { useReducedMotion } from "@/lib/motion";
 import { useMemo, useRef } from "react";
 import { Animated, PanResponder } from "react-native";
-import { useReducedMotion } from "@/lib/motion";
 
 /** How far a drag has to go, or how fast it has to be, to count as a page turn. */
 const COMMIT_DISTANCE = 80;
@@ -48,7 +48,8 @@ export function usePageFlip({
   still.current = reduced;
 
   const responder = useMemo(() => {
-    const sideways = (dx: number, dy: number) => Math.abs(dx) > 24 && Math.abs(dx) > Math.abs(dy) * 2;
+    const sideways = (dx: number, dy: number) =>
+      Math.abs(dx) > 24 && Math.abs(dx) > Math.abs(dy) * 2;
     return PanResponder.create({
       // Never on touch-down: everything under here is still tappable and scrollable until
       // a gesture proves it is a sideways drag.

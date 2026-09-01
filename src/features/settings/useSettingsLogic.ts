@@ -141,8 +141,7 @@ export function useSettingsLogic() {
       void save("documentLanguage", () => writeDocumentLanguage(store, language)),
     setCurrency: (currency: CurrencyCode) =>
       void save("currency", () => writeDefaultCurrency(store, currency)),
-    setSyncEnabled: (enabled: boolean) =>
-      void save("sync", () => writeSyncEnabled(store, enabled)),
+    setSyncEnabled: (enabled: boolean) => void save("sync", () => writeSyncEnabled(store, enabled)),
     /**
      * Clearing the searches, with the acknowledgement standing in for the button (20c).
      *

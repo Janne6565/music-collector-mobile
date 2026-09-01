@@ -1,4 +1,22 @@
+import { listDevices, muteDevice } from "@/api/devices";
+import {
+  type NotificationCategory,
+  notificationPreferences,
+  updateNotificationPreference,
+} from "@/api/notifications";
+import {
+  type PushPermission,
+  askForPush,
+  pushPermissionState,
+  syncPushRegistration,
+} from "@/features/notifications/push";
+import { useStore } from "@/local/StoreProvider";
+import { useAppSelector } from "@/store/hooks";
+import { colors, fonts } from "@/theme/colors";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
+import { ChevronLeft, Lock } from "lucide-react-native";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
@@ -11,24 +29,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ChevronLeft, Lock } from "lucide-react-native";
-import { useEffect, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  type NotificationCategory,
-  notificationPreferences,
-  updateNotificationPreference,
-} from "@/api/notifications";
-import { listDevices, muteDevice } from "@/api/devices";
-import {
-  type PushPermission,
-  askForPush,
-  pushPermissionState,
-  syncPushRegistration,
-} from "@/features/notifications/push";
-import { useStore } from "@/local/StoreProvider";
-import { useAppSelector } from "@/store/hooks";
-import { colors, fonts } from "@/theme/colors";
 
 const ORDER: readonly NotificationCategory[] = [
   "FRIEND_REQUEST",
@@ -201,10 +201,17 @@ export function NotificationsScreen() {
               const row = categories.find((candidate) => candidate.category === category);
               if (row === undefined) return null;
               return (
-                <View key={category} style={[styles.row, index === ORDER.length - 1 && styles.rowLast]}>
+                <View
+                  key={category}
+                  style={[styles.row, index === ORDER.length - 1 && styles.rowLast]}
+                >
                   <View style={styles.categoryColumn}>
-                    <Text style={styles.rowTitle}>{t(`notifications.category.${category}.title`)}</Text>
-                    <Text style={styles.rowBody}>{t(`notifications.category.${category}.short`)}</Text>
+                    <Text style={styles.rowTitle}>
+                      {t(`notifications.category.${category}.title`)}
+                    </Text>
+                    <Text style={styles.rowBody}>
+                      {t(`notifications.category.${category}.short`)}
+                    </Text>
                   </View>
 
                   <View style={styles.cell}>
@@ -275,12 +282,12 @@ export function NotificationsScreen() {
               >
                 <View style={styles.categoryColumn}>
                   <Text style={styles.rowTitle}>
-                    {device.current ? t("push.devices.thisPhone") : (device.label ?? device.platform)}
+                    {device.current
+                      ? t("push.devices.thisPhone")
+                      : (device.label ?? device.platform)}
                   </Text>
                   <Text style={styles.rowBody}>
-                    {device.mutedAt === null
-                      ? t("push.devices.allowed")
-                      : t("push.devices.muted")}
+                    {device.mutedAt === null ? t("push.devices.allowed") : t("push.devices.muted")}
                   </Text>
                 </View>
                 <Switch
@@ -321,7 +328,13 @@ const styles = StyleSheet.create({
   },
   noticeTitle: { fontFamily: fonts.sans, fontSize: 13, fontWeight: "600", color: colors.ink },
   noticeBody: { fontFamily: fonts.sans, fontSize: 12, lineHeight: 17, color: colors.inkMuted },
-  headerRow: { flexDirection: "row", alignItems: "flex-end", gap: 10, paddingHorizontal: 14, marginTop: 6 },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 10,
+    paddingHorizontal: 14,
+    marginTop: 6,
+  },
   columnLabel: {
     width: 58,
     textAlign: "center",
@@ -371,7 +384,12 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: colors.ink,
   },
-  noticeActionText: { fontFamily: fonts.sans, fontSize: 12.5, fontWeight: "600", color: colors.paper },
+  noticeActionText: {
+    fontFamily: fonts.sans,
+    fontSize: 12.5,
+    fontWeight: "600",
+    color: colors.paper,
+  },
   noticeFootnote: {
     fontFamily: fonts.sans,
     fontSize: 11.5,

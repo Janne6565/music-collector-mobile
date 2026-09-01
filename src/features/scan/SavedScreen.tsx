@@ -1,17 +1,17 @@
+import { ReleaseArt } from "@/components/ReleaseArt";
+import { useSaveBatch } from "@/features/scan/useSaveBatch";
+import { useStore } from "@/local/StoreProvider";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { scanActions } from "@/store/scanSlice";
+import { colors, fonts } from "@/theme/colors";
+import type { Copy, Release, WishlistItem } from "@janne6565/rekordo-shared";
+import { FORMAT_LABELS, copyFormat, formatBarcode } from "@janne6565/rekordo-shared";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { Check, CloudOff, Disc3, Heart, LibraryBig } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ReleaseArt } from "@/components/ReleaseArt";
-import { useSaveBatch } from "@/features/scan/useSaveBatch";
-import { useStore } from "@/local/StoreProvider";
-import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { scanActions } from "@/store/scanSlice";
-import type { Copy, Release, WishlistItem } from "@janne6565/rekordo-shared";
-import { FORMAT_LABELS, copyFormat, formatBarcode } from "@janne6565/rekordo-shared";
-import { colors, fonts } from "@/theme/colors";
 
 /**
  * What a saved crate looks like: both destinations named plainly, and nothing to fill in.
@@ -114,9 +114,7 @@ export function SavedScreen() {
           {wishes.map((wish) => (
             <SavedRow
               key={wish.id}
-              title={
-                wish.pendingBarcode === null ? wish.title : formatBarcode(wish.pendingBarcode)
-              }
+              title={wish.pendingBarcode === null ? wish.title : formatBarcode(wish.pendingBarcode)}
               mono={wish.pendingBarcode !== null}
               meta={wish.pendingBarcode !== null ? t("scan.pendingRow") : wishMeta(wish)}
               release={undefined}
@@ -128,7 +126,9 @@ export function SavedScreen() {
         {pending > 0 && (
           <View style={styles.waiting}>
             <CloudOff size={14} color={colors.inkMuted} strokeWidth={1.8} />
-            <Text style={styles.waitingText}>{t("scan.saved.stillWaiting", { count: pending })}</Text>
+            <Text style={styles.waitingText}>
+              {t("scan.saved.stillWaiting", { count: pending })}
+            </Text>
           </View>
         )}
 
@@ -279,8 +279,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  title: { fontFamily: fonts.serif, fontSize: 30, lineHeight: 35, color: colors.ink, marginTop: 20 },
-  lede: { fontFamily: fonts.sans, fontSize: 13.5, lineHeight: 22, color: colors.inkMuted, marginTop: 8 },
+  title: {
+    fontFamily: fonts.serif,
+    fontSize: 30,
+    lineHeight: 35,
+    color: colors.ink,
+    marginTop: 20,
+  },
+  lede: {
+    fontFamily: fonts.sans,
+    fontSize: 13.5,
+    lineHeight: 22,
+    color: colors.inkMuted,
+    marginTop: 8,
+  },
 
   list: { marginTop: 22 },
   row: {
@@ -309,7 +321,13 @@ const styles = StyleSheet.create({
   tagTextWished: { color: colors.accent },
 
   waiting: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 22 },
-  waitingText: { fontFamily: fonts.sans, fontSize: 12, lineHeight: 18, color: colors.inkMuted, flex: 1 },
+  waitingText: {
+    fontFamily: fonts.sans,
+    fontSize: 12,
+    lineHeight: 18,
+    color: colors.inkMuted,
+    flex: 1,
+  },
 
   details: {
     marginTop: 22,

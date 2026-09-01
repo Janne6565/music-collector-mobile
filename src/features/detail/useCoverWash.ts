@@ -1,12 +1,12 @@
 import {
+  type CoverTheme,
   DURATION,
+  type DetailChrome,
   EASING,
   REDUCED,
   WASH_DARK,
-  WASH_LANES,
   WASH_INSTANT_BEFORE,
-  type CoverTheme,
-  type DetailChrome,
+  WASH_LANES,
   chromeFor,
   lightnessOfHex,
 } from "@janne6565/rekordo-shared";

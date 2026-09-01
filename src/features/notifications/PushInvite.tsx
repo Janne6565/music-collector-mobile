@@ -1,11 +1,11 @@
-import { useRouter, useRootNavigationState } from "expo-router";
-import { useEffect, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { friendsApi } from "@/api/friends";
 import { canStillAskForPush } from "@/features/notifications/push";
-import { claimPushPriming } from "@/local/settings";
 import { useStore } from "@/local/StoreProvider";
+import { claimPushPriming } from "@/local/settings";
 import { useAppSelector } from "@/store/hooks";
+import { useQuery } from "@tanstack/react-query";
+import { useRootNavigationState, useRouter } from "expo-router";
+import { useEffect, useRef } from "react";
 
 /**
  * Offers 22b once on launch to somebody who already has a friend.

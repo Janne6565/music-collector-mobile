@@ -1,6 +1,6 @@
+import { findArtists } from "@/api/releases";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { findArtists } from "@/api/releases";
 
 /**
  * How many artist rows show before the disclosure.

@@ -1,13 +1,13 @@
+import type { useAccountLogic } from "@/features/auth/useAccountLogic";
+import { useStore } from "@/local/StoreProvider";
+import { readLocalOnlyNoticeSeen } from "@/local/settings";
+import { colors, fonts } from "@/theme/colors";
+import { passwordStrength } from "@janne6565/rekordo-shared";
 import { useRouter } from "expo-router";
 import { Check, Disc3, Eye, EyeOff, HardDrive, Lock, Mail, User } from "lucide-react-native";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-import { passwordStrength } from "@janne6565/rekordo-shared";
-import type { useAccountLogic } from "@/features/auth/useAccountLogic";
-import { useStore } from "@/local/StoreProvider";
-import { readLocalOnlyNoticeSeen } from "@/local/settings";
-import { colors, fonts } from "@/theme/colors";
 
 /** Screens 4a and 4b. */
 export function AuthForm({ logic }: { readonly logic: ReturnType<typeof useAccountLogic> }) {
@@ -77,7 +77,10 @@ export function AuthForm({ logic }: { readonly logic: ReturnType<typeof useAccou
             {t("auth.agreeTerms")}
           </Toggle>
           <View style={styles.consentLinks}>
-            <Pressable accessibilityRole="link" onPress={() => router.push("/legal/nutzungsbedingungen")}>
+            <Pressable
+              accessibilityRole="link"
+              onPress={() => router.push("/legal/nutzungsbedingungen")}
+            >
               <Text style={styles.consentLink}>{t("legal.terms")}</Text>
             </Pressable>
             <Text style={styles.consentSeparator}>·</Text>
@@ -120,7 +123,9 @@ export function AuthForm({ logic }: { readonly logic: ReturnType<typeof useAccou
         {logic.busy ? (
           <ActivityIndicator size="small" color={colors.paper} />
         ) : (
-          <Text style={styles.primaryText}>{registering ? t("auth.create") : t("auth.signIn")}</Text>
+          <Text style={styles.primaryText}>
+            {registering ? t("auth.create") : t("auth.signIn")}
+          </Text>
         )}
       </Pressable>
 
@@ -173,7 +178,10 @@ export function AuthForm({ logic }: { readonly logic: ReturnType<typeof useAccou
       </Pressable>
       {!registering && <Text style={styles.withoutNote}>{t("auth.useWithoutBody")}</Text>}
 
-      <Pressable accessibilityRole="button" onPress={() => logic.setMode(registering ? "SIGN_IN" : "REGISTER")}>
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => logic.setMode(registering ? "SIGN_IN" : "REGISTER")}
+      >
         <Text style={styles.switchMode}>
           {registering ? t("auth.haveAccount") : t("auth.needAccount")}
         </Text>
@@ -211,7 +219,9 @@ function PasswordInput({
           secureTextEntry={!visible}
           autoCapitalize="none"
           textContentType={registering ? "newPassword" : "password"}
-          placeholder={registering ? t("auth.newPasswordPlaceholder") : t("auth.passwordPlaceholder")}
+          placeholder={
+            registering ? t("auth.newPasswordPlaceholder") : t("auth.passwordPlaceholder")
+          }
           placeholderTextColor={colors.inkSubtle}
           style={styles.input}
         />
@@ -235,7 +245,10 @@ function PasswordInput({
             {[1, 2, 3].map((bar) => (
               <View
                 key={bar}
-                style={[styles.bar, { backgroundColor: bar <= strength ? colors.accent : colors.line }]}
+                style={[
+                  styles.bar,
+                  { backgroundColor: bar <= strength ? colors.accent : colors.line },
+                ]}
               />
             ))}
           </View>
@@ -250,7 +263,9 @@ function Field({
   label,
   icon,
   ...input
-}: { readonly label: string; readonly icon: React.ReactNode } & React.ComponentProps<typeof TextInput>) {
+}: { readonly label: string; readonly icon: React.ReactNode } & React.ComponentProps<
+  typeof TextInput
+>) {
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
@@ -293,7 +308,10 @@ function Toggle({
  * time, which is the same conversation a single "something went wrong" was having — just
  * slower.
  */
-function errorText(error: ReturnType<typeof useAccountLogic>["failed"][number], t: (k: never) => string) {
+function errorText(
+  error: ReturnType<typeof useAccountLogic>["failed"][number],
+  t: (k: never) => string,
+) {
   const translate = t as unknown as (key: string) => string;
   return translate(`auth.error.${error}`);
 }
@@ -303,7 +321,13 @@ const styles = StyleSheet.create({
   providerConsent: { fontSize: 11, lineHeight: 17, color: colors.inkSubtle, marginBottom: 4 },
   // Indented to the checkbox label, so the two document names read as belonging to the
   // sentence above them rather than to the age tick below.
-  consentLinks: { flexDirection: "row", alignItems: "center", gap: 8, marginLeft: 31, marginTop: -4 },
+  consentLinks: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginLeft: 31,
+    marginTop: -4,
+  },
   consentLink: { fontSize: 12, fontWeight: "600", color: colors.accent },
   consentSeparator: { fontSize: 12, color: colors.inkSubtle },
   root: { gap: 14 },
@@ -319,7 +343,13 @@ const styles = StyleSheet.create({
   lede: { fontSize: 14, lineHeight: 21, color: colors.inkMuted, marginTop: -8 },
   field: { gap: 7 },
   labelRow: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" },
-  label: { fontSize: 10, letterSpacing: 1, textTransform: "uppercase", color: colors.inkSubtle, fontWeight: "500" },
+  label: {
+    fontSize: 10,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    color: colors.inkSubtle,
+    fontWeight: "500",
+  },
   forgot: { fontSize: 11.5, fontWeight: "500", color: colors.accent },
   footnote: { fontSize: 11.5, lineHeight: 17, color: colors.inkSubtle },
   inputBox: {
@@ -362,7 +392,12 @@ const styles = StyleSheet.create({
   dim: { opacity: 0.5 },
   divider: { flexDirection: "row", alignItems: "center", gap: 12 },
   rule: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: colors.line },
-  dividerText: { fontSize: 10, letterSpacing: 1, textTransform: "uppercase", color: colors.inkSubtle },
+  dividerText: {
+    fontSize: 10,
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    color: colors.inkSubtle,
+  },
   secondary: {
     height: 48,
     borderRadius: 999,

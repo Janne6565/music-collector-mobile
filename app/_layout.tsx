@@ -1,19 +1,19 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { Provider } from "react-redux";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { Provider } from "react-redux";
 import "@/i18n/config";
 import { RestoreSession } from "@/features/auth/RestoreSession";
-import { PushInvite } from "@/features/notifications/PushInvite";
 import { SignInConflictSheet } from "@/features/auth/SignInConflictSheet";
+import { PushInvite } from "@/features/notifications/PushInvite";
 import { UploadRefusalSheet } from "@/features/photos/UploadRefusalSheet";
 import { UndoProvider } from "@/features/wishlist/UndoBar";
+import { useReducedMotion } from "@/lib/motion";
 import { StoreProvider } from "@/local/StoreProvider";
+import { store } from "@/store";
 import { PendingScans } from "@/sync/PendingScans";
 import { SyncProvider } from "@/sync/SyncProvider";
-import { useReducedMotion } from "@/lib/motion";
-import { store } from "@/store";
 
 const queryClient = new QueryClient();
 
@@ -54,47 +54,47 @@ export default function RootLayout() {
                 it is opened, so hanging it off the account screen meant a cold launch into
                 the shelf never synced at all. */}
             <SyncProvider>
-            {/* 28d, above the tabs for the same reason the sync loop is: the refusal is
+              {/* 28d, above the tabs for the same reason the sync loop is: the refusal is
                 learned during a sync, which lands long after the sheet that saved the copy
                 is gone. Hung off the editor it would reach nobody. */}
-            <UploadRefusalSheet />
-            {/* 29, above the tabs for the same reason: the question is about the library,
+              <UploadRefusalSheet />
+              {/* 29, above the tabs for the same reason: the question is about the library,
                 and asked from the You tab it walked away with whoever left that tab. */}
-            <SignInConflictSheet />
-            {/* Screen 16e's line lives above the stack: the entry that leaves on its own
+              <SignInConflictSheet />
+              {/* Screen 16e's line lives above the stack: the entry that leaves on its own
                 does so wherever a record gets filed, which is rarely the wishlist. */}
-            <UndoProvider>
-              {/*
-                * The platform push, untouched — 350ms slide with the interactive back-swipe
-                * intact. This is the one place the web's Cross is deliberately *not*
-                * mirrored: on a phone the stack is the mental model, and a cross-fade throws
-                * away the swipe. Do not customise it.
-                *
-                * The exception is a reader who has asked for less movement, where the slide
-                * goes and the screens simply replace one another.
-                */}
-              <Stack
-                screenOptions={{ headerShown: false, animation: reduced ? "none" : "default" }}
-              >
-                {/* Your own copy. As an ordinary page in the stack every sideways swipe
+              <UndoProvider>
+                {/*
+                 * The platform push, untouched — 350ms slide with the interactive back-swipe
+                 * intact. This is the one place the web's Cross is deliberately *not*
+                 * mirrored: on a phone the stack is the mental model, and a cross-fade throws
+                 * away the swipe. Do not customise it.
+                 *
+                 * The exception is a reader who has asked for less movement, where the slide
+                 * goes and the screens simply replace one another.
+                 */}
+                <Stack
+                  screenOptions={{ headerShown: false, animation: reduced ? "none" : "default" }}
+                >
+                  {/* Your own copy. As an ordinary page in the stack every sideways swipe
                     was fighting the interactive back gesture, and that is not something you
                     can tune your way out of. */}
-                <Stack.Screen name="copies/[copyId]" options={sheet(reduced)} />
-                {/*
-                  * A record on somebody else's shelf, presented exactly the same way.
-                  *
-                  * It used to be an RN `<Modal presentationStyle="pageSheet">` drawn inside
-                  * the profile, and it dismissed badly: the native card ran its own drag,
-                  * cancelled it on release, and React tore the modal window down underneath
-                  * — the sheet sprang back up and then disappeared without an animation.
-                  * A sheet the navigator presents is dragged and dismissed by the navigator,
-                  * which is the only place those two can be one motion. The two record
-                  * sheets now share this, `CoverSheet` and `usePageFlip`; what differs is
-                  * only what is inside them, which is the part that genuinely differs.
-                  */}
-                <Stack.Screen name="profiles/[handle]/[open]" options={sheet(reduced)} />
-              </Stack>
-            </UndoProvider>
+                  <Stack.Screen name="copies/[copyId]" options={sheet(reduced)} />
+                  {/*
+                   * A record on somebody else's shelf, presented exactly the same way.
+                   *
+                   * It used to be an RN `<Modal presentationStyle="pageSheet">` drawn inside
+                   * the profile, and it dismissed badly: the native card ran its own drag,
+                   * cancelled it on release, and React tore the modal window down underneath
+                   * — the sheet sprang back up and then disappeared without an animation.
+                   * A sheet the navigator presents is dragged and dismissed by the navigator,
+                   * which is the only place those two can be one motion. The two record
+                   * sheets now share this, `CoverSheet` and `usePageFlip`; what differs is
+                   * only what is inside them, which is the part that genuinely differs.
+                   */}
+                  <Stack.Screen name="profiles/[handle]/[open]" options={sheet(reduced)} />
+                </Stack>
+              </UndoProvider>
             </SyncProvider>
           </StoreProvider>
         </SafeAreaProvider>

@@ -1,5 +1,5 @@
-import type { Visibility } from "@/api/friends";
 import { WEB_BASE } from "@/api/config";
+import type { Visibility } from "@/api/friends";
 import { useSharingLogic } from "@/features/friends/useSharingLogic";
 import { colors, fonts } from "@/theme/colors";
 import * as Clipboard from "expo-clipboard";
@@ -7,7 +7,15 @@ import { useRouter } from "expo-router";
 import { Check, ChevronLeft, Copy, EyeOff } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 /**
@@ -113,7 +121,9 @@ export function SharingScreen() {
               <View style={styles.rowText}>
                 <Text style={styles.rowTitle}>{t("sharing.prices.title")}</Text>
                 <Text style={styles.rowBody}>
-                  {settings.pricesPublic === true ? t("sharing.prices.on") : t("sharing.prices.off")}
+                  {settings.pricesPublic === true
+                    ? t("sharing.prices.on")
+                    : t("sharing.prices.off")}
                 </Text>
               </View>
               <Switch
@@ -175,9 +185,12 @@ function PublicLink({
 
   // Otherwise the two-second reset fires into a screen that has been left, which React
   // Native answers with a warning about setting state on an unmounted component.
-  useEffect(() => () => {
-    if (timer.current !== null) clearTimeout(timer.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (timer.current !== null) clearTimeout(timer.current);
+    },
+    [],
+  );
 
   return (
     <View style={styles.linkRow}>
@@ -260,7 +273,13 @@ function Choices({
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.paper },
-  bar: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingVertical: 10 },
+  bar: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
   barTitle: { fontFamily: fonts.sans, fontSize: 15, fontWeight: "600", color: colors.ink },
   centred: { flex: 1, alignItems: "center", justifyContent: "center" },
   body: { paddingHorizontal: 20, paddingBottom: 40, gap: 4 },
@@ -281,7 +300,13 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   divider: { height: 1, backgroundColor: colors.line },
-  linkRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 14, paddingVertical: 12 },
+  linkRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
   linkLabel: {
     fontFamily: fonts.sans,
     fontSize: 10,
@@ -290,7 +315,13 @@ const styles = StyleSheet.create({
     color: colors.inkSubtle,
   },
   linkUrl: { fontFamily: fonts.sans, fontSize: 12, color: colors.ink, marginTop: 3 },
-  linkWho: { fontFamily: fonts.sans, fontSize: 11.5, lineHeight: 16, color: colors.inkMuted, marginTop: 3 },
+  linkWho: {
+    fontFamily: fonts.sans,
+    fontSize: 11.5,
+    lineHeight: 16,
+    color: colors.inkMuted,
+    marginTop: 3,
+  },
   copyButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -303,10 +334,22 @@ const styles = StyleSheet.create({
   },
   copyButtonPressed: { backgroundColor: colors.canvas },
   copyLabel: { fontFamily: fonts.sans, fontSize: 12, fontWeight: "600", color: colors.ink },
-  row: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 14, paddingVertical: 13 },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+  },
   rowText: { flex: 1, minWidth: 0 },
   rowTitle: { fontFamily: fonts.sans, fontSize: 13.5, fontWeight: "600", color: colors.ink },
-  rowBody: { fontFamily: fonts.sans, fontSize: 12, lineHeight: 17, color: colors.inkMuted, marginTop: 2 },
+  rowBody: {
+    fontFamily: fonts.sans,
+    fontSize: 12,
+    lineHeight: 17,
+    color: colors.inkMuted,
+    marginTop: 2,
+  },
   radio: {
     width: 18,
     height: 18,
@@ -317,7 +360,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   radioOn: { backgroundColor: colors.ink, borderColor: colors.ink },
-  note: { fontFamily: fonts.sans, fontSize: 12, lineHeight: 17, color: colors.inkMuted, marginTop: 8 },
+  note: {
+    fontFamily: fonts.sans,
+    fontSize: 12,
+    lineHeight: 17,
+    color: colors.inkMuted,
+    marginTop: 8,
+  },
   footnote: {
     flexDirection: "row",
     gap: 8,
@@ -326,5 +375,11 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: colors.canvas,
   },
-  footnoteText: { flex: 1, fontFamily: fonts.sans, fontSize: 12, lineHeight: 17, color: colors.inkMuted },
+  footnoteText: {
+    flex: 1,
+    fontFamily: fonts.sans,
+    fontSize: 12,
+    lineHeight: 17,
+    color: colors.inkMuted,
+  },
 });

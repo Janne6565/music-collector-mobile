@@ -3,8 +3,8 @@ import type { ProfilePictureLogic } from "@/features/account/useProfilePictureLo
 import { Avatar } from "@/features/friends/Avatar";
 import { colors, fonts } from "@/theme/colors";
 import { ChevronRight } from "lucide-react-native";
-import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
+import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 
 /**
  * Screen 27a and 27c — the only place in the app that offers a profile picture.
@@ -216,9 +216,21 @@ const styles = StyleSheet.create({
   bodyFailed: { color: colors.accentStrong, lineHeight: 17 },
   verb: { fontFamily: fonts.sans, fontSize: 12, fontWeight: "600", color: colors.accent },
 
-  progress: { width: 52, height: 52, borderRadius: 999, overflow: "hidden", backgroundColor: "rgba(25,23,19,0.12)" },
+  progress: {
+    width: 52,
+    height: 52,
+    borderRadius: 999,
+    overflow: "hidden",
+    backgroundColor: "rgba(25,23,19,0.12)",
+  },
   progressTrack: { ...StyleSheet.absoluteFill },
-  progressFill: { position: "absolute", left: 0, top: 0, bottom: 0, backgroundColor: colors.accent },
+  progressFill: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: colors.accent,
+  },
   progressInner: { position: "absolute", left: 5, top: 5, right: 5, bottom: 5 },
 
   scrim: { flex: 1, backgroundColor: "rgba(25,23,19,0.34)", justifyContent: "flex-end" },
@@ -231,7 +243,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "rgba(25,23,19,0.08)",
   },
-  sheetHeadText: { fontFamily: fonts.sans, fontSize: 11, fontWeight: "500", color: colors.inkMuted },
+  sheetHeadText: {
+    fontFamily: fonts.sans,
+    fontSize: 11,
+    fontWeight: "500",
+    color: colors.inkMuted,
+  },
   sheetRow: {
     paddingVertical: 15,
     alignItems: "center",

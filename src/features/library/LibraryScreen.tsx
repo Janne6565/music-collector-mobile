@@ -1,21 +1,25 @@
+import { CopyTile } from "@/components/CopyTile";
+import { ReleaseArt } from "@/components/ReleaseArt";
+import { ConfirmStrip } from "@/features/auth/ConfirmStrip";
+import { SyncOutcomeStrip } from "@/features/auth/SyncOutcomeStrip";
+import { rememberCopyOrder } from "@/features/library/copyOrder";
+import {
+  type FormatFilter,
+  type LibraryRow,
+  useLibraryLogic,
+} from "@/features/library/useLibraryLogic";
+import { useCoverPhotos } from "@/features/photos/useCoverPhotos";
+import type { CatalogueGap } from "@/local/settings";
+import { colors, fonts } from "@/theme/colors";
+import type { Format } from "@janne6565/rekordo-shared";
+import { catalogArtShown, copyFormat, copyPreviewSrc } from "@janne6565/rekordo-shared";
+import { FORMAT_LABELS } from "@janne6565/rekordo-shared";
 import { useRouter } from "expo-router";
 import { Plus } from "lucide-react-native";
 import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ConfirmStrip } from "@/features/auth/ConfirmStrip";
-import { SyncOutcomeStrip } from "@/features/auth/SyncOutcomeStrip";
-import { rememberCopyOrder } from "@/features/library/copyOrder";
-import { CopyTile } from "@/components/CopyTile";
-import { ReleaseArt } from "@/components/ReleaseArt";
-import type { Format } from "@janne6565/rekordo-shared";
-import { catalogArtShown, copyFormat, copyPreviewSrc } from "@janne6565/rekordo-shared";
-import { FORMAT_LABELS } from "@janne6565/rekordo-shared";
-import { type FormatFilter, type LibraryRow, useLibraryLogic } from "@/features/library/useLibraryLogic";
-import { useCoverPhotos } from "@/features/photos/useCoverPhotos";
-import type { CatalogueGap } from "@/local/settings";
-import { colors, fonts } from "@/theme/colors";
 
 const FILTERS: readonly FormatFilter[] = ["ALL", "VINYL", "CD", "CASSETTE", "DIGITAL"];
 
@@ -188,7 +192,13 @@ const styles = StyleSheet.create({
   },
   // The row owns the air under it as well as over it: the chips are a control strip, and
   // letting the shelf start right below them read as the first row belonging to them.
-  filters: { flexDirection: "row", gap: 7, paddingHorizontal: 18, paddingTop: 14, paddingBottom: 12 },
+  filters: {
+    flexDirection: "row",
+    gap: 7,
+    paddingHorizontal: 18,
+    paddingTop: 14,
+    paddingBottom: 12,
+  },
   chip: {
     paddingHorizontal: 13,
     paddingVertical: 7,

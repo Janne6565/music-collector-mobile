@@ -1,8 +1,3 @@
-import { ChevronRight, Cloud, FileDown, GitCompare, Image, List, Smartphone } from "lucide-react-native";
-import type { ReactNode } from "react";
-import { useTranslation } from "react-i18next";
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { FormatThumb } from "@/components/FormatThumb";
 import { RisingSheet } from "@/components/RisingSheet";
 import { conflictDate, conflictValueText } from "@/features/auth/conflictValues";
@@ -11,6 +6,27 @@ import { useAppSelector } from "@/store/hooks";
 import { colors, fonts } from "@/theme/colors";
 import type { OneSidedEntry, ValueDifference } from "@janne6565/rekordo-shared";
 import { differenceKey } from "@janne6565/rekordo-shared";
+import {
+  ChevronRight,
+  Cloud,
+  FileDown,
+  GitCompare,
+  Image,
+  List,
+  Smartphone,
+} from "lucide-react-native";
+import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
+import {
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 /**
  * Turn 29 on the phone — signing in onto a shelf that already exists.
@@ -72,7 +88,9 @@ function Body({ logic }: { readonly logic: Logic }) {
       return (
         <View style={styles.pad}>
           <Text style={styles.title}>{t("conflict.comparing.title")}</Text>
-          <Text style={styles.lede}>{t("conflict.comparing.body", { count: logic.localCount })}</Text>
+          <Text style={styles.lede}>
+            {t("conflict.comparing.body", { count: logic.localCount })}
+          </Text>
           <Bar />
         </View>
       );
@@ -92,7 +110,9 @@ function Body({ logic }: { readonly logic: Logic }) {
     case "UPLOADING":
       return (
         <View style={styles.pad}>
-          <Text style={styles.title}>{t("conflict.uploading.title", { count: logic.localCount })}</Text>
+          <Text style={styles.title}>
+            {t("conflict.uploading.title", { count: logic.localCount })}
+          </Text>
           <Text style={styles.lede}>{t("conflict.uploading.body")}</Text>
           <Bar />
           {logic.failed && <Failed onRetry={logic.keepBoth} />}
@@ -145,7 +165,11 @@ function NoLoss({ logic, email }: { readonly logic: Logic; readonly email: strin
         busy={logic.working}
         wide
       />
-      <Pressable accessibilityRole="button" onPress={logic.openDifference} style={styles.disclosure}>
+      <Pressable
+        accessibilityRole="button"
+        onPress={logic.openDifference}
+        style={styles.disclosure}
+      >
         <List size={13} color={colors.accent} strokeWidth={2} />
         <Text style={styles.disclosureText}>{t("conflict.noLoss.show", { count: incoming })}</Text>
       </Pressable>
@@ -185,8 +209,12 @@ function Question({ logic, email }: { readonly logic: Logic; readonly email: str
         <View style={styles.table}>
           <View style={[styles.tableRow, styles.tableHead]}>
             <Text style={[styles.column, styles.columnGrow]}>{t("conflict.rows.header")}</Text>
-            <Text style={[styles.column, styles.columnNumber]}>{t("conflict.sides.localShort")}</Text>
-            <Text style={[styles.column, styles.columnNumber]}>{t("conflict.sides.accountShort")}</Text>
+            <Text style={[styles.column, styles.columnNumber]}>
+              {t("conflict.sides.localShort")}
+            </Text>
+            <Text style={[styles.column, styles.columnNumber]}>
+              {t("conflict.sides.accountShort")}
+            </Text>
           </View>
           <CountRow
             label={t("conflict.rows.copies")}
@@ -302,7 +330,9 @@ function DropConfirmation({ logic }: { readonly logic: Logic }) {
         style={styles.export}
       >
         <FileDown size={15} color={colors.inkSubtle} strokeWidth={1.75} />
-        <Text style={styles.exportText}>{t("conflict.drop.export", { count: entries.length })}</Text>
+        <Text style={styles.exportText}>
+          {t("conflict.drop.export", { count: entries.length })}
+        </Text>
         <ChevronRight size={14} color={colors.inkSubtle} strokeWidth={2} />
       </Pressable>
       <View style={styles.actions}>
@@ -397,7 +427,12 @@ function DifferenceScreen({ logic }: { readonly logic: Logic }) {
       </ScrollView>
 
       <View style={styles.screenFoot}>
-        <Primary onPress={logic.keepBoth} busy={logic.working} label={t("conflict.keepBoth")} wide />
+        <Primary
+          onPress={logic.keepBoth}
+          busy={logic.working}
+          label={t("conflict.keepBoth")}
+          wide
+        />
       </View>
     </SafeAreaView>
   );
@@ -430,7 +465,10 @@ function ReviewScreen({ logic }: { readonly logic: Logic }) {
         </View>
         <View style={styles.track}>
           <View
-            style={[styles.trackFill, { width: `${total === 0 ? 0 : (logic.decided / total) * 100}%` }]}
+            style={[
+              styles.trackFill,
+              { width: `${total === 0 ? 0 : (logic.decided / total) * 100}%` },
+            ]}
           />
         </View>
         <View style={[styles.spread, styles.progressNote]}>
@@ -444,7 +482,9 @@ function ReviewScreen({ logic }: { readonly logic: Logic }) {
       <ScrollView contentContainerStyle={styles.screenBody}>
         {comparison.values.length > 0 && (
           <>
-            <PlainHeading>{t("conflict.review.values", { count: comparison.values.length })}</PlainHeading>
+            <PlainHeading>
+              {t("conflict.review.values", { count: comparison.values.length })}
+            </PlainHeading>
             <View style={styles.cardStack}>
               {comparison.values.map((value) => {
                 const key = differenceKey(value);
@@ -469,7 +509,11 @@ function ReviewScreen({ logic }: { readonly logic: Logic }) {
                                 ? "conflict.sides.localShort"
                                 : "conflict.sides.accountShort",
                             )}{" "}
-                            · {conflictDate(side === "LOCAL" ? value.localAt : value.accountAt, i18n.language)}
+                            ·{" "}
+                            {conflictDate(
+                              side === "LOCAL" ? value.localAt : value.accountAt,
+                              i18n.language,
+                            )}
                           </Text>
                           <Text
                             style={[styles.pickValue, picked === side && styles.pickValueChosen]}
@@ -566,7 +610,9 @@ function EntryGroup({
           <EntryLine
             key={entry.id}
             entry={entry}
-            trailing={<Text style={styles.when}>{conflictDate(entry.changedAt, i18n.language)}</Text>}
+            trailing={
+              <Text style={styles.when}>{conflictDate(entry.changedAt, i18n.language)}</Text>
+            }
           />
         ))}
       </View>
@@ -590,7 +636,10 @@ function EntryLine({
           {entry.title ?? t("conflict.untitled")}
         </Text>
         <Text numberOfLines={1} style={styles.entryMeta}>
-          {[entry.artistName, t(entry.kind === "COPY" ? "conflict.kind.copy" : "conflict.kind.wish")]
+          {[
+            entry.artistName,
+            t(entry.kind === "COPY" ? "conflict.kind.copy" : "conflict.kind.wish"),
+          ]
             .filter(Boolean)
             .join(" · ")}
         </Text>
@@ -610,7 +659,9 @@ function EntryHeading({ value }: { readonly value: ValueDifference }) {
           {value.title ?? t("conflict.untitled")}
         </Text>
         <Text numberOfLines={1} style={styles.entryMeta}>
-          {[value.artistName, t(`conflict.field.${value.field}` as const)].filter(Boolean).join(" · ")}
+          {[value.artistName, t(`conflict.field.${value.field}` as const)]
+            .filter(Boolean)
+            .join(" · ")}
         </Text>
       </View>
     </View>
@@ -715,7 +766,9 @@ function Stamp({
       <Text style={styles.stampValue}>
         {at === null
           ? t("conflict.never")
-          : new Intl.DateTimeFormat(language, { dateStyle: "medium", timeStyle: "short" }).format(at)}
+          : new Intl.DateTimeFormat(language, { dateStyle: "medium", timeStyle: "short" }).format(
+              at,
+            )}
       </Text>
     </View>
   );
@@ -826,10 +879,22 @@ const styles = StyleSheet.create({
     color: colors.inkSubtle,
     fontWeight: "500",
   },
-  title: { fontFamily: fonts.serif, fontSize: 25, lineHeight: 30, color: colors.ink, marginTop: 12 },
+  title: {
+    fontFamily: fonts.serif,
+    fontSize: 25,
+    lineHeight: 30,
+    color: colors.ink,
+    marginTop: 12,
+  },
   lede: { fontSize: 13, lineHeight: 21, color: colors.inkMuted, marginTop: 10 },
 
-  track: { height: 4, borderRadius: 999, backgroundColor: "rgba(25,23,19,0.09)", marginTop: 14, overflow: "hidden" },
+  track: {
+    height: 4,
+    borderRadius: 999,
+    backgroundColor: "rgba(25,23,19,0.09)",
+    marginTop: 14,
+    overflow: "hidden",
+  },
   trackFill: { height: "100%", borderRadius: 999, backgroundColor: colors.ink },
   trackIndeterminate: { width: "38%" },
 
@@ -859,7 +924,13 @@ const styles = StyleSheet.create({
   quietAccent: { color: colors.accent },
   centred: { alignItems: "center", marginTop: 13 },
 
-  disclosure: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 15 },
+  disclosure: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    marginTop: 15,
+  },
   disclosureText: { fontSize: 12.5, fontWeight: "600", color: colors.accent },
 
   stampCard: {
@@ -874,7 +945,11 @@ const styles = StyleSheet.create({
     borderColor: colors.line,
   },
   stamp: { flex: 1 },
-  stampRule: { width: StyleSheet.hairlineWidth, alignSelf: "stretch", backgroundColor: colors.line },
+  stampRule: {
+    width: StyleSheet.hairlineWidth,
+    alignSelf: "stretch",
+    backgroundColor: colors.line,
+  },
   stampLabel: { fontSize: 11.5, color: colors.inkSubtle },
   stampValue: { fontSize: 11, fontWeight: "500", color: colors.ink, marginTop: 3 },
 
@@ -885,16 +960,36 @@ const styles = StyleSheet.create({
     borderColor: colors.line,
     overflow: "hidden",
   },
-  tableRow: { flexDirection: "row", alignItems: "center", paddingHorizontal: 14, paddingVertical: 9 },
-  tableHead: { backgroundColor: "rgba(25,23,19,0.03)", borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
-  column: { fontSize: 9, letterSpacing: 0.8, textTransform: "uppercase", color: colors.inkSubtle, fontWeight: "500" },
+  tableRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+  },
+  tableHead: {
+    backgroundColor: "rgba(25,23,19,0.03)",
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.line,
+  },
+  column: {
+    fontSize: 9,
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+    color: colors.inkSubtle,
+    fontWeight: "500",
+  },
   columnGrow: { flex: 1 },
   columnNumber: { width: 62, textAlign: "right" },
   rowLabel: { fontSize: 13, fontWeight: "600", color: colors.ink, flex: 1 },
   rowNumber: { fontSize: 12.5, fontWeight: "500", color: colors.ink },
   rowNote: { fontSize: 11, lineHeight: 16, color: colors.inkSubtle, marginTop: 3 },
   countRow: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
-  valuesRow: { paddingHorizontal: 14, paddingVertical: 11, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
+  valuesRow: {
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.line,
+  },
   photoRow: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -928,7 +1023,12 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.line,
   },
-  keepBoth: { borderRadius: 12, backgroundColor: colors.ink, paddingHorizontal: 16, paddingVertical: 13 },
+  keepBoth: {
+    borderRadius: 12,
+    backgroundColor: colors.ink,
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+  },
   keepBothTitle: { fontSize: 14.5, fontWeight: "600", color: colors.paper },
   keepBothCount: { fontSize: 11, fontWeight: "500", color: "rgba(255,255,255,0.6)" },
   keepBothBody: { fontSize: 11.5, lineHeight: 17, color: "rgba(255,255,255,0.6)", marginTop: 3 },
@@ -981,7 +1081,13 @@ const styles = StyleSheet.create({
   progressNote: { marginTop: 9 },
   keepAll: { fontSize: 11.5, fontWeight: "600", color: colors.accent },
 
-  groupHeading: { flexDirection: "row", alignItems: "center", gap: 8, paddingTop: 16, paddingBottom: 8 },
+  groupHeading: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingTop: 16,
+    paddingBottom: 8,
+  },
   groupHeadingText: {
     fontSize: 9.5,
     letterSpacing: 0.95,
@@ -1030,7 +1136,13 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 11,
   },
-  sideStack: { marginTop: 9, borderRadius: 8, overflow: "hidden", backgroundColor: "rgba(25,23,19,0.08)", gap: StyleSheet.hairlineWidth },
+  sideStack: {
+    marginTop: 9,
+    borderRadius: 8,
+    overflow: "hidden",
+    backgroundColor: "rgba(25,23,19,0.08)",
+    gap: StyleSheet.hairlineWidth,
+  },
   sideLine: {
     flexDirection: "row",
     alignItems: "baseline",
@@ -1040,7 +1152,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 7,
   },
-  sideLabel: { fontSize: 9, letterSpacing: 0.7, textTransform: "uppercase", color: colors.inkSubtle, fontWeight: "500" },
+  sideLabel: {
+    fontSize: 9,
+    letterSpacing: 0.7,
+    textTransform: "uppercase",
+    color: colors.inkSubtle,
+    fontWeight: "500",
+  },
   sideValue: { fontSize: 11.5, color: colors.ink, flexShrink: 1, textAlign: "right" },
   wins: { fontSize: 9, fontWeight: "500", color: colors.inkSubtle, marginTop: 7 },
 
@@ -1055,12 +1173,23 @@ const styles = StyleSheet.create({
     borderColor: "rgba(25,23,19,0.10)",
   },
   pickChosen: { backgroundColor: colors.ink, borderColor: colors.ink },
-  pickLabel: { fontSize: 9, letterSpacing: 0.7, textTransform: "uppercase", color: colors.inkSubtle, fontWeight: "500" },
+  pickLabel: {
+    fontSize: 9,
+    letterSpacing: 0.7,
+    textTransform: "uppercase",
+    color: colors.inkSubtle,
+    fontWeight: "500",
+  },
   pickLabelChosen: { color: "rgba(255,255,255,0.65)" },
   pickValue: { fontSize: 11.5, lineHeight: 16, color: colors.ink, marginTop: 4 },
   pickValueChosen: { color: colors.paper },
 
-  segmented: { flexDirection: "row", padding: 2, borderRadius: 8, backgroundColor: "rgba(25,23,19,0.07)" },
+  segmented: {
+    flexDirection: "row",
+    padding: 2,
+    borderRadius: 8,
+    backgroundColor: "rgba(25,23,19,0.07)",
+  },
   segment: { paddingHorizontal: 9, paddingVertical: 5, borderRadius: 6 },
   segmentActive: { backgroundColor: colors.ink },
   segmentText: { fontSize: 10.5, fontWeight: "600", color: colors.inkMuted },

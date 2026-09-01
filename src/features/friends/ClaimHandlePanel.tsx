@@ -81,7 +81,13 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   title: { fontFamily: fonts.serif, fontSize: 22, color: colors.ink },
-  body: { fontFamily: fonts.sans, fontSize: 13.5, lineHeight: 20, color: colors.inkMuted, marginTop: 8 },
+  body: {
+    fontFamily: fonts.sans,
+    fontSize: 13.5,
+    lineHeight: 20,
+    color: colors.inkMuted,
+    marginTop: 8,
+  },
   field: {
     flexDirection: "row",
     alignItems: "center",
@@ -97,7 +103,13 @@ const styles = StyleSheet.create({
   fieldBad: { borderColor: "rgba(140,69,48,0.45)" },
   at: { fontFamily: fonts.sans, fontSize: 16, color: colors.inkSubtle },
   input: { flex: 1, fontFamily: fonts.sans, fontSize: 16, color: colors.ink, padding: 0 },
-  hint: { fontFamily: fonts.sans, fontSize: 12, lineHeight: 17, color: colors.inkMuted, marginTop: 8 },
+  hint: {
+    fontFamily: fonts.sans,
+    fontSize: 12,
+    lineHeight: 17,
+    color: colors.inkMuted,
+    marginTop: 8,
+  },
   hintBad: { color: colors.accentStrong },
   button: {
     marginTop: 20,

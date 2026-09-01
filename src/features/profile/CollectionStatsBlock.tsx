@@ -1,10 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
-import { useTranslation } from "react-i18next";
-import { StyleSheet, Text, View } from "react-native";
-import { FORMAT_LABELS } from "@janne6565/rekordo-shared";
 import { formatMoney, spendByCurrency } from "@/domain/currency";
 import { useStore } from "@/local/StoreProvider";
 import { colors, fonts } from "@/theme/colors";
+import { FORMAT_LABELS } from "@janne6565/rekordo-shared";
+import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
+import { StyleSheet, Text, View } from "react-native";
 
 /**
  * The stats block from screen 1l.

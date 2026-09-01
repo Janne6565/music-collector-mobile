@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
 import { useStore } from "@/local/StoreProvider";
+import { useQuery } from "@tanstack/react-query";
 
 /**
  * Each copy's own photo, as a file URI an Image can render.

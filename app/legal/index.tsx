@@ -1,5 +1,5 @@
-import { LegalScreen } from "@/features/legal/LegalScreen";
 import { useAccountLogic } from "@/features/auth/useAccountLogic";
+import { LegalScreen } from "@/features/legal/LegalScreen";
 
 export default function Legal() {
   // Only for whether to show the consent dates and the delete row: the documents themselves

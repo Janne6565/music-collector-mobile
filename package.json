@@ -63,7 +63,5 @@
     "@types/react": "~19.2.2",
     "typescript": "~6.0.3"
   },
-  "trustedDependencies": [
-    "@biomejs/biome"
-  ]
+  "trustedDependencies": ["@biomejs/biome"]
 }

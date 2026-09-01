@@ -1,8 +1,8 @@
 import { lookupAlbumCovers, lookupPressingCovers } from "@/api/releases";
 import { useWishPhotos } from "@/features/wishlist/useWishPhotos";
 import { useStore } from "@/local/StoreProvider";
-import { useSync } from "@/sync/SyncProvider";
 import { readWishlistSort, writeWishlistSort } from "@/local/settings";
+import { useSync } from "@/sync/SyncProvider";
 import type { WishPatch, WishSort, WishlistItem } from "@janne6565/rekordo-shared";
 import {
   applyWishPatch,
@@ -229,8 +229,7 @@ export function useWishEntryLogic(wishId: string) {
 
   const entry = useQuery({
     queryKey: ["wishlist", wishId],
-    queryFn: async () =>
-      (await store.listWishlist()).find((item) => item.id === wishId) ?? null,
+    queryFn: async () => (await store.listWishlist()).find((item) => item.id === wishId) ?? null,
   });
 
   /**

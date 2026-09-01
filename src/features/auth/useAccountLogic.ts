@@ -1,16 +1,11 @@
-import * as FileSystem from "expo-file-system/legacy";
-import * as Sharing from "expo-sharing";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSync } from "@/sync/SyncProvider";
-import { useCallback, useEffect, useState } from "react";
 import {
   type AuthProvider,
   accountExport,
   authProviders,
-  createAccount,
-  deleteAccount,
   cancelEmailChange,
   changeEmailAddress,
+  createAccount,
+  deleteAccount,
   emailConfirmation,
   fetchAccount,
   requestPasswordReset,
@@ -20,16 +15,26 @@ import {
   signOutEverywhere,
   updateDisplayName,
 } from "@/api/auth";
-import { signInWithProvider } from "@/features/auth/externalSignIn";
-import { toCsv, wishlistToCsv } from "@/domain/csv";
 import { lookupAlbumCovers, lookupPressingCovers } from "@/api/releases";
-import { readPhotoBytes } from "@/local/photoBytes";
-import { encodeBase64 } from "@/local/sqliteStore";
+import { toCsv, wishlistToCsv } from "@/domain/csv";
+import { signInWithProvider } from "@/features/auth/externalSignIn";
 import { useStore } from "@/local/StoreProvider";
+import { readPhotoBytes } from "@/local/photoBytes";
 import { readSyncEnabled, writeSyncEnabled } from "@/local/settings";
+import { encodeBase64 } from "@/local/sqliteStore";
 import { accountChanged, signedIn, signedOut } from "@/store/authSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { MC_MIME_TYPE, exportMcArchive, mcFileName, passwordLongEnough } from "@janne6565/rekordo-shared";
+import { useSync } from "@/sync/SyncProvider";
+import {
+  MC_MIME_TYPE,
+  exportMcArchive,
+  mcFileName,
+  passwordLongEnough,
+} from "@janne6565/rekordo-shared";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import * as FileSystem from "expo-file-system/legacy";
+import * as Sharing from "expo-sharing";
+import { useCallback, useEffect, useState } from "react";
 
 export type AuthMode = "SIGN_IN" | "REGISTER";
 export type AuthError =
@@ -129,7 +134,6 @@ export function useAccountLogic() {
     })();
   }, [store]);
 
-
   const submit = useCallback(async () => {
     // The one rule worth checking before the round trip, because the server can only
     // answer it with the same sentence the field already carries as a hint.
@@ -224,7 +228,10 @@ export function useAccountLogic() {
     const file = `${FileSystem.cacheDirectory}${name}-${new Date().toISOString().slice(0, 10)}.csv`;
     await FileSystem.writeAsStringAsync(file, text);
     if (await Sharing.isAvailableAsync()) {
-      await Sharing.shareAsync(file, { mimeType: "text/csv", UTI: "public.comma-separated-values-text" });
+      await Sharing.shareAsync(file, {
+        mimeType: "text/csv",
+        UTI: "public.comma-separated-values-text",
+      });
     }
   }, []);
 
@@ -277,9 +284,13 @@ export function useAccountLogic() {
       (releaseIds) => lookupPressingCovers(releaseIds),
     );
     const file = `${FileSystem.cacheDirectory}${mcFileName(exportedAt)}`;
-    await FileSystem.writeAsStringAsync(file, encodeBase64(archive.bytes.slice().buffer as ArrayBuffer), {
-      encoding: FileSystem.EncodingType.Base64,
-    });
+    await FileSystem.writeAsStringAsync(
+      file,
+      encodeBase64(archive.bytes.slice().buffer as ArrayBuffer),
+      {
+        encoding: FileSystem.EncodingType.Base64,
+      },
+    );
     if (await Sharing.isAvailableAsync()) {
       await Sharing.shareAsync(file, { mimeType: MC_MIME_TYPE, UTI: "public.zip-archive" });
     }
@@ -406,7 +417,9 @@ export function useAccountLogic() {
     return () => clearInterval(timer);
   }, [sentAt, retryAfter]);
   const confirmationCooldown =
-    sentAt === null ? 0 : Math.max(0, Math.ceil((Date.parse(sentAt) + retryAfter * 1000 - now) / 1000));
+    sentAt === null
+      ? 0
+      : Math.max(0, Math.ceil((Date.parse(sentAt) + retryAfter * 1000 - now) / 1000));
 
   /**
    * Re-reads the account, for the case the link was followed somewhere else.

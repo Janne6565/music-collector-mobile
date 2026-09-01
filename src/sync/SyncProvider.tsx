@@ -1,10 +1,15 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { createContext, type ReactNode, useCallback, useContext, useEffect, useRef } from "react";
-import { useStore } from "@/local/StoreProvider";
-import { alignSyncOrigin, readSyncEnabled, writeCatalogueGap, writeLastSyncedAt } from "@/local/settings";
 import { API_BASE } from "@/api/config";
+import { useStore } from "@/local/StoreProvider";
+import {
+  alignSyncOrigin,
+  readSyncEnabled,
+  writeCatalogueGap,
+  writeLastSyncedAt,
+} from "@/local/settings";
 import { useAppSelector } from "@/store/hooks";
 import { createSyncEngine } from "@/sync/transport";
+import { useQueryClient } from "@tanstack/react-query";
+import { type ReactNode, createContext, useCallback, useContext, useEffect, useRef } from "react";
 
 /** A minute between passes: often enough to feel live, rare enough to spare the battery. */
 const SYNC_INTERVAL_MS = 60_000;
@@ -52,7 +57,8 @@ export function SyncProvider({ children }: { readonly children: ReactNode }) {
       return;
     }
     if (firstSyncPending) {
-      if (__DEV__) console.log("[rekordo] sync skipped — the sign-in conflict has not been answered yet");
+      if (__DEV__)
+        console.log("[rekordo] sync skipped — the sign-in conflict has not been answered yet");
       return;
     }
     // A slow sync must not stack up behind itself on a flaky connection, and a pull-to-

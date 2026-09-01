@@ -1,8 +1,8 @@
+import type { useLibraryLogic } from "@/features/library/useLibraryLogic";
+import { colors } from "@/theme/colors";
 import { Check, X } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import type { useLibraryLogic } from "@/features/library/useLibraryLogic";
-import { colors } from "@/theme/colors";
 
 /**
  * 29e-5 — the one line the shelf says after the sign-in conflict is settled.

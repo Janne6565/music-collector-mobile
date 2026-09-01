@@ -1,5 +1,5 @@
-import { API_BASE } from "@/api/config";
 import { HttpError, readRefreshToken, refreshSession, request } from "@/api/client";
+import { API_BASE } from "@/api/config";
 
 /**
  * The photo bytes, which do not go through the JSON client.

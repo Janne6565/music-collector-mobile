@@ -1,3 +1,5 @@
+import { useAccountLogic } from "@/features/auth/useAccountLogic";
+import { colors, fonts } from "@/theme/colors";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -11,8 +13,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useAccountLogic } from "@/features/auth/useAccountLogic";
-import { colors, fonts } from "@/theme/colors";
 
 /**
  * Screen 21g — moving the account to a different address.
@@ -130,7 +130,12 @@ export function ChangeEmailScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.paper },
-  centered: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.paper },
+  centered: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.paper,
+  },
   body: { padding: 18, paddingBottom: 40, gap: 14 },
   title: { fontSize: 26, fontFamily: fonts.serif, color: colors.ink },
   lede: { fontSize: 13.5, lineHeight: 20, color: colors.inkMuted },

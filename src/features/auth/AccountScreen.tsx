@@ -1,3 +1,14 @@
+import { friendsApi } from "@/api/friends";
+import { PictureRow } from "@/features/account/PictureRow";
+import { StorageMeterRow } from "@/features/account/StorageMeterRow";
+import { useProfilePictureLogic } from "@/features/account/useProfilePictureLogic";
+import { AuthForm } from "@/features/auth/AuthForm";
+import { useAccountLogic } from "@/features/auth/useAccountLogic";
+import { Avatar } from "@/features/friends/Avatar";
+import { CollectionStatsBlock } from "@/features/profile/CollectionStatsBlock";
+import { useStore } from "@/local/StoreProvider";
+import { colors, fonts } from "@/theme/colors";
+import { useQuery } from "@tanstack/react-query";
 import { useFocusEffect, useRouter } from "expo-router";
 import { ChevronRight, LogOut } from "lucide-react-native";
 import { useCallback, useEffect, useState } from "react";
@@ -13,17 +24,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useQuery } from "@tanstack/react-query";
-import { friendsApi } from "@/api/friends";
-import { PictureRow } from "@/features/account/PictureRow";
-import { StorageMeterRow } from "@/features/account/StorageMeterRow";
-import { useProfilePictureLogic } from "@/features/account/useProfilePictureLogic";
-import { AuthForm } from "@/features/auth/AuthForm";
-import { useAccountLogic } from "@/features/auth/useAccountLogic";
-import { Avatar } from "@/features/friends/Avatar";
-import { CollectionStatsBlock } from "@/features/profile/CollectionStatsBlock";
-import { useStore } from "@/local/StoreProvider";
-import { colors, fonts } from "@/theme/colors";
 
 /**
  * The "You" tab — screen 8b, the same sections as the web account page (7a).
@@ -671,7 +671,12 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.line,
     gap: 8,
   },
-  stackTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
+  stackTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
   rowActions: { flexDirection: "row", alignItems: "center", gap: 12 },
   rowLink: { fontSize: 12.5, fontWeight: "600", color: colors.accent },
   rowMuted: { fontSize: 12.5, fontWeight: "600", color: colors.inkMuted },

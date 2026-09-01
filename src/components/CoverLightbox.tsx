@@ -1,8 +1,8 @@
+import { StatusBar } from "expo-status-bar";
 import { X } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 import { Image, Modal, Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { StatusBar } from "expo-status-bar";
 
 /**
  * One picture, as large as the glass allows.
@@ -39,7 +39,12 @@ export function CoverLightbox({
   return (
     <Modal visible transparent={false} animationType="fade" onRequestClose={onClose}>
       <StatusBar style="light" />
-      <Pressable accessibilityRole="button" accessibilityLabel={t("common.close")} onPress={onClose} style={styles.root}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={t("common.close")}
+        onPress={onClose}
+        style={styles.root}
+      >
         <Image source={{ uri }} style={styles.image} resizeMode="contain" />
       </Pressable>
       <View style={styles.chrome} pointerEvents="box-none">
@@ -63,7 +68,12 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#000", alignItems: "center", justifyContent: "center" },
   image: { width: "100%", height: "100%" },
   chrome: { position: "absolute", top: 0, left: 0, right: 0 },
-  chromeRow: { flexDirection: "row", justifyContent: "flex-start", paddingHorizontal: 14, paddingBottom: 14 },
+  chromeRow: {
+    flexDirection: "row",
+    justifyContent: "flex-start",
+    paddingHorizontal: 14,
+    paddingBottom: 14,
+  },
   close: {
     width: 34,
     height: 34,

@@ -65,4 +65,3 @@ export function createSyncTransport(store: NativeLocalStore): SyncTransport {
 export function createSyncEngine(store: NativeLocalStore, clock: ClockSource): SyncEngine {
   return new SyncEngine(store, clock, createSyncTransport(store));
 }
-

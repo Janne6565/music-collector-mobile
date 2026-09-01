@@ -1,12 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
-import { useCallback, useState } from "react";
-import type { Copy, Format, Release } from "@janne6565/rekordo-shared";
 import type { LibraryFilter } from "@/local/LocalStore";
-import { readCatalogueGap } from "@/local/settings";
 import { useStore } from "@/local/StoreProvider";
+import { readCatalogueGap } from "@/local/settings";
 import { syncOutcomeCleared } from "@/store/authSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { useSync } from "@/sync/SyncProvider";
+import type { Copy, Format, Release } from "@janne6565/rekordo-shared";
+import { useQuery } from "@tanstack/react-query";
+import { useCallback, useState } from "react";
 
 export type FormatFilter = Format | "ALL";
 

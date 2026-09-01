@@ -1,10 +1,10 @@
 import { describe, expect, it } from "bun:test";
 import { toTracklist } from "@/api/tracklistPayload";
 import {
+  TRACK_ROW_CAP,
   capMedia,
   durationParts,
   knownDurationMs,
-  TRACK_ROW_CAP,
   trackDuration,
   trackTotal,
 } from "@/features/tracklist/tracklistFormat";

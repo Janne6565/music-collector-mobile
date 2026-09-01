@@ -83,9 +83,7 @@ export function Segments({
             style={styles.segment}
           >
             <Text style={[styles.label, selected && styles.labelActive]}>{option.label}</Text>
-            {option.count === undefined ? null : (
-              <Text style={styles.count}>{option.count}</Text>
-            )}
+            {option.count === undefined ? null : <Text style={styles.count}>{option.count}</Text>}
           </Pressable>
         );
       })}

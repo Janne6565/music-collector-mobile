@@ -8,7 +8,16 @@ import { colors, fonts } from "@/theme/colors";
 import type { WishFormat } from "@janne6565/rekordo-shared";
 import { FORMAT_LABELS, asWishFormat, chromeFor } from "@janne6565/rekordo-shared";
 import { useRouter } from "expo-router";
-import { Camera, Check, ChevronLeft, Heart, HeartOff, ImagePlus, Pencil, X } from "lucide-react-native";
+import {
+  Camera,
+  Check,
+  ChevronLeft,
+  Heart,
+  HeartOff,
+  ImagePlus,
+  Pencil,
+  X,
+} from "lucide-react-native";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -184,7 +193,9 @@ export function WishEntryScreen({ wishId }: { readonly wishId: string }) {
         <Pressable
           accessibilityRole="button"
           onPress={() =>
-            router.push(`/add?wish=${encodeURIComponent(`${entry.artistName} ${entry.title}`.trim())}`)
+            router.push(
+              `/add?wish=${encodeURIComponent(`${entry.artistName} ${entry.title}`.trim())}`,
+            )
           }
           style={styles.primary}
         >
@@ -259,7 +270,13 @@ const PAPER = chromeFor(null);
 const styles = StyleSheet.create({
   tracklist: { paddingHorizontal: 20 },
   safe: { flex: 1, backgroundColor: colors.paper },
-  back: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 12, paddingVertical: 10 },
+  back: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
   backText: { fontSize: 14, color: colors.ink },
   gone: { padding: 18, fontSize: 13, color: colors.inkMuted },
   content: { padding: 18, paddingBottom: 60 },
@@ -273,9 +290,21 @@ const styles = StyleSheet.create({
   },
   coverAction: { flexDirection: "row", alignItems: "center", gap: 5 },
   coverActionText: { fontSize: 11.5, color: colors.inkMuted },
-  title: { fontFamily: fonts.serif, fontSize: 26, color: colors.ink, textAlign: "center", marginTop: 18 },
+  title: {
+    fontFamily: fonts.serif,
+    fontSize: 26,
+    color: colors.ink,
+    textAlign: "center",
+    marginTop: 18,
+  },
   subtitle: { fontSize: 13, color: colors.inkMuted, textAlign: "center", marginTop: 4 },
-  sinceRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, marginTop: 12 },
+  sinceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    marginTop: 12,
+  },
   sinceBadge: { flexDirection: "row", alignItems: "center", gap: 5 },
   sinceBadgeText: { fontSize: 12, fontWeight: "600", color: colors.accent },
   sinceText: { fontSize: 11.5, color: colors.inkSubtle },
@@ -314,7 +343,13 @@ const styles = StyleSheet.create({
     marginTop: 22,
   },
   primaryText: { fontFamily: fonts.sans, fontSize: 15, fontWeight: "700", color: colors.paper },
-  primaryHint: { fontSize: 11.5, lineHeight: 17, color: colors.inkMuted, textAlign: "center", marginTop: 10 },
+  primaryHint: {
+    fontSize: 11.5,
+    lineHeight: 17,
+    color: colors.inkMuted,
+    textAlign: "center",
+    marginTop: 10,
+  },
   secondaries: { flexDirection: "row", gap: 10, marginTop: 18 },
   secondary: {
     flex: 1,

@@ -1,8 +1,8 @@
+import { usePulse } from "@/components/Skeleton";
+import type { Format } from "@janne6565/rekordo-shared";
 import { LinearGradient } from "expo-linear-gradient";
 import type { ReactNode } from "react";
 import { Animated, StyleSheet, View, type ViewStyle } from "react-native";
-import { usePulse } from "@/components/Skeleton";
-import type { Format } from "@janne6565/rekordo-shared";
 
 /**
  * The format mark, ported from Format Marks.dc.html.

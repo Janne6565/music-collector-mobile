@@ -1,3 +1,9 @@
+import { ConfirmCard } from "@/features/scan/ConfirmCard";
+import { TrayRow } from "@/features/scan/TrayRow";
+import { useScannerLogic } from "@/features/scan/useScannerLogic";
+import { countByDestination } from "@/store/scanSlice";
+import { colors, fonts } from "@/theme/colors";
+import { formatBarcode } from "@janne6565/rekordo-shared";
 import { CameraView } from "expo-camera";
 import {
   CloudOff,
@@ -10,12 +16,6 @@ import {
 import { useTranslation } from "react-i18next";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { formatBarcode } from "@janne6565/rekordo-shared";
-import { ConfirmCard } from "@/features/scan/ConfirmCard";
-import { TrayRow } from "@/features/scan/TrayRow";
-import { useScannerLogic } from "@/features/scan/useScannerLogic";
-import { countByDestination } from "@/store/scanSlice";
-import { colors, fonts } from "@/theme/colors";
 
 /**
  * The camera as a window in the app's own page, not a dark room the app switches into.
@@ -160,9 +160,7 @@ export function ScannerScreen() {
             onPress={logic.openReview}
             style={[styles.review, logic.kept.length === 0 && styles.reviewEmpty]}
           >
-            <Text
-              style={[styles.reviewText, logic.kept.length === 0 && styles.reviewTextEmpty]}
-            >
+            <Text style={[styles.reviewText, logic.kept.length === 0 && styles.reviewTextEmpty]}>
               {t("scan.review", { count: logic.kept.length })}
             </Text>
           </Pressable>
@@ -363,7 +361,12 @@ const styles = StyleSheet.create({
   reviewTextEmpty: { color: "rgba(25,23,19,0.35)" },
 
   permission: { flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 12 },
-  permissionTitle: { fontFamily: fonts.serif, fontSize: 24, color: colors.ink, textAlign: "center" },
+  permissionTitle: {
+    fontFamily: fonts.serif,
+    fontSize: 24,
+    color: colors.ink,
+    textAlign: "center",
+  },
   permissionBody: {
     fontFamily: fonts.sans,
     fontSize: 13,

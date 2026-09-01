@@ -1,14 +1,14 @@
-import { useQueryClient } from "@tanstack/react-query";
-import * as Crypto from "expo-crypto";
-import { useCameraPermissions } from "expo-camera";
-import { useRouter } from "expo-router";
-import { useCallback, useEffect, useRef, useState } from "react";
 import { lookupByBarcode, lookupPressings } from "@/api/releases";
 import { useStore } from "@/local/StoreProvider";
-import { type KeptScan, type ScanDestination, scanActions } from "@/store/scanSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { type KeptScan, type ScanDestination, scanActions } from "@/store/scanSlice";
 import type { Copy, Format, Release } from "@janne6565/rekordo-shared";
 import { copyFormat, isBarcode, pickPressing } from "@janne6565/rekordo-shared";
+import { useQueryClient } from "@tanstack/react-query";
+import { useCameraPermissions } from "expo-camera";
+import * as Crypto from "expo-crypto";
+import { useRouter } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
  * What the card under the camera window is currently asking.
@@ -98,7 +98,14 @@ export function useScannerLogic() {
       try {
         const candidates = await lookupByBarcode(barcode);
         if (candidates.length === 0) {
-          setCard({ kind: "MISSING", barcode, candidates, picked: null, format: null, owned: null });
+          setCard({
+            kind: "MISSING",
+            barcode,
+            candidates,
+            picked: null,
+            format: null,
+            owned: null,
+          });
           return;
         }
 
@@ -120,7 +127,14 @@ export function useScannerLogic() {
       } catch {
         // Not an error to report: the camera worked, nobody could be asked. The scan keeps
         // its digits and names itself when a connection returns.
-        setCard({ kind: "OFFLINE", barcode, candidates: [], picked: null, format: null, owned: null });
+        setCard({
+          kind: "OFFLINE",
+          barcode,
+          candidates: [],
+          picked: null,
+          format: null,
+          owned: null,
+        });
       } finally {
         setLooking(false);
       }
@@ -189,10 +203,14 @@ export function useScannerLogic() {
      * What the picker offers: the pressings that share the barcode when several do,
      * otherwise every pressing of the album the match belongs to.
      */
-    pressings:
-      card === null ? [] : card.candidates.length > 1 ? card.candidates : (siblings ?? []),
+    pressings: card === null ? [] : card.candidates.length > 1 ? card.candidates : (siblings ?? []),
     /** How many pressings the album has in total, or null while nobody knows yet. */
-    pressingCount: card === null ? null : card.candidates.length > 1 ? card.candidates.length : siblings?.length ?? null,
+    pressingCount:
+      card === null
+        ? null
+        : card.candidates.length > 1
+          ? card.candidates.length
+          : (siblings?.length ?? null),
     pick: useCallback((release: Release) => {
       setCard((open) =>
         open === null

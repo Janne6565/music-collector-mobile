@@ -12,10 +12,7 @@ import { StyleSheet, Text, View } from "react-native";
  *
  * A heading and a sentence: what is not here, and what will put it here.
  */
-export function EmptyPanel({
-  title,
-  body,
-}: { readonly title: string; readonly body: string }) {
+export function EmptyPanel({ title, body }: { readonly title: string; readonly body: string }) {
   return (
     <View style={styles.empty}>
       <Text style={styles.title}>{title}</Text>

@@ -1,6 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
-import { useTranslation } from "react-i18next";
-import { StyleSheet, Text, View } from "react-native";
 import { accountStorage } from "@/api/storage";
 import {
   type StorageReading,
@@ -10,6 +7,9 @@ import {
   tickPercent,
 } from "@/features/account/storageReading";
 import { colors, fonts } from "@/theme/colors";
+import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
+import { StyleSheet, Text, View } from "react-native";
 
 /**
  * The allowance, at the top of the Storage card (design 28b), mirroring the web row one for
