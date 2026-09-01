@@ -5,7 +5,13 @@ import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { scanActions } from "@/store/scanSlice";
 import { colors, fonts } from "@/theme/colors";
 import type { Copy, Release, WishlistItem } from "@janne6565/rekordo-shared";
-import { FORMAT_LABELS, copyFormat, formatBarcode } from "@janne6565/rekordo-shared";
+import {
+  FORMAT_LABELS,
+  catalogueKeyOf,
+  catalogueKeysOf,
+  copyFormat,
+  formatBarcode,
+} from "@janne6565/rekordo-shared";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { Check, CloudOff, Disc3, Heart, LibraryBig } from "lucide-react-native";
@@ -49,7 +55,7 @@ export function SavedScreen() {
       }
       const all = await store.listWishlist();
       const wishes = all.filter((wish) => batch.wishIds.includes(wish.id));
-      const releases = await store.getReleases(copies.map((copy) => copy.releaseId));
+      const releases = await store.getReleases(catalogueKeysOf(copies));
       return { copies, wishes, releases };
     },
   });
@@ -98,16 +104,16 @@ export function SavedScreen() {
               key={copy.id}
               title={
                 copy.pendingBarcode === null
-                  ? (written.data?.releases.get(copy.releaseId)?.title ?? "")
+                  ? (written.data?.releases.get(catalogueKeyOf(copy) ?? "")?.title ?? "")
                   : formatBarcode(copy.pendingBarcode)
               }
               mono={copy.pendingBarcode !== null}
               meta={
                 copy.pendingBarcode !== null
                   ? t("scan.pendingRow")
-                  : metaLine(written.data?.releases.get(copy.releaseId), copy)
+                  : metaLine(written.data?.releases.get(catalogueKeyOf(copy) ?? ""), copy)
               }
-              release={written.data?.releases.get(copy.releaseId)}
+              release={written.data?.releases.get(catalogueKeyOf(copy) ?? "")}
               destination="SHELF"
             />
           ))}
@@ -248,7 +254,7 @@ function restorable(
     ...copies.map((copy) => ({
       key: copy.id,
       barcode: copy.pendingBarcode ?? "",
-      release: releases?.get(copy.releaseId) ?? null,
+      release: releases?.get(catalogueKeyOf(copy) ?? "") ?? null,
       format: copy.manualFormat,
       destination: "SHELF" as const,
       secondCopy: false,

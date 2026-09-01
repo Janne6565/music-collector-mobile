@@ -7,7 +7,12 @@ import {
 import { useStore } from "@/local/StoreProvider";
 import { readDefaultCurrency } from "@/local/settings";
 import type { Format, ManualRelease } from "@janne6565/rekordo-shared";
-import { createManualCopy, createPhoto } from "@janne6565/rekordo-shared";
+import {
+  catalogueKeyOf,
+  catalogueKeysOf,
+  createManualCopy,
+  createPhoto,
+} from "@janne6565/rekordo-shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Crypto from "expo-crypto";
 import { useRouter } from "expo-router";
@@ -78,10 +83,10 @@ export function useManualEntryLogic() {
     queryKey: ["manualArtists"],
     queryFn: async () => {
       const copies = await store.listCopies();
-      const releases = await store.getReleases(copies.map((copy) => copy.releaseId));
+      const releases = await store.getReleases(catalogueKeysOf(copies));
       const counts = new Map<string, number>();
       for (const copy of copies) {
-        const name = releases.get(copy.releaseId)?.artistName;
+        const name = releases.get(catalogueKeyOf(copy) ?? "")?.artistName;
         if (name === undefined || name.trim() === "") continue;
         counts.set(name, (counts.get(name) ?? 0) + 1);
       }

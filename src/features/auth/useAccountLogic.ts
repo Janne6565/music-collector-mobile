@@ -27,6 +27,7 @@ import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { useSync } from "@/sync/SyncProvider";
 import {
   MC_MIME_TYPE,
+  catalogueKeysOf,
   exportMcArchive,
   mcFileName,
   passwordLongEnough,
@@ -241,7 +242,7 @@ export function useAccountLogic() {
    */
   const exportCsv = useCallback(async () => {
     const copies = await store.listCopies();
-    const releases = await store.getReleases(copies.map((copy) => copy.releaseId));
+    const releases = await store.getReleases(catalogueKeysOf(copies));
     await shareCsv("rekordo", toCsv(copies, releases));
   }, [store, shareCsv]);
 
@@ -269,7 +270,7 @@ export function useAccountLogic() {
     const exportedAt = new Date();
     const copies = await store.listCopies();
     const wishlist = await store.listWishlist();
-    const releases = await store.getReleases(copies.map((copy) => copy.releaseId));
+    const releases = await store.getReleases(catalogueKeysOf(copies));
     const archive = await exportMcArchive(
       store,
       { collection: toCsv(copies, releases), wishlist: wishlistToCsv(wishlist) },
@@ -314,7 +315,7 @@ export function useAccountLogic() {
   /** What a device with no account has to hand over: its own store, and nothing else. */
   async function localExport() {
     const copies = await store.listCopies();
-    const releases = await store.getReleases(copies.map((copy) => copy.releaseId));
+    const releases = await store.getReleases(catalogueKeysOf(copies));
     return {
       exportedAt: new Date().toISOString(),
       account: null,

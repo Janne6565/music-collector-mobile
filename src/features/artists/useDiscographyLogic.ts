@@ -1,5 +1,6 @@
 import { type Discography, lookupDiscography } from "@/api/releases";
 import { useStore } from "@/local/StoreProvider";
+import { catalogueKeyOf, catalogueKeysOf } from "@janne6565/rekordo-shared";
 import type { Album, Condition } from "@janne6565/rekordo-shared";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -65,10 +66,10 @@ export function useDiscographyLogic(artistMbid: string) {
     queryKey: ["albumMarks"],
     queryFn: async () => {
       const copies = await store.listCopies();
-      const releases = await store.getReleases(copies.map((copy) => copy.releaseId));
+      const releases = await store.getReleases(catalogueKeysOf(copies));
       const owned = new Map<string, Condition | null>();
       for (const copy of copies) {
-        const album = releases.get(copy.releaseId)?.albumId;
+        const album = releases.get(catalogueKeyOf(copy) ?? "")?.albumId;
         if (album === undefined) continue;
         // The first grade found stands for the album: the row is saying "you have this
         // record", and picking between two copies' grades is the copy screen's job.

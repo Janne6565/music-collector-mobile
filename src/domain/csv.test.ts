@@ -23,6 +23,7 @@ const release: Release = {
 const copy: Copy = {
   id: "c1",
   releaseId: "r1",
+  albumId: "alb-1",
   pendingBarcode: null,
   manualTitle: null,
   manualArtist: null,
@@ -55,6 +56,7 @@ describe("csv", () => {
     expect(rows).toEqual([
       {
         releaseId: "r1",
+        albumId: "alb-1",
         // Carried through even for a catalogued row: which columns describe the pressing
         // does not depend on where the pressing came from.
         title: 'Bitches Brew, "complete"',

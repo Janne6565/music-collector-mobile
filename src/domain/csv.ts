@@ -3,6 +3,7 @@ import {
   CONDITIONS,
   DEFAULT_WISH_SORT,
   FORMATS,
+  catalogueKeyOf,
   copyFormat,
   formatCentsForInput,
   hasManualOrder,
@@ -25,6 +26,9 @@ import {
 
 export const CSV_COLUMNS = [
   "releaseId",
+  // Added after the release id, and read back by name, so a file written before this
+  // column existed still imports -- the lookup simply finds nothing and reads "".
+  "albumId",
   "title",
   "artist",
   "year",
@@ -56,6 +60,7 @@ export interface CsvRow {
   readonly year: number | null;
   readonly format: Format;
   readonly label: string | null;
+  readonly albumId: string;
   readonly catalogNumber: string | null;
   readonly mediaCondition: Condition | null;
   readonly sleeveCondition: Condition | null;
@@ -75,10 +80,11 @@ function quote(value: string): string {
 export function toCsv(copies: readonly Copy[], releases: ReadonlyMap<string, Release>): string {
   const lines = [CSV_COLUMNS.join(",")];
   for (const copy of copies) {
-    const release = releases.get(copy.releaseId);
+    const release = releases.get(catalogueKeyOf(copy) ?? "");
     lines.push(
       [
-        copy.releaseId,
+        copy.releaseId ?? "",
+        copy.albumId ?? "",
         release?.title ?? "",
         release?.artistName ?? "",
         release?.year === null || release?.year === undefined ? "" : String(release.year),
@@ -186,7 +192,10 @@ export function fromCsv(text: string): { rows: CsvRow[]; skipped: number } {
   let skipped = 0;
   for (const row of parsed.slice(1)) {
     const releaseId = at(row, "releaseId");
-    if (releaseId === "") {
+    const albumId = at(row, "albumId");
+    // A row naming neither is not a record. A row naming only an album is a copy whose
+    // owner never chose a pressing, which is ordinary and must not be dropped.
+    if (releaseId === "" && albumId === "") {
       skipped += 1;
       continue;
     }
@@ -194,6 +203,7 @@ export function fromCsv(text: string): { rows: CsvRow[]; skipped: number } {
     const year = Number.parseInt(at(row, "year"), 10);
     rows.push({
       releaseId,
+      albumId,
       title: at(row, "title"),
       artist: at(row, "artist"),
       year: Number.isNaN(year) ? null : year,

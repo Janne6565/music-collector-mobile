@@ -267,7 +267,7 @@ async function ownedCopy(
 ): Promise<Copy | null> {
   const ids = new Set(candidates.map((release) => release.id));
   const copies = await store.listCopies();
-  return copies.find((copy) => ids.has(copy.releaseId)) ?? null;
+  return copies.find((copy) => copy.releaseId !== null && ids.has(copy.releaseId)) ?? null;
 }
 
 /**

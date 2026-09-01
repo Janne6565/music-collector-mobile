@@ -4,7 +4,14 @@ import { useStore } from "@/local/StoreProvider";
 import { useAppSelector } from "@/store/hooks";
 import { colors, fonts } from "@/theme/colors";
 import type { Copy, CopyPatch, Release } from "@janne6565/rekordo-shared";
-import { FORMAT_LABELS, applyCopyPatch, chromeFor, copyFormat } from "@janne6565/rekordo-shared";
+import {
+  FORMAT_LABELS,
+  applyCopyPatch,
+  catalogueKeyOf,
+  catalogueKeysOf,
+  chromeFor,
+  copyFormat,
+} from "@janne6565/rekordo-shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useState } from "react";
@@ -47,7 +54,7 @@ export function DetailsRunScreen() {
         // be asking about a record neither of us can see.
         if (copy !== undefined && copy.pendingBarcode === null) copies.push(copy);
       }
-      const releases = await store.getReleases(copies.map((copy) => copy.releaseId));
+      const releases = await store.getReleases(catalogueKeysOf(copies));
       return { copies, releases };
     },
   });
@@ -66,7 +73,7 @@ export function DetailsRunScreen() {
   const copies = run.data?.copies ?? [];
   const copy = copies[at];
   const release: Release | undefined =
-    copy === undefined ? undefined : run.data?.releases.get(copy.releaseId);
+    copy === undefined ? undefined : run.data?.releases.get(catalogueKeyOf(copy) ?? "");
 
   function next() {
     if (at + 1 >= copies.length) {

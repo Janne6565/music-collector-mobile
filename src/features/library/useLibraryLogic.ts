@@ -4,6 +4,7 @@ import { readCatalogueGap } from "@/local/settings";
 import { syncOutcomeCleared } from "@/store/authSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { useSync } from "@/sync/SyncProvider";
+import { catalogueKeyOf, catalogueKeysOf } from "@janne6565/rekordo-shared";
 import type { Copy, Format, Release } from "@janne6565/rekordo-shared";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
@@ -48,8 +49,8 @@ export function useLibraryLogic() {
     queryKey: ["copies", format, sort],
     queryFn: async () => {
       const copies = await store.listCopies({ format, sort });
-      const releases = await store.getReleases(copies.map((copy) => copy.releaseId));
-      return copies.map((copy) => ({ copy, release: releases.get(copy.releaseId) }));
+      const releases = await store.getReleases(catalogueKeysOf(copies));
+      return copies.map((copy) => ({ copy, release: releases.get(catalogueKeyOf(copy) ?? "") }));
     },
   });
 

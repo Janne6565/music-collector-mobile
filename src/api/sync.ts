@@ -25,6 +25,8 @@ function toCopy(raw: unknown): Copy | null {
   return {
     id: dto.id,
     releaseId: dto.releaseId,
+    // Absent means a server older than the field, which reads as an album nobody named.
+    albumId: dto.albumId ?? null,
     // Absent means a server older than the field, which reads as nothing pending.
     pendingBarcode: dto.pendingBarcode ?? null,
     // The pressing a hand-entered copy describes itself. Null throughout on a matched one,

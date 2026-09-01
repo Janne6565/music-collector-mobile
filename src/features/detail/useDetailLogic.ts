@@ -2,7 +2,13 @@ import { lookupRelease } from "@/api/releases";
 import { neighboursOf } from "@/features/library/copyOrder";
 import { useStore } from "@/local/StoreProvider";
 import type { Copy, CopyPatch, Release } from "@janne6565/rekordo-shared";
-import { applyCopyPatch, tombstoneCopy } from "@janne6565/rekordo-shared";
+import {
+  albumIdOf,
+  applyCopyPatch,
+  catalogueKeyOf,
+  catalogueKeysOf,
+  tombstoneCopy,
+} from "@janne6565/rekordo-shared";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
 import { useEffect } from "react";
@@ -38,17 +44,23 @@ export function useDetailLogic(copyId: string) {
       const copy = await store.getCopy(copyId);
       if (copy === undefined) return null;
 
-      const release = await store.getRelease(copy.releaseId);
-      const siblings =
-        release === undefined ? [] : await store.listCopiesInReleaseGroup(release.albumId);
-      const releases = await store.getReleases(siblings.map((sibling) => sibling.releaseId));
+      const key = catalogueKeyOf(copy);
+      const release = key === null ? undefined : await store.getRelease(key);
+      // The copy knows its own album, so a shelf grouping no longer depends on the
+      // mirror having cached the pressing.
+      const album = albumIdOf(copy, release);
+      const siblings = album === null ? [] : await store.listCopiesInReleaseGroup(album);
+      const releases = await store.getReleases(catalogueKeysOf(siblings));
 
       return {
         copy,
         release,
         otherCopies: siblings
           .filter((sibling) => sibling.id !== copy.id)
-          .map((sibling) => ({ copy: sibling, release: releases.get(sibling.releaseId) })),
+          .map((sibling) => ({
+            copy: sibling,
+            release: releases.get(catalogueKeyOf(sibling) ?? ""),
+          })),
       };
     },
   });
@@ -151,7 +163,8 @@ function useNeighbourPalettes(copyId: string): void {
         if (neighbour === null || !alive) continue;
         const copy = await store.getCopy(neighbour);
         if (copy === undefined || !alive) continue;
-        const release = await store.getRelease(copy.releaseId);
+        const neighbourKey = catalogueKeyOf(copy);
+        const release = neighbourKey === null ? undefined : await store.getRelease(neighbourKey);
         // Already sampled, or nothing to sample: either way there is nothing to fetch.
         if (release === undefined || release.coverTheme !== null || !alive) continue;
         const enriched = await lookupRelease(release.id).catch(() => null);

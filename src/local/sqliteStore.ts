@@ -9,6 +9,7 @@ import type {
 } from "@janne6565/rekordo-shared";
 import {
   FORMATS,
+  catalogueKeyOf,
   isManualReleaseId,
   manualRelease,
   manualReleaseCopyId,
@@ -122,7 +123,9 @@ export class SqliteLocalStore implements LocalStore {
 
       CREATE TABLE IF NOT EXISTS copies (
         id              TEXT PRIMARY KEY NOT NULL,
-        releaseId     TEXT NOT NULL,
+        -- Null when nobody chose a pressing: the album below is what the person picked.
+        releaseId       TEXT,
+        albumId         TEXT,
         manualTitle     TEXT,
         manualArtist    TEXT,
         manualYear      INTEGER,
@@ -150,6 +153,7 @@ export class SqliteLocalStore implements LocalStore {
         fieldClocks     TEXT NOT NULL
       );
       CREATE INDEX IF NOT EXISTS copies_release_idx ON copies (releaseId);
+      CREATE INDEX IF NOT EXISTS copies_album_idx ON copies (albumId);
       CREATE INDEX IF NOT EXISTS copies_alive_idx ON copies (deletedAt);
 
       CREATE TABLE IF NOT EXISTS releases (
@@ -214,7 +218,9 @@ export class SqliteLocalStore implements LocalStore {
     // `CREATE TABLE IF NOT EXISTS` leaves an existing database on its old shape, so a column
     // added later has to be added explicitly. PRAGMA rather than a version number: it asks
     // the database what it actually has, which cannot drift the way a stored version can.
-    const columns = await db.getAllAsync<{ name: string }>("PRAGMA table_info(copies)");
+    const columns = await db.getAllAsync<{ name: string; notnull: number }>(
+      "PRAGMA table_info(copies)",
+    );
     if (!columns.some((column) => column.name === "sleeveCondition")) {
       await db.execAsync("ALTER TABLE copies ADD COLUMN sleeveCondition TEXT");
     }
@@ -240,6 +246,69 @@ export class SqliteLocalStore implements LocalStore {
     if (!columns.some((column) => column.name === "pendingBarcode")) {
       await db.execAsync("ALTER TABLE copies ADD COLUMN pendingBarcode TEXT");
     }
+    // The album a copy is of. Nullable, and backfilled from the mirror below, because
+    // every copy written before this column pointed at a pressing and a pressing knows
+    // its album.
+    if (!columns.some((column) => column.name === "albumId")) {
+      await db.execAsync(`
+        ALTER TABLE copies ADD COLUMN albumId TEXT;
+        UPDATE copies
+           SET albumId = (SELECT releases.albumId FROM releases WHERE releases.id = copies.releaseId)
+         WHERE albumId IS NULL;
+        -- A hand-entered copy is in no catalogue; its album is its own id, exactly as its
+        -- release already is.
+        UPDATE copies SET albumId = releaseId
+         WHERE albumId IS NULL AND releaseId LIKE 'local:%';
+        CREATE INDEX IF NOT EXISTS copies_album_idx ON copies (albumId);
+      `);
+    }
+
+    // A copy whose owner never chose a pressing stores null here, which the original table
+    // forbade. SQLite cannot drop NOT NULL in place, so the table is rebuilt -- the same
+    // move the photos table needed, and for the same reason: without it the insert fails
+    // silently, as one row of a sync batch.
+    if (columns.some((column) => column.name === "releaseId" && column.notnull === 1)) {
+      await db.execAsync(`
+        BEGIN;
+        CREATE TABLE copies_optional_pressing (
+          id              TEXT PRIMARY KEY NOT NULL,
+          releaseId       TEXT,
+          albumId         TEXT,
+          manualTitle     TEXT,
+          manualArtist    TEXT,
+          manualYear      INTEGER,
+          manualLabel     TEXT,
+          manualCatalogNumber TEXT,
+          manualFormat    TEXT,
+          pendingBarcode  TEXT,
+          condition       TEXT,
+          sleeveCondition TEXT,
+          pricePaidCents  INTEGER,
+          currency        TEXT NOT NULL,
+          purchasedOn     TEXT,
+          purchasedAt     TEXT,
+          notes           TEXT,
+          notesConflict   TEXT,
+          rating          INTEGER,
+          hidden          INTEGER NOT NULL DEFAULT 0,
+          createdAt       INTEGER NOT NULL,
+          deletedAt       INTEGER,
+          fieldClocks     TEXT NOT NULL
+        );
+        INSERT INTO copies_optional_pressing
+          SELECT id, releaseId, albumId, manualTitle, manualArtist, manualYear, manualLabel,
+                 manualCatalogNumber, manualFormat, pendingBarcode, condition,
+                 sleeveCondition, pricePaidCents, currency, purchasedOn, purchasedAt, notes,
+                 notesConflict, rating, hidden, createdAt, deletedAt, fieldClocks
+          FROM copies;
+        DROP TABLE copies;
+        ALTER TABLE copies_optional_pressing RENAME TO copies;
+        CREATE INDEX IF NOT EXISTS copies_release_idx ON copies (releaseId);
+        CREATE INDEX IF NOT EXISTS copies_album_idx ON copies (albumId);
+        COMMIT;
+      `);
+    }
+
     // Why a not-yet-pushed copy exists, so the server can keep imports out of the feed.
     // Local-only and never merged: it is the reason for one push, not a fact about the
     // record, and only this device was ever asked the question.
@@ -478,14 +547,15 @@ export class SqliteLocalStore implements LocalStore {
   private async write(copy: Copy): Promise<void> {
     await this.handle().runAsync(
       `INSERT OR REPLACE INTO copies
-        (id, releaseId, pendingBarcode, manualTitle, manualArtist, manualYear, manualLabel,
-         manualCatalogNumber, manualFormat, condition, sleeveCondition, pricePaidCents,
-         currency, purchasedOn, purchasedAt, notes, notesConflict, rating, hidden,
-         createdAt, deletedAt, fieldClocks)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (id, releaseId, albumId, pendingBarcode, manualTitle, manualArtist, manualYear,
+         manualLabel, manualCatalogNumber, manualFormat, condition, sleeveCondition,
+         pricePaidCents, currency, purchasedOn, purchasedAt, notes, notesConflict, rating,
+         hidden, createdAt, deletedAt, fieldClocks)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         copy.id,
         copy.releaseId,
+        copy.albumId,
         copy.pendingBarcode,
         copy.manualTitle,
         copy.manualArtist,
@@ -576,7 +646,7 @@ export class SqliteLocalStore implements LocalStore {
       );
       for (const row of copies) {
         const copy = toCopy(row);
-        found.set(copy.releaseId, manualRelease(copy));
+        found.set(catalogueKeyOf(copy) ?? "", manualRelease(copy));
       }
     }
 
@@ -907,12 +977,14 @@ export class SqliteLocalStore implements LocalStore {
   }
 }
 
-interface CopyRow extends Omit<Copy, "fieldClocks" | "hidden" | "pendingBarcode"> {
+interface CopyRow extends Omit<Copy, "fieldClocks" | "hidden" | "pendingBarcode" | "albumId"> {
   fieldClocks: string;
   /** SQLite has no boolean; 0 or 1. */
   hidden: number;
   /** Undefined on a row written before the column existed, which reads as "not pending". */
   pendingBarcode: string | null | undefined;
+  /** Undefined on a row written before the column existed, for the same reason. */
+  albumId: string | null | undefined;
 }
 
 interface ReleaseRow extends Omit<Release, "coverTheme"> {
@@ -939,6 +1011,8 @@ function toCopy(row: CopyRow): Copy {
     // Undefined on a row older than the column, and undefined is not null to the merge —
     // the same reason `toWish` normalises `releaseId`.
     pendingBarcode: row.pendingBarcode ?? null,
+    // Undefined on a row written before the column existed, for the same reason.
+    albumId: row.albumId ?? null,
     fieldClocks: JSON.parse(row.fieldClocks) as Copy["fieldClocks"],
   };
 }

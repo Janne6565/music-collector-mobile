@@ -12,7 +12,7 @@ import { useWishPhotos } from "@/features/wishlist/useWishPhotos";
 import { useStore } from "@/local/StoreProvider";
 import { clearRecentSearches, readRecentSearches, rememberSearch } from "@/local/settings";
 import type { Copy, Format, Release, WishlistItem } from "@janne6565/rekordo-shared";
-import { isManualReleaseId } from "@janne6565/rekordo-shared";
+import { catalogueKeyOf, isManualReleaseId } from "@janne6565/rekordo-shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -159,10 +159,13 @@ export function useAddLogic(seedTerm = "") {
     queryFn: async () => {
       const map = new Map<string, { condition: Copy["condition"]; addedAt: number }>();
       for (const copy of await store.listCopies()) {
-        const seen = map.get(copy.releaseId);
+        const seen = map.get(catalogueKeyOf(copy) ?? "");
         // The oldest is the copy somebody thinks of as "the one I have".
         if (seen === undefined || copy.createdAt < seen.addedAt) {
-          map.set(copy.releaseId, { condition: copy.condition, addedAt: copy.createdAt });
+          map.set(catalogueKeyOf(copy) ?? "", {
+            condition: copy.condition,
+            addedAt: copy.createdAt,
+          });
         }
       }
       return map;
@@ -270,7 +273,9 @@ export function useAddLogic(seedTerm = "") {
     /** The pressing's sleeve when the entry was made from one, else the album's. */
     wishCoverOf: (wish: WishlistItem): string | null => {
       const pressing =
-        wish.releaseId === null ? undefined : wishPressingCovers.data?.get(wish.releaseId);
+        wish.releaseId === null
+          ? undefined
+          : wishPressingCovers.data?.get(catalogueKeyOf(wish) ?? "");
       return pressing ?? wishCovers.data?.get(wish.albumId) ?? null;
     },
     /** A picture somebody gave the entry themselves, which no catalogue can supply. */

@@ -6,6 +6,8 @@ import { useSync } from "@/sync/SyncProvider";
 import type { WishPatch, WishSort, WishlistItem } from "@janne6565/rekordo-shared";
 import {
   applyWishPatch,
+  catalogueKeyOf,
+  catalogueKeysOf,
   filterWishlist,
   hasManualOrder,
   isManualReleaseId,
@@ -203,7 +205,7 @@ export function useWishlistLogic() {
      */
     coverOf: (item: WishlistItem): string | null => {
       const pressing =
-        item.releaseId === null ? undefined : pressingCovers.data?.get(item.releaseId);
+        item.releaseId === null ? undefined : pressingCovers.data?.get(catalogueKeyOf(item) ?? "");
       return pressing ?? covers.data?.get(item.albumId) ?? null;
     },
     /**
@@ -245,9 +247,9 @@ export function useWishEntryLogic(wishId: string) {
       const artist = entry.data?.artistName.toLowerCase();
       if (artist === undefined) return [];
       const copies = await store.listCopies();
-      const releases = await store.getReleases(copies.map((copy) => copy.releaseId));
+      const releases = await store.getReleases(catalogueKeysOf(copies));
       return copies
-        .map((copy) => releases.get(copy.releaseId))
+        .map((copy) => releases.get(catalogueKeyOf(copy) ?? ""))
         .filter((release) => release !== undefined)
         .filter((release) => release.artistName.toLowerCase() === artist)
         .map((release) => release.title);
