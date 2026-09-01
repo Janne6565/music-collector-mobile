@@ -1,9 +1,9 @@
-import { lookupPressings } from "@/api/releases";
 import { ReleaseArt } from "@/components/ReleaseArt";
 import { RetryNotice } from "@/components/RetryNotice";
 import { Skeleton } from "@/components/Skeleton";
 import { AddSheet } from "@/features/add/AddSheet";
 import { ArtistAvatar } from "@/features/add/ArtistResults";
+import { albumAsRelease } from "@/features/add/albumRelease";
 import type { AddDestination } from "@/features/add/useAddSheetLogic";
 import {
   OWNERSHIP_FILTERS,
@@ -76,7 +76,6 @@ export function ArtistScreen({ artist, fromQuery, destination }: ArtistScreenPro
    * is where the other forty-six are one tap away.
    */
   const [sheet, setSheet] = useState<{ release: Release } | null>(null);
-  const [resolving, setResolving] = useState<string | null>(null);
   /**
    * An album whose pressings did not arrive, so its row can say so and offer the tap again.
    *
@@ -84,31 +83,17 @@ export function ArtistScreen({ artist, fromQuery, destination }: ArtistScreenPro
    * the record, and a request that did not come back is a fact about the connection. They
    * read the same on a row that only says "nothing happened".
    */
-  const [unresolved, setUnresolved] = useState<{
-    albumId: string;
-    reason: "EMPTY" | "ERROR";
-  } | null>(null);
 
-  const openSheet = async (album: Album) => {
-    setResolving(album.albumId);
-    setUnresolved(null);
-    try {
-      const pressings = await lookupPressings(album.albumId, 100);
-      const first = pressings[0];
-      // Nothing to add: the archive has the album but not one pressing of it. There is no
-      // sheet to open on that, so the row says so rather than swallowing the tap.
-      if (first === undefined) {
-        setUnresolved({ albumId: album.albumId, reason: "EMPTY" });
-        return;
-      }
-      setSheet({ release: first });
-    } catch {
-      // No connection, or the proxy is down. Either way the tap did nothing, and a row
-      // that stays silent about that reads as a broken button.
-      setUnresolved({ albumId: album.albumId, reason: "ERROR" });
-    } finally {
-      setResolving(null);
-    }
+  /*
+    Opens on the album itself, immediately.
+
+    This used to fetch the album's pressings and open on the first of them, so a tap on a
+    row waited on a paced request -- measured at up to several seconds -- to answer a
+    question the sheet can ask perfectly well once it is open, and that most people never
+    ask at all. It also meant a tap could fail, which is why this had an error state.
+  */
+  const openSheet = (album: Album) => {
+    setSheet({ release: albumAsRelease(album, Date.now()) });
   };
 
   return (
@@ -209,12 +194,7 @@ export function ArtistScreen({ artist, fromQuery, destination }: ArtistScreenPro
           </>
         )}
 
-        <Discography
-          logic={logic}
-          onAdd={(album) => void openSheet(album)}
-          resolving={resolving}
-          unresolved={unresolved}
-        />
+        <Discography logic={logic} onAdd={(album) => void openSheet(album)} />
 
         {logic.type === null && <RestDisclosure logic={logic} />}
 
@@ -233,6 +213,8 @@ export function ArtistScreen({ artist, fromQuery, destination }: ArtistScreenPro
              and both destinations are offered inside. */
           destination={destination}
           chosen={false}
+          /* An album is all that was named; the pressing is chosen in the sheet or not at all. */
+          pressingChosen={false}
           onClose={() => setSheet(null)}
         />
       )}
@@ -315,13 +297,9 @@ function TypeChip({
 function Discography({
   logic,
   onAdd,
-  resolving,
-  unresolved,
 }: {
   readonly logic: Logic;
   readonly onAdd: (album: Album) => void;
-  readonly resolving: string | null;
-  readonly unresolved: { albumId: string; reason: "EMPTY" | "ERROR" } | null;
 }) {
   const { t } = useTranslation();
 
@@ -349,14 +327,7 @@ function Discography({
             <Text style={styles.hint}>{t("artists.noneOfType")}</Text>
           ) : (
             section.albums.map((album) => (
-              <AlbumRow
-                key={album.albumId}
-                album={album}
-                logic={logic}
-                onAdd={onAdd}
-                resolving={resolving === album.albumId}
-                unresolved={unresolved?.albumId === album.albumId ? unresolved.reason : null}
-              />
+              <AlbumRow key={album.albumId} album={album} logic={logic} onAdd={onAdd} />
             ))
           )}
         </View>
@@ -369,14 +340,10 @@ function AlbumRow({
   album,
   logic,
   onAdd,
-  resolving,
-  unresolved,
 }: {
   readonly album: Album;
   readonly logic: Logic;
   readonly onAdd: (album: Album) => void;
-  readonly resolving: boolean;
-  readonly unresolved: "EMPTY" | "ERROR" | null;
 }) {
   const { t } = useTranslation();
   const mark = logic.markOf(album);
@@ -430,28 +397,12 @@ function AlbumRow({
             accessibilityRole="button"
             accessibilityLabel={t("add.add")}
             onPress={() => onAdd(album)}
-            disabled={resolving}
             style={styles.destination}
           >
-            {resolving ? (
-              <ActivityIndicator size="small" color="#ffffff" />
-            ) : (
-              <Plus size={16} color="#ffffff" strokeWidth={2} />
-            )}
+            <Plus size={16} color="#ffffff" strokeWidth={2} />
           </Pressable>
         )}
       </Pressable>
-
-      {unresolved !== null && (
-        <RetryNotice
-          compact
-          message={t(
-            unresolved === "EMPTY" ? "artists.noPressings" : "artists.pressingsUnavailable",
-          )}
-          onRetry={() => onAdd(album)}
-          retrying={resolving}
-        />
-      )}
     </View>
   );
 }

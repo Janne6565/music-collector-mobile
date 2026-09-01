@@ -6,6 +6,7 @@ import { WishRow } from "@/components/WishRow";
 import { AddSheet } from "@/features/add/AddSheet";
 import { ArtistResults } from "@/features/add/ArtistResults";
 import { ExamplePlate } from "@/features/add/ExamplePlate";
+import { albumAsRelease } from "@/features/add/albumRelease";
 import { FORMAT_FILTERS, useAddLogic } from "@/features/add/useAddLogic";
 import type { AddDestination } from "@/features/add/useAddSheetLogic";
 import { useCross } from "@/lib/motion";
@@ -93,6 +94,8 @@ export function AddScreen({
     destination: AddDestination;
     /** False when the sheet was opened on a record rather than by a destination button. */
     chosen?: boolean;
+    /** False when all that was named is an album, so no pressing has been chosen yet. */
+    pressingChosen?: boolean;
   } | null>(null);
 
   /*
@@ -148,6 +151,7 @@ export function AddScreen({
           release={confirming.release}
           destination={confirming.destination}
           chosen={confirming.chosen ?? true}
+          pressingChosen={confirming.pressingChosen ?? true}
           onClose={() => setConfirming(null)}
         />
       )}
@@ -167,6 +171,7 @@ function Body({
     release: Release;
     destination: AddDestination;
     chosen?: boolean;
+    pressingChosen?: boolean;
   }) => void;
   readonly destination: AddDestination;
 }) {
@@ -357,6 +362,7 @@ function BeforeTyping({
     release: Release;
     destination: AddDestination;
     chosen?: boolean;
+    pressingChosen?: boolean;
   }) => void;
   readonly destination: AddDestination;
 }) {
@@ -456,18 +462,26 @@ function BeforeTyping({
       */}
       <ExamplePlate
         coverOf={logic.exampleCoverOf}
-        openingAlbumId={logic.openingExample}
-        onOpen={async (example) => {
-          const release = await logic.resolveExample(example.albumId);
-          /* No pressing the mirror can name is not a dead end: the search still finds the
-             record, and it is the way in this plate used to have. */
-          if (release === null) {
-            logic.searchExample(example.title, example.artistName);
-            return;
-          }
+        /* Nothing to wait for any more, so no tile is ever in the opening state. */
+        openingAlbumId={null}
+        onOpen={(example) => {
+          /* Opens on the album itself. This used to fetch the album's pressings first and
+             open on the first of them -- a paced request nobody asked for, in front of a
+             tap, to answer a question the sheet is perfectly able to ask later. */
+          const release = albumAsRelease(
+            {
+              albumId: example.albumId,
+              title: example.title,
+              artistName: example.artistName,
+              year: null,
+              primaryType: null,
+              coverArtUrl: logic.exampleCoverOf(example.albumId),
+            },
+            Date.now(),
+          );
           /* The shelf is only where the sheet starts here. Nobody pressed a destination
              to get in, so the sheet must not report one back. */
-          onConfirm({ release, destination, chosen: false });
+          onConfirm({ release, destination, chosen: false, pressingChosen: false });
         }}
       />
     </ScrollView>
@@ -706,7 +720,16 @@ const styles = StyleSheet.create({
    * did so sometimes: it depended on what was underneath.
    */
   formatChipsRow: { flexGrow: 0, flexShrink: 0 },
-  formatChips: { gap: 7, paddingHorizontal: 18, paddingTop: 14, alignItems: "center" },
+  // Padded top and bottom by the same amount: the row is a band of its own, and
+  // without the lower half the first result sits against the chips as though it
+  // belonged to them.
+  formatChips: {
+    gap: 7,
+    paddingHorizontal: 18,
+    paddingTop: 14,
+    paddingBottom: 14,
+    alignItems: "center",
+  },
   formatChip: {
     borderRadius: 999,
     paddingHorizontal: 12,

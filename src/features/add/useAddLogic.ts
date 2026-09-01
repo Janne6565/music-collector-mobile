@@ -2,7 +2,6 @@ import {
   lookupAlbumCovers,
   lookupByBarcode,
   lookupPressingCovers,
-  lookupPressings,
   searchReleases,
 } from "@/api/releases";
 import { EXAMPLE_ALBUM_IDS } from "@/features/add/exampleReleases";
@@ -55,7 +54,6 @@ export function useAddLogic(seedTerm = "") {
   const [submitted, setSubmitted] = useState(seedTerm);
   const [format, setFormat] = useState<AddFormatFilter>("ALL");
   /** The example whose pressings are on their way, so its tile can say so. */
-  const [openingExample, setOpeningExample] = useState<string | null>(null);
 
   const resultsQuery = useQuery({
     queryKey: ["releaseSearch", submitted],
@@ -281,7 +279,6 @@ export function useAddLogic(seedTerm = "") {
     /** A picture somebody gave the entry themselves, which no catalogue can supply. */
     wishPictureOf: (wish: WishlistItem): string | null => wishPhotos.get(wish.id) ?? null,
     /** The example a tap is currently resolving, if any. */
-    openingExample,
     /**
      * The pressing an example tile opens the confirm sheet on.
      *
@@ -296,21 +293,6 @@ export function useAddLogic(seedTerm = "") {
      * Null when the album has no pressings the mirror can name -- the caller falls back to
      * running the search, which is the older behaviour and never a dead end.
      */
-    resolveExample: async (albumId: string): Promise<Release | null> => {
-      setOpeningExample(albumId);
-      try {
-        const pressings = await queryClient.fetchQuery({
-          queryKey: ["pressings", albumId],
-          queryFn: () => lookupPressings(albumId),
-          staleTime: 60 * 60 * 1000,
-        });
-        return pressings[0] ?? null;
-      } catch {
-        return null;
-      } finally {
-        setOpeningExample(null);
-      }
-    },
     /** The plate's sleeves, by album id. Null until the batch lands, and after a miss. */
     exampleCoverOf: (albumId: string): string | null => exampleCovers.data?.get(albumId) ?? null,
     /**

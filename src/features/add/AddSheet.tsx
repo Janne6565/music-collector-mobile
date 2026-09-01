@@ -31,6 +31,7 @@ export function AddSheet({
   release,
   destination,
   chosen = true,
+  pressingChosen = true,
   onClose,
 }: {
   readonly release: Release;
@@ -45,10 +46,18 @@ export function AddSheet({
    * they are still both offered, and pressing one is where the choice actually happens.
    */
   readonly chosen?: boolean;
+  /**
+   * Whether `release` is a pressing somebody picked, or the record they tapped.
+   *
+   * False from an artist row or an example tile, where all that was named is an album. The
+   * sheet then opens with no pressing chosen and the box offers the list, rather than
+   * writing down whichever pressing the catalogue happened to rank first.
+   */
+  readonly pressingChosen?: boolean;
   readonly onClose: () => void;
 }) {
   const { t } = useTranslation();
-  const logic = useAddSheetLogic(release, destination, onClose);
+  const logic = useAddSheetLogic(release, destination, onClose, pressingChosen);
   const shelf = logic.destination === "SHELF";
 
   return (
@@ -134,12 +143,14 @@ export function AddSheet({
                 <View style={styles.headText}>
                   <View style={styles.pressingTitleRow}>
                     <Text style={styles.pressingTitle}>
-                      {[
-                        FORMAT_LABELS[logic.picked.format],
-                        logic.picked.year === null ? null : String(logic.picked.year),
-                      ]
-                        .filter((part) => part !== null)
-                        .join(" · ")}
+                      {logic.hasPressing
+                        ? [
+                            FORMAT_LABELS[logic.picked.format],
+                            logic.picked.year === null ? null : String(logic.picked.year),
+                          ]
+                            .filter((part) => part !== null)
+                            .join(" · ")
+                        : t("addSheet.noPressing")}
                     </Text>
                     {logic.isGuess && (
                       <View style={styles.guess}>
@@ -148,18 +159,26 @@ export function AddSheet({
                     )}
                   </View>
                   <Text style={styles.pressingMeta}>
-                    {releaseDisambiguation(logic.picked) || t("addSheet.noCatalog")}
+                    {logic.hasPressing
+                      ? releaseDisambiguation(logic.picked) || t("addSheet.noCatalog")
+                      : t("addSheet.noPressingMeta")}
                   </Text>
                 </View>
                 {logic.loadingPressings ? (
                   <ActivityIndicator size="small" color={colors.inkSubtle} />
                 ) : logic.canPick ? (
                   <View style={styles.pressingPick}>
-                    <Text style={styles.link}>{t("addSheet.others", { count: logic.others })}</Text>
+                    <Text style={styles.link}>
+                      {logic.hasPressing
+                        ? t("addSheet.others", { count: logic.others })
+                        : t("addSheet.choosePressing", { count: logic.pressings.length })}
+                    </Text>
                     <ChevronRight size={15} color={colors.accent} strokeWidth={2} />
                   </View>
                 ) : (
-                  <Text style={styles.pressingOnly}>{t("addSheet.onlyPressing")}</Text>
+                  <Text style={styles.pressingOnly}>
+                    {logic.hasPressing ? t("addSheet.onlyPressing") : t("addSheet.noneListed")}
+                  </Text>
                 )}
               </Pressable>
 
