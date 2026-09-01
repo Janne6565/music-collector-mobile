@@ -1,13 +1,20 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { lookupAlbumCovers, lookupByBarcode, lookupPressingCovers, searchReleases } from "@/api/releases";
-import type { Copy, Format, Release, WishlistItem } from "@janne6565/rekordo-shared";
-import { isManualReleaseId } from "@janne6565/rekordo-shared";
+import {
+  lookupAlbumCovers,
+  lookupByBarcode,
+  lookupPressingCovers,
+  lookupPressings,
+  searchReleases,
+} from "@/api/releases";
+import { EXAMPLE_ALBUM_IDS } from "@/features/add/exampleReleases";
 import { useAddCopy } from "@/features/add/useAddCopy";
 import { useArtistSearchLogic } from "@/features/add/useArtistSearchLogic";
 import { useWishPhotos } from "@/features/wishlist/useWishPhotos";
-import { clearRecentSearches, readRecentSearches, rememberSearch } from "@/local/settings";
 import { useStore } from "@/local/StoreProvider";
+import { clearRecentSearches, readRecentSearches, rememberSearch } from "@/local/settings";
+import type { Copy, Format, Release, WishlistItem } from "@janne6565/rekordo-shared";
+import { isManualReleaseId } from "@janne6565/rekordo-shared";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 /**
  * The format filter above the results (screens 2a and 10a).
@@ -47,6 +54,8 @@ export function useAddLogic(seedTerm = "") {
   const [term, setTerm] = useState(seedTerm);
   const [submitted, setSubmitted] = useState(seedTerm);
   const [format, setFormat] = useState<AddFormatFilter>("ALL");
+  /** The example whose pressings are on their way, so its tile can say so. */
+  const [openingExample, setOpeningExample] = useState<string | null>(null);
 
   const resultsQuery = useQuery({
     queryKey: ["releaseSearch", submitted],
@@ -117,6 +126,23 @@ export function useAddLogic(seedTerm = "") {
     enabled: wishAlbumIds.length > 0,
     staleTime: 60 * 60 * 1000,
     queryFn: () => lookupAlbumCovers(wishAlbumIds, store),
+  });
+
+  /**
+   * The artwork for the examples plate (screen 1a).
+   *
+   * Only while nothing has been searched, which is the only time the plate is on screen:
+   * opening this screen from a wish or a scan goes straight to results, and a request for
+   * covers nobody will see would spend the archive's one-per-second budget on nothing.
+   *
+   * The ids are a constant, so this is one request per install in practice -- the key
+   * never changes and the answer is the same for every user on the platform.
+   */
+  const exampleCovers = useQuery({
+    queryKey: ["albumCovers", EXAMPLE_ALBUM_IDS],
+    enabled: submitted.trim() === "",
+    staleTime: 24 * 60 * 60 * 1000,
+    queryFn: () => lookupAlbumCovers(EXAMPLE_ALBUM_IDS, store),
   });
 
   const wishPhotos = useWishPhotos(useMemo(() => wishes.map((wish) => wish.id), [wishes]));
@@ -226,6 +252,8 @@ export function useAddLogic(seedTerm = "") {
      */
     searching: waiting || resultsQuery.isFetching,
     failed: resultsQuery.isError && !waiting,
+    /** Ask the archive again. The query is keyed on the term, so this repeats it. */
+    retry: () => void resultsQuery.refetch(),
     hasSearched: submitted.trim() !== "" || waiting,
     submittedTerm: submitted.trim(),
     /** True when the thing with no results was a scanned or pasted barcode (screen 8c). */
@@ -247,6 +275,52 @@ export function useAddLogic(seedTerm = "") {
     },
     /** A picture somebody gave the entry themselves, which no catalogue can supply. */
     wishPictureOf: (wish: WishlistItem): string | null => wishPhotos.get(wish.id) ?? null,
+    /** The example a tap is currently resolving, if any. */
+    openingExample,
+    /**
+     * The pressing an example tile opens the confirm sheet on.
+     *
+     * A tile names an album and the sheet is written about a release, so one has to be
+     * chosen before the sheet can be raised. The first pressing is only the seed: the
+     * sheet lists the rest under it and swaps freely, which is where the choice of which
+     * copy you actually own belongs.
+     *
+     * Fetched through the query client under the key the sheet itself uses, so the sheet
+     * opens with its own pressings list already warm rather than asking a second time.
+     *
+     * Null when the album has no pressings the mirror can name -- the caller falls back to
+     * running the search, which is the older behaviour and never a dead end.
+     */
+    resolveExample: async (albumId: string): Promise<Release | null> => {
+      setOpeningExample(albumId);
+      try {
+        const pressings = await queryClient.fetchQuery({
+          queryKey: ["pressings", albumId],
+          queryFn: () => lookupPressings(albumId),
+          staleTime: 60 * 60 * 1000,
+        });
+        return pressings[0] ?? null;
+      } catch {
+        return null;
+      } finally {
+        setOpeningExample(null);
+      }
+    },
+    /** The plate's sleeves, by album id. Null until the batch lands, and after a miss. */
+    exampleCoverOf: (albumId: string): string | null => exampleCovers.data?.get(albumId) ?? null,
+    /**
+     * A tap on an example runs its search, and never files anything.
+     *
+     * The same handoff a wish makes: the tile names an album, the shelf holds a pressing,
+     * so the only honest thing a tap can do is put the album in the field and let the
+     * results answer which copy you have.
+     */
+    searchExample: (title: string, artistName: string) => {
+      const query = `${artistName} ${title}`;
+      setTerm(query);
+      run(query);
+      remember(query);
+    },
     searchWish: (title: string, artistName: string) => {
       const wish = `${artistName} ${title}`;
       setTerm(wish);

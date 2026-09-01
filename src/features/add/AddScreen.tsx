@@ -1,11 +1,25 @@
+import { releaseDisambiguation } from "@/api/releases";
+import { ReleaseArt } from "@/components/ReleaseArt";
+import { RetryNotice } from "@/components/RetryNotice";
+import { Skeleton } from "@/components/Skeleton";
+import { WishRow } from "@/components/WishRow";
+import { AddSheet } from "@/features/add/AddSheet";
+import { ArtistResults } from "@/features/add/ArtistResults";
+import { ExamplePlate } from "@/features/add/ExamplePlate";
+import { FORMAT_FILTERS, useAddLogic } from "@/features/add/useAddLogic";
+import type { AddDestination } from "@/features/add/useAddSheetLogic";
+import { useCross } from "@/lib/motion";
+import { colors, fonts } from "@/theme/colors";
+import type { Artist, Copy, Format, Release, WishlistItem } from "@janne6565/rekordo-shared";
+import { CONDITION_SHORT, FORMAT_LABELS } from "@janne6565/rekordo-shared";
 import { useRouter } from "expo-router";
 import {
   ArrowUpLeft,
   Clock,
   CopyPlus,
-  Heart,
   LibraryBig,
   PencilLine,
+  Plus,
   ScanBarcode,
   Search,
   SearchX,
@@ -24,18 +38,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { releaseDisambiguation } from "@/api/releases";
-import { ArtistResults } from "@/features/add/ArtistResults";
-import { useCross } from "@/lib/motion";
-import { Skeleton } from "@/components/Skeleton";
-import { ReleaseArt } from "@/components/ReleaseArt";
-import { WishRow } from "@/components/WishRow";
-import type { Artist, Copy, Format, Release, WishlistItem } from "@janne6565/rekordo-shared";
-import { CONDITION_SHORT, FORMAT_LABELS } from "@janne6565/rekordo-shared";
-import { FORMAT_FILTERS, useAddLogic } from "@/features/add/useAddLogic";
-import { AddSheet } from "@/features/add/AddSheet";
-import type { AddDestination } from "@/features/add/useAddSheetLogic";
-import { colors, fonts } from "@/theme/colors";
 
 type Logic = ReturnType<typeof useAddLogic>;
 
@@ -67,7 +69,21 @@ const SKELETON_ROWS: readonly (readonly [Percent, Percent, Percent])[] = [
  * `wish` arrives from screen 16b's "I found a copy": the entry's search, already run.
  * A wish names an album, not a pressing, so which copy you found is still yours to pick.
  */
-export function AddScreen({ seedTerm = "" }: { readonly seedTerm?: string } = {}) {
+export function AddScreen({
+  seedTerm = "",
+  destination = "SHELF",
+}: {
+  readonly seedTerm?: string;
+  /**
+   * Which list the tab that opened this screen is about.
+   *
+   * Not a decision anybody made, so the sheet still says "Add this record" and still
+   * offers both -- it only decides which of the two is the button and which is the line
+   * underneath. Coming from the wishlist and being handed "Add to shelf" is a small lie
+   * about what you were doing.
+   */
+  readonly destination?: AddDestination;
+} = {}) {
   const { t } = useTranslation();
   const router = useRouter();
   const logic = useAddLogic(seedTerm);
@@ -75,6 +91,8 @@ export function AddScreen({ seedTerm = "" }: { readonly seedTerm?: string } = {}
   const [confirming, setConfirming] = useState<{
     release: Release;
     destination: AddDestination;
+    /** False when the sheet was opened on a record rather than by a destination button. */
+    chosen?: boolean;
   } | null>(null);
 
   /*
@@ -123,12 +141,13 @@ export function AddScreen({ seedTerm = "" }: { readonly seedTerm?: string } = {}
 
       {logic.showFormatFilter && <FormatChips logic={logic} />}
 
-      <Body logic={logic} onScan={scan} onConfirm={setConfirming} />
+      <Body logic={logic} onScan={scan} onConfirm={setConfirming} destination={destination} />
 
       {confirming !== null && (
         <AddSheet
           release={confirming.release}
           destination={confirming.destination}
+          chosen={confirming.chosen ?? true}
           onClose={() => setConfirming(null)}
         />
       )}
@@ -140,10 +159,16 @@ function Body({
   logic,
   onScan,
   onConfirm,
+  destination,
 }: {
   readonly logic: Logic;
   readonly onScan: () => void;
-  readonly onConfirm: (subject: { release: Release; destination: AddDestination }) => void;
+  readonly onConfirm: (subject: {
+    release: Release;
+    destination: AddDestination;
+    chosen?: boolean;
+  }) => void;
+  readonly destination: AddDestination;
 }) {
   const { t } = useTranslation();
   const router = useRouter();
@@ -156,8 +181,14 @@ function Body({
   const crossing = useCross(logic.submittedTerm);
 
   if (logic.searching) return <SearchingRows />;
-  if (logic.failed) return <Text style={styles.hint}>{t("add.failed")}</Text>;
-  if (!logic.hasSearched) return <BeforeTyping logic={logic} onScan={onScan} />;
+  if (logic.failed)
+    return (
+      <RetryNotice message={t("add.failed")} onRetry={logic.retry} retrying={logic.searching} />
+    );
+  if (!logic.hasSearched)
+    return (
+      <BeforeTyping logic={logic} onScan={onScan} onConfirm={onConfirm} destination={destination} />
+    );
   // Only when the search itself found nothing. A format chip that hides every row is a
   // different situation with a different way out, and it is handled in the list below.
   if (logic.unfilteredCount === 0) {
@@ -187,6 +218,7 @@ function Body({
         beganIn: artist.beganIn ?? "",
         endedIn: artist.endedIn ?? "",
         fromQuery: logic.submittedTerm,
+        to: destination,
       },
     });
 
@@ -229,8 +261,10 @@ function Body({
         <ResultRow
           release={item}
           owned={logic.ownedCopy(item)}
-          onShelf={() => onConfirm({ release: item, destination: "SHELF" })}
-          onWish={() => onConfirm({ release: item, destination: "WISHLIST" })}
+          /* One button, and it does not pick a side: the sheet it raises offers both
+             destinations, so the row no longer has to ask which one before it knows
+             anything about the record. */
+          onAdd={() => onConfirm({ release: item, destination, chosen: false })}
         />
       )}
     />
@@ -311,17 +345,36 @@ function SearchingRows() {
 }
 
 /** Screen 5a — nothing searched yet. */
-function BeforeTyping({ logic, onScan }: { readonly logic: Logic; readonly onScan: () => void }) {
+function BeforeTyping({
+  logic,
+  onScan,
+  onConfirm,
+  destination,
+}: {
+  readonly logic: Logic;
+  readonly onScan: () => void;
+  readonly onConfirm: (subject: {
+    release: Release;
+    destination: AddDestination;
+    chosen?: boolean;
+  }) => void;
+  readonly destination: AddDestination;
+}) {
   const { t } = useTranslation();
   const router = useRouter();
 
   return (
     <ScrollView contentContainerStyle={styles.list} keyboardShouldPersistTaps="handled">
+      {/*
+        One line of 52px buttons, not the two tall cards this screen used to open with.
+        There is content underneath them now, and a card that explains itself in a
+        sentence was only ever earning its height because nothing else was on the screen.
+        They stay exactly where the hand already looks for them.
+      */}
       <View style={styles.shortcuts}>
         <Pressable accessibilityRole="button" onPress={onScan} style={styles.shortcut}>
-          <ScanBarcode size={20} color={colors.ink} strokeWidth={1.6} />
+          <ScanBarcode size={17} color={colors.accent} strokeWidth={1.7} />
           <Text style={styles.shortcutTitle}>{t("add.scanCard.title")}</Text>
-          <Text style={styles.shortcutBody}>{t("add.scanCard.body")}</Text>
         </Pressable>
         {/* The second card of screen 5a: the two ways in that are not a title search. */}
         <Pressable
@@ -329,9 +382,8 @@ function BeforeTyping({ logic, onScan }: { readonly logic: Logic; readonly onSca
           onPress={() => router.push("/manual")}
           style={styles.shortcut}
         >
-          <PencilLine size={20} color={colors.ink} strokeWidth={1.6} />
+          <PencilLine size={17} color={colors.accent} strokeWidth={1.7} />
           <Text style={styles.shortcutTitle}>{t("add.manualCard.title")}</Text>
-          <Text style={styles.shortcutBody}>{t("add.manualBody")}</Text>
         </Pressable>
       </View>
 
@@ -396,12 +448,37 @@ function BeforeTyping({ logic, onScan }: { readonly logic: Logic; readonly onSca
           ))}
         </>
       )}
+
+      {/*
+        Last, deliberately. Anything the account actually owns -- a search it ran, a record
+        it wants -- outranks the app's sample page, so the plate fills the space that is
+        left rather than taking the space at the top.
+      */}
+      <ExamplePlate
+        coverOf={logic.exampleCoverOf}
+        openingAlbumId={logic.openingExample}
+        onOpen={async (example) => {
+          const release = await logic.resolveExample(example.albumId);
+          /* No pressing the mirror can name is not a dead end: the search still finds the
+             record, and it is the way in this plate used to have. */
+          if (release === null) {
+            logic.searchExample(example.title, example.artistName);
+            return;
+          }
+          /* The shelf is only where the sheet starts here. Nobody pressed a destination
+             to get in, so the sheet must not report one back. */
+          onConfirm({ release, destination, chosen: false });
+        }}
+      />
     </ScrollView>
   );
 }
 
 /** Screen 8c — the barcode scanned fine and matched nothing. */
-function BarcodeNotFound({ logic, onScan }: { readonly logic: Logic; readonly onScan: () => void }) {
+function BarcodeNotFound({
+  logic,
+  onScan,
+}: { readonly logic: Logic; readonly onScan: () => void }) {
   const { t } = useTranslation();
   const router = useRouter();
 
@@ -451,24 +528,23 @@ function BarcodeNotFound({ logic, onScan }: { readonly logic: Logic; readonly on
 /**
  * One row per release *and* format, as screen 6a lists them.
  *
- * Both destinations ride the row as icon buttons, equal in size and in weight, wishlist
- * left and shelf right — the same order they take everywhere else in the app, so the hand
- * learns one position. Neither writes anything: a search hit names a release and a shelf
- * holds a pressing, so both raise the sheet that closes that gap.
+ * One button, not two. The row used to carry both destinations as equal icon buttons,
+ * which asked for a decision before the sheet had shown anything to decide on -- and the
+ * sheet behind them offered both anyway, so the pair only moved the choice earlier than it
+ * needed to be made. A single Add raises the same sheet, and the destination is picked
+ * there, next to the pressing and the format it belongs with.
  *
- * Owning one already does not take the buttons away. It says so under the title and steps
- * them back, because a second pressing is an ordinary thing to buy.
+ * Owning one already does not take the button away. It says so under the title and steps
+ * the button back, because a second pressing is an ordinary thing to buy.
  */
 function ResultRow({
   release,
   owned,
-  onShelf,
-  onWish,
+  onAdd,
 }: {
   readonly release: Release;
   readonly owned: { readonly condition: Copy["condition"]; readonly addedAt: number } | null;
-  readonly onShelf: () => void;
-  readonly onWish: () => void;
+  readonly onAdd: () => void;
 }) {
   const { t } = useTranslation();
   const subtitle = releaseDisambiguation(release);
@@ -510,24 +586,15 @@ function ResultRow({
       </View>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={t("wishlist.addToWishlist")}
-        onPress={onWish}
-        style={[styles.rowAdd, owned !== null && styles.rowAddOwned]}
-      >
-        <Heart
-          size={15}
-          color={owned === null ? "#ffffff" : colors.inkMuted}
-          strokeWidth={owned === null ? 1.9 : 1.8}
-        />
-      </Pressable>
-      <Pressable
-        accessibilityRole="button"
         accessibilityLabel={owned === null ? t("add.add") : t("addSheet.secondCopy")}
-        onPress={onShelf}
+        onPress={onAdd}
         style={[styles.rowAdd, owned !== null && styles.rowAddOwned]}
       >
+        {/* Already on the shelf turns the plus into a second-copy mark: the gesture is the
+            same, and the icon is the only place left to say that this one would be another
+            of something you have. */}
         {owned === null ? (
-          <LibraryBig size={15} color="#ffffff" strokeWidth={1.9} />
+          <Plus size={16} color="#ffffff" strokeWidth={2} />
         ) : (
           <CopyPlus size={15} color={colors.inkMuted} strokeWidth={1.8} />
         )}
@@ -541,7 +608,13 @@ const MONO = "ui-monospace";
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.paper },
-  header: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 18, paddingTop: 8 },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 18,
+    paddingTop: 8,
+  },
   searchBox: {
     flex: 1,
     flexDirection: "row",
@@ -569,15 +642,18 @@ const styles = StyleSheet.create({
   shortcuts: { flexDirection: "row", gap: 10 },
   shortcut: {
     flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
     gap: 9,
-    padding: 14,
+    height: 52,
+    paddingHorizontal: 13,
     borderRadius: 12,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: "rgba(25,23,19,0.09)",
   },
-  shortcutTitle: { fontSize: 13, fontWeight: "600", color: colors.ink },
-  shortcutBody: { fontSize: 11, lineHeight: 16, color: colors.inkSubtle },
+  /* One line at 12.5, which is what the longer German label needs to fit beside an icon. */
+  shortcutTitle: { flex: 1, fontSize: 12.5, lineHeight: 16, fontWeight: "600", color: colors.ink },
   sectionRow: {
     flexDirection: "row",
     alignItems: "center",

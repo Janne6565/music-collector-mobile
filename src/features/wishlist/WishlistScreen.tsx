@@ -7,7 +7,18 @@ import { colors, fonts } from "@/theme/colors";
 import type { WishSort, WishlistItem } from "@janne6565/rekordo-shared";
 import { CHOOSABLE_WISH_SORTS, FORMAT_LABELS } from "@janne6565/rekordo-shared";
 import { useRouter } from "expo-router";
-import { ArrowUpDown, ChevronDown, ChevronRight, Disc3, Heart, Pencil, Plus, Search, Users, X } from "lucide-react-native";
+import {
+  ArrowUpDown,
+  ChevronDown,
+  ChevronRight,
+  Disc3,
+  Heart,
+  Pencil,
+  Plus,
+  Search,
+  Users,
+  X,
+} from "lucide-react-native";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -110,7 +121,8 @@ export function WishlistScreen() {
             accessibilityLabel={t("wishlist.addToWishlist")}
             // The search screen, not the sheet: a wishlist is where records you found
             // somewhere else end up, and finding them is what the add screen is for.
-            onPress={() => router.push("/add")}
+            // `to` carries which list this tab is about, so the sheet leads with it.
+            onPress={() => router.push("/add?to=WISHLIST")}
             style={styles.addButton}
           >
             <Plus size={19} color={colors.paper} strokeWidth={2} />
@@ -271,8 +283,8 @@ function EmptyWishlist({ onTypeItIn }: { readonly onTypeItIn: () => void }) {
   const router = useRouter();
 
   const ways = [
-    { key: "search", icon: Search, go: () => router.push("/add") },
-    { key: "artist", icon: Disc3, go: () => router.push("/add") },
+    { key: "search", icon: Search, go: () => router.push("/add?to=WISHLIST") },
+    { key: "artist", icon: Disc3, go: () => router.push("/add?to=WISHLIST") },
     // The friends tab is turn 15's; until it lands there is nowhere for this one to go.
     { key: "friend", icon: Users, go: null },
     { key: "manual", icon: Pencil, go: onTypeItIn },
@@ -307,7 +319,12 @@ function EmptyWishlist({ onTypeItIn }: { readonly onTypeItIn: () => void }) {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.paper },
   header: { paddingHorizontal: 18, paddingTop: 8 },
-  headerRow: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 12 },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 12,
+  },
   headerText: { flex: 1, minWidth: 0 },
   title: { fontFamily: fonts.serif, fontSize: 30, color: colors.ink },
   count: { fontSize: 12.5, color: colors.inkMuted, marginTop: 6 },

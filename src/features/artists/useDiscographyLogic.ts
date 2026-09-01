@@ -1,8 +1,8 @@
-import { useQueries, useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
-import { type Discography, lookupDiscography, lookupPressings } from "@/api/releases";
+import { type Discography, lookupDiscography } from "@/api/releases";
 import { useStore } from "@/local/StoreProvider";
 import type { Album, Condition } from "@janne6565/rekordo-shared";
+import { useQueries, useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 
 /**
  * What you have already said about an album, drawn on its row.
@@ -51,7 +51,6 @@ export function useDiscographyLogic(artistMbid: string) {
   /** Null while the screen is at rest, showing the sections the deck opens with. */
   const [type, setType] = useState<PrimaryType | null>(null);
   const [filter, setFilter] = useState("");
-  const [expandedAlbum, setExpandedAlbum] = useState<string | null>(null);
   const [restExpanded, setRestExpanded] = useState(false);
   const [ownership, setOwnership] = useState<OwnershipFilter>("ALL");
 
@@ -158,13 +157,6 @@ export function useDiscographyLogic(artistMbid: string) {
     // nothing — but only while filtering, so a type that genuinely has none still says so.
     .filter((section) => (term === "" && ownership === "ALL") || section.albums.length > 0);
 
-  const pressings = useQuery({
-    queryKey: ["pressings", expandedAlbum],
-    enabled: expandedAlbum !== null,
-    queryFn: () => lookupPressings(expandedAlbum as string, 100),
-    staleTime: 5 * 60_000,
-  });
-
   /** Counts for every type already fetched, read out of this render's own results. */
   const totals = Object.fromEntries(
     PRIMARY_TYPES.map((primaryType) => {
@@ -179,10 +171,7 @@ export function useDiscographyLogic(artistMbid: string) {
 
   return {
     type,
-    setType: (next: PrimaryType | null) => {
-      setType(next);
-      setExpandedAlbum(null);
-    },
+    setType,
     filter,
     setFilter,
     filtering: term !== "",
@@ -228,17 +217,23 @@ export function useDiscographyLogic(artistMbid: string) {
     loading: sections.length > 0 && sections.every((section) => section.loading),
     failed: sections.length > 0 && sections.every((section) => section.failed),
     /**
+     * Ask again for whatever came back empty-handed.
+     *
+     * Only the failed sections: the ones that arrived are already on screen, and asking
+     * for them a second time would spend the archive's one-request-a-second budget
+     * refetching answers we are holding.
+     */
+    retry: () => {
+      for (const result of results) {
+        if (result.isError) void result.refetch();
+      }
+      if (everything.isError) void everything.refetch();
+    },
+    /**
      * True while any part of the artist is still arriving, including the background
      * totals — what the deck's "Cover art loading · 1 request / second" line reports.
      */
     settling: results.some((result) => result.isFetching) || everything.isFetching,
-
-    expandedAlbum,
-    toggleAlbum: (album: Album) =>
-      setExpandedAlbum((current) => (current === album.albumId ? null : album.albumId)),
-    pressings: pressings.data ?? [],
-    pressingsLoading: pressings.isFetching,
-    pressingsFailed: pressings.isError,
   };
 }
 

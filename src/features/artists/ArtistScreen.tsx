@@ -1,18 +1,32 @@
+import { lookupPressings } from "@/api/releases";
+import { ReleaseArt } from "@/components/ReleaseArt";
+import { RetryNotice } from "@/components/RetryNotice";
+import { Skeleton } from "@/components/Skeleton";
+import { AddSheet } from "@/features/add/AddSheet";
+import { ArtistAvatar } from "@/features/add/ArtistResults";
+import type { AddDestination } from "@/features/add/useAddSheetLogic";
+import {
+  OWNERSHIP_FILTERS,
+  PRIMARY_TYPES,
+  useDiscographyLogic,
+} from "@/features/artists/useDiscographyLogic";
+import { colors } from "@/theme/colors";
+import type { Album, Artist, Release } from "@janne6565/rekordo-shared";
+import { CONDITION_SHORT } from "@janne6565/rekordo-shared";
+import { useRouter } from "expo-router";
 import {
   Check,
   ChevronDown,
   ChevronLeft,
-  ChevronRight,
   ChevronUp,
   Heart,
-  LibraryBig,
+  Plus,
   Search,
 } from "lucide-react-native";
-import { type ReactNode, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
-  Animated,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -21,23 +35,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import { lookupPressings, releaseDisambiguation } from "@/api/releases";
-import { ReleaseArt } from "@/components/ReleaseArt";
-import { Skeleton } from "@/components/Skeleton";
-import type { Album, Artist, Release } from "@janne6565/rekordo-shared";
-import { CONDITION_SHORT, FORMAT_LABELS } from "@janne6565/rekordo-shared";
-import { AddSheet } from "@/features/add/AddSheet";
-import { ArtistAvatar } from "@/features/add/ArtistResults";
-import type { AddDestination } from "@/features/add/useAddSheetLogic";
-import { useAddCopy } from "@/features/add/useAddCopy";
-import { useMarkRing } from "@/lib/motion";
-import {
-  OWNERSHIP_FILTERS,
-  PRIMARY_TYPES,
-  useDiscographyLogic,
-} from "@/features/artists/useDiscographyLogic";
-import { colors } from "@/theme/colors";
 
 type Logic = ReturnType<typeof useDiscographyLogic>;
 
@@ -45,6 +42,13 @@ interface ArtistScreenProps {
   readonly artist: Artist;
   /** The search this artist was opened from, so the header can name what "back" means. */
   readonly fromQuery: string;
+  /**
+   * Which list the tab that started this is about, carried here from the search.
+   *
+   * It only decides which of the sheet's two destinations is the button and which is the
+   * line under it. Nobody chose it, so the sheet still opens neutral.
+   */
+  readonly destination: AddDestination;
 }
 
 /**
@@ -58,42 +62,50 @@ interface ArtistScreenProps {
  * Dark chrome throughout, like the add screen it is reached from. Nothing about opening an
  * artist should feel like leaving the flow of adding a record.
  */
-export function ArtistScreen({ artist, fromQuery }: ArtistScreenProps) {
+export function ArtistScreen({ artist, fromQuery, destination }: ArtistScreenProps) {
   const { t } = useTranslation();
   const router = useRouter();
   const logic = useDiscographyLogic(artist.mbid);
-  const { add, addingMbid, added } = useAddCopy({ stay: true });
 
   /**
-   * A destination pressed on an album row, resolved to the pressing the sheet is about.
+   * Add pressed on an album row, resolved to the pressing the sheet is about.
    *
    * An album is not an object you can own — "Bitches Brew" is one row here and forty-seven
    * pressings in the archive — so the row cannot write anything by itself. It fetches the
    * pressings and hands the archive's first to the same sheet a search result opens, which
    * is where the other forty-six are one tap away.
    */
-  const [sheet, setSheet] = useState<{
-    release: Release;
-    destination: AddDestination;
-  } | null>(null);
+  const [sheet, setSheet] = useState<{ release: Release } | null>(null);
   const [resolving, setResolving] = useState<string | null>(null);
+  /**
+   * An album whose pressings did not arrive, so its row can say so and offer the tap again.
+   *
+   * The reason is kept with it: an album the archive lists no pressing of is a fact about
+   * the record, and a request that did not come back is a fact about the connection. They
+   * read the same on a row that only says "nothing happened".
+   */
+  const [unresolved, setUnresolved] = useState<{
+    albumId: string;
+    reason: "EMPTY" | "ERROR";
+  } | null>(null);
 
-  const openSheet = async (album: Album, destination: AddDestination) => {
+  const openSheet = async (album: Album) => {
     setResolving(album.albumId);
+    setUnresolved(null);
     try {
       const pressings = await lookupPressings(album.albumId, 100);
       const first = pressings[0];
-      // Nothing to add: the archive has the album but no pressing of it. Opening the album
-      // is then the only honest next step, and that is what the row already does.
+      // Nothing to add: the archive has the album but not one pressing of it. There is no
+      // sheet to open on that, so the row says so rather than swallowing the tap.
       if (first === undefined) {
-        logic.toggleAlbum(album);
+        setUnresolved({ albumId: album.albumId, reason: "EMPTY" });
         return;
       }
-      setSheet({ release: first, destination });
+      setSheet({ release: first });
     } catch {
-      // No connection, or the proxy is down. The pressings list under the row says so in
-      // its own words, so unfolding it is both the fallback and the explanation.
-      logic.toggleAlbum(album);
+      // No connection, or the proxy is down. Either way the tap did nothing, and a row
+      // that stays silent about that reads as a broken button.
+      setUnresolved({ albumId: album.albumId, reason: "ERROR" });
     } finally {
       setResolving(null);
     }
@@ -114,7 +126,7 @@ export function ArtistScreen({ artist, fromQuery }: ArtistScreenProps) {
           {t("artists.resultsFor", { query: fromQuery })}
         </Text>
         {/* Balances the back button so the caption sits centred, as the deck draws it. */}
-        <View style={styles.back} />
+        <View style={styles.backSpacer} />
       </View>
 
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
@@ -199,11 +211,9 @@ export function ArtistScreen({ artist, fromQuery }: ArtistScreenProps) {
 
         <Discography
           logic={logic}
-          add={add}
-          addingMbid={addingMbid}
-          added={added}
-          onDestination={(album, destination) => void openSheet(album, destination)}
+          onAdd={(album) => void openSheet(album)}
           resolving={resolving}
+          unresolved={unresolved}
         />
 
         {logic.type === null && <RestDisclosure logic={logic} />}
@@ -219,7 +229,10 @@ export function ArtistScreen({ artist, fromQuery }: ArtistScreenProps) {
       {sheet !== null && (
         <AddSheet
           release={sheet.release}
-          destination={sheet.destination}
+          /* Where the sheet starts, not a choice anybody made: the row has one button now,
+             and both destinations are offered inside. */
+          destination={destination}
+          chosen={false}
           onClose={() => setSheet(null)}
         />
       )}
@@ -301,22 +314,21 @@ function TypeChip({
 
 function Discography({
   logic,
-  add,
-  addingMbid,
-  added,
-  onDestination,
+  onAdd,
   resolving,
+  unresolved,
 }: {
   readonly logic: Logic;
-  readonly add: (release: Release) => void;
-  readonly addingMbid: string | undefined;
-  readonly added: string | null;
-  readonly onDestination: (album: Album, destination: AddDestination) => void;
+  readonly onAdd: (album: Album) => void;
   readonly resolving: string | null;
+  readonly unresolved: { albumId: string; reason: "EMPTY" | "ERROR" } | null;
 }) {
   const { t } = useTranslation();
 
-  if (logic.failed) return <Text style={styles.hint}>{t("add.failed")}</Text>;
+  if (logic.failed)
+    return (
+      <RetryNotice message={t("add.failed")} onRetry={logic.retry} retrying={logic.settling} />
+    );
   if (logic.loading) return <AlbumSkeletons />;
   if (logic.sections.length === 0) {
     return (
@@ -341,11 +353,9 @@ function Discography({
                 key={album.albumId}
                 album={album}
                 logic={logic}
-                add={add}
-                addingMbid={addingMbid}
-                added={added}
-                onDestination={onDestination}
+                onAdd={onAdd}
                 resolving={resolving === album.albumId}
+                unresolved={unresolved?.albumId === album.albumId ? unresolved.reason : null}
               />
             ))
           )}
@@ -358,22 +368,17 @@ function Discography({
 function AlbumRow({
   album,
   logic,
-  add,
-  addingMbid,
-  added,
-  onDestination,
+  onAdd,
   resolving,
+  unresolved,
 }: {
   readonly album: Album;
   readonly logic: Logic;
-  readonly add: (release: Release) => void;
-  readonly addingMbid: string | undefined;
-  readonly added: string | null;
-  readonly onDestination: (album: Album, destination: AddDestination) => void;
+  readonly onAdd: (album: Album) => void;
   readonly resolving: boolean;
+  readonly unresolved: "EMPTY" | "ERROR" | null;
 }) {
   const { t } = useTranslation();
-  const expanded = logic.expandedAlbum === album.albumId;
   const mark = logic.markOf(album);
   const grade = logic.gradeOf(album);
 
@@ -381,9 +386,8 @@ function AlbumRow({
     <View>
       <Pressable
         accessibilityRole="button"
-        accessibilityState={{ expanded }}
-        accessibilityLabel={`${album.title}, ${t("artists.pressings")}`}
-        onPress={() => logic.toggleAlbum(album)}
+        accessibilityLabel={`${album.title}, ${t("add.add")}`}
+        onPress={() => onAdd(album)}
         style={styles.row}
       >
         {/* An album's own cover, from the archive's release-group endpoint — picking one
@@ -404,13 +408,16 @@ function AlbumRow({
          *
          * Owned and wished rows say so and step back — the pressings are still one tap
          * away under the row, which is where a second copy is chosen. Everything else
-         * carries the two destinations, in the order they take everywhere else.
+         * carries a single Add, which raises the sheet without choosing a destination
+         * first; the sheet offers both, next to the pressing they apply to.
          */}
         {mark === "OWNED" ? (
           <View style={styles.mark}>
             <Check size={11} color={colors.accentStrong} strokeWidth={2.4} />
             <Text style={styles.markText}>
-              {grade === null ? t("artists.yours") : t("artists.yoursGraded", { grade: CONDITION_SHORT[grade] })}
+              {grade === null
+                ? t("artists.yours")
+                : t("artists.yoursGraded", { grade: CONDITION_SHORT[grade] })}
             </Text>
           </View>
         ) : mark === "WISHED" ? (
@@ -419,113 +426,32 @@ function AlbumRow({
             <Text style={[styles.markText, styles.markWished]}>{t("artists.onWishlist")}</Text>
           </View>
         ) : (
-          <View style={styles.destinations}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t("wishlist.addToWishlist")}
-              onPress={() => onDestination(album, "WISHLIST")}
-              disabled={resolving}
-              style={styles.destination}
-            >
-              <Heart size={15} color="#ffffff" strokeWidth={1.9} />
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t("add.add")}
-              onPress={() => onDestination(album, "SHELF")}
-              disabled={resolving}
-              style={styles.destination}
-            >
-              {resolving ? (
-                <ActivityIndicator size="small" color="#ffffff" />
-              ) : (
-                <LibraryBig size={15} color="#ffffff" strokeWidth={1.9} />
-              )}
-            </Pressable>
-          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t("add.add")}
+            onPress={() => onAdd(album)}
+            disabled={resolving}
+            style={styles.destination}
+          >
+            {resolving ? (
+              <ActivityIndicator size="small" color="#ffffff" />
+            ) : (
+              <Plus size={16} color="#ffffff" strokeWidth={2} />
+            )}
+          </Pressable>
         )}
       </Pressable>
 
-      {expanded && (
-        <Pressings logic={logic} add={add} addingMbid={addingMbid} added={added} />
+      {unresolved !== null && (
+        <RetryNotice
+          compact
+          message={t(
+            unresolved === "EMPTY" ? "artists.noPressings" : "artists.pressingsUnavailable",
+          )}
+          onRetry={() => onAdd(album)}
+          retrying={resolving}
+        />
       )}
-    </View>
-  );
-}
-
-/**
- * The pressings of one album, under it.
- *
- * A list rather than the web's table (10d): the six columns that fit beside a modal do not
- * fit on a phone, and the three facts that actually separate two pressings — year, label
- * and country, catalogue number — read perfectly well stacked.
- */
-function Pressings({
-  logic,
-  add,
-  addingMbid,
-  added,
-}: {
-  readonly logic: Logic;
-  readonly add: (release: Release) => void;
-  readonly addingMbid: string | undefined;
-  readonly added: string | null;
-}) {
-  const { t } = useTranslation();
-
-  if (logic.pressingsLoading) {
-    return (
-      <View style={styles.pressings}>
-        {["54%", "42%"].map((width) => (
-          <View key={width} style={styles.pressingRow}>
-            <View style={styles.rowBody}>
-              <Skeleton style={{ height: 10, width: width as `${number}%` }} />
-              <Skeleton tone="soft" style={{ height: 8, width: "38%", marginTop: 6 }} />
-            </View>
-          </View>
-        ))}
-      </View>
-    );
-  }
-  if (logic.pressingsFailed) return <Text style={styles.pressingHint}>{t("add.failed")}</Text>;
-  if (logic.pressings.length === 0) {
-    return <Text style={styles.pressingHint}>{t("artists.noPressings")}</Text>;
-  }
-
-  return (
-    <View style={styles.pressings}>
-      {logic.pressings.map((pressing) => {
-        const meta = releaseDisambiguation(pressing);
-        return (
-          <PressingRow
-            key={pressing.id}
-            marked={added === pressing.id}
-            accessibilityLabel={`${pressing.title}, ${t("add.add")}`}
-            onPress={() => add(pressing)}
-            disabled={addingMbid !== undefined || added === pressing.id}
-          >
-            <View style={styles.rowBody}>
-              <Text style={styles.pressingTitle} numberOfLines={1}>
-                {pressing.year ?? "—"} · {FORMAT_LABELS[pressing.format]}
-              </Text>
-              {meta !== "" && (
-                <Text style={styles.rowMeta} numberOfLines={1}>
-                  {meta}
-                </Text>
-              )}
-            </View>
-            {addingMbid === pressing.id ? (
-              <ActivityIndicator size="small" color={colors.inkMuted} />
-            ) : added === pressing.id ? (
-              // The control itself is the answer: it became the tick, in place.
-              <Check size={15} color={colors.accentStrong} strokeWidth={2} />
-            ) : (
-              <ChevronRight size={15} color={colors.inkSubtle} strokeWidth={1.75} />
-            )}
-          </PressingRow>
-        );
-      })}
-      <Text style={styles.pressingHint}>{t("artists.pickLater")}</Text>
     </View>
   );
 }
@@ -587,6 +513,9 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingHorizontal: 18,
     paddingTop: 8,
+    /* The caption row needs air under it. Without this the chips below start immediately
+       against it, and on a scrolled list the header reads as a cut rather than an edge. */
+    paddingBottom: 12,
   },
   back: {
     width: 34,
@@ -598,6 +527,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  /*
+   * The counterweight on the right, and nothing else.
+   *
+   * It used to borrow the back button's style, which paints a bordered white circle -- so
+   * the corner held what looked like a button with its icon missing. It exists only to let
+   * the caption sit centred, so it takes the width and none of the paint.
+   */
+  backSpacer: { width: 34, height: 34 },
   headerCaption: { flex: 1, textAlign: "center", fontSize: 11.5, color: colors.inkMuted },
   body: { paddingHorizontal: 18, paddingTop: 14, paddingBottom: 32 },
   identity: { flexDirection: "row", gap: 14, alignItems: "flex-start" },
@@ -757,42 +694,3 @@ const styles = StyleSheet.create({
     color: colors.inkSubtle,
   },
 });
-
-/**
- * One pressing, and the ring it takes when it becomes a record you own.
- *
- * The row does not move and the list does not reorder under it — the reader is somewhere
- * in a discography and that place is theirs. The ring is the whole celebration, and it is
- * the same one the library grid gives a record that has just arrived.
- */
-function PressingRow({
-  marked,
-  accessibilityLabel,
-  onPress,
-  disabled,
-  children,
-}: {
-  readonly marked: boolean;
-  readonly accessibilityLabel: string;
-  readonly onPress: () => void;
-  readonly disabled: boolean;
-  readonly children: ReactNode;
-}) {
-  const ring = useMarkRing(marked);
-
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel}
-      onPress={onPress}
-      disabled={disabled}
-      style={styles.pressingRow}
-    >
-      <Animated.View
-        pointerEvents="none"
-        style={[StyleSheet.absoluteFill, styles.markRing, { opacity: ring }]}
-      />
-      {children}
-    </Pressable>
-  );
-}

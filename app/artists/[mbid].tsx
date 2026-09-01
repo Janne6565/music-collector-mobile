@@ -1,6 +1,6 @@
-import { useLocalSearchParams } from "expo-router";
-import type { Artist } from "@janne6565/rekordo-shared";
 import { ArtistScreen } from "@/features/artists/ArtistScreen";
+import type { Artist } from "@janne6565/rekordo-shared";
+import { useLocalSearchParams } from "expo-router";
 
 /**
  * Screen 10c, reached from an artist row in the search results.
@@ -23,6 +23,7 @@ export default function ArtistRoute() {
     beganIn?: string;
     endedIn?: string;
     fromQuery?: string;
+    to?: string;
   }>();
 
   const orNull = (value: string | undefined) =>
@@ -40,5 +41,13 @@ export default function ArtistRoute() {
     score: null,
   };
 
-  return <ArtistScreen artist={artist} fromQuery={params.fromQuery ?? ""} />;
+  return (
+    <ArtistScreen
+      artist={artist}
+      fromQuery={params.fromQuery ?? ""}
+      /* Which list the tab that started this is about, carried across the hop so the sheet
+         opened from a discography leads with the same answer the search did. */
+      destination={params.to === "WISHLIST" ? "WISHLIST" : "SHELF"}
+    />
+  );
 }

@@ -1,13 +1,21 @@
-import { Check, Heart, LibraryBig } from "lucide-react-native";
-import { useTranslation } from "react-i18next";
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { releaseDisambiguation } from "@/api/releases";
 import { ReleaseArt } from "@/components/ReleaseArt";
 import { RisingSheet } from "@/components/RisingSheet";
 import { type AddDestination, useAddSheetLogic } from "@/features/add/useAddSheetLogic";
+import { colors, fonts } from "@/theme/colors";
 import type { Format, Release } from "@janne6565/rekordo-shared";
 import { FORMAT_LABELS } from "@janne6565/rekordo-shared";
-import { colors, fonts } from "@/theme/colors";
+import { Check, ChevronRight, Disc3, Heart, LibraryBig } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
+import {
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 /** The four a person picks between. `OTHER` is a catalogue answer, never a choice. */
 const CHIPS: readonly Format[] = ["VINYL", "CD", "CASSETTE", "DIGITAL"];
@@ -22,10 +30,21 @@ const CHIPS: readonly Format[] = ["VINYL", "CD", "CASSETTE", "DIGITAL"];
 export function AddSheet({
   release,
   destination,
+  chosen = true,
   onClose,
 }: {
   readonly release: Release;
   readonly destination: AddDestination;
+  /**
+   * Whether `destination` is a choice somebody made, or only where this sheet starts.
+   *
+   * Pressing the heart or the shelf button on a row is a decision, and the line at the top
+   * reads it back. Opening the sheet on a record without having pressed either -- an
+   * example tile, anything that is just "add this" -- is not, and announcing "to your
+   * shelf" there states a decision on the reader's behalf. The buttons are unaffected:
+   * they are still both offered, and pressing one is where the choice actually happens.
+   */
+  readonly chosen?: boolean;
   readonly onClose: () => void;
 }) {
   const { t } = useTranslation();
@@ -36,7 +55,7 @@ export function AddSheet({
     <Modal transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.scrim} onPress={onClose} accessibilityRole="button" />
       <View style={styles.sheetHolder} pointerEvents="box-none">
-        <RisingSheet style={styles.sheet}>
+        <RisingSheet style={styles.sheet} onDismiss={onClose}>
           <View style={styles.grabber} />
 
           {logic.picking ? (
@@ -62,13 +81,19 @@ export function AddSheet({
           ) : (
             <>
               <View style={styles.eyebrow}>
-                {shelf ? (
+                {!chosen ? (
+                  <Disc3 size={13} color={colors.inkSubtle} strokeWidth={2} />
+                ) : shelf ? (
                   <LibraryBig size={13} color={colors.inkSubtle} strokeWidth={2} />
                 ) : (
                   <Heart size={13} color={colors.inkSubtle} strokeWidth={2} />
                 )}
                 <Text style={styles.eyebrowText}>
-                  {shelf ? t("addSheet.toYourShelf") : t("addSheet.toYourWishlist")}
+                  {!chosen
+                    ? t("addSheet.addThisRecord")
+                    : shelf
+                      ? t("addSheet.toYourShelf")
+                      : t("addSheet.toYourWishlist")}
                 </Text>
               </View>
 
@@ -89,7 +114,23 @@ export function AddSheet({
               </View>
 
               <Text style={styles.label}>{t("addSheet.pressing")}</Text>
-              <View style={styles.pressing}>
+              {/*
+                The box is the control, not a label with a link beside it.
+                The way to another pressing used to be a small "3 others" line that only
+                appeared once the count was known, so on an album the archive answers with
+                one row -- anything from Discogs, among others -- there was no way to change
+                the pressing and nothing saying why. Now the box always reports where it
+                stands: a chevron and a count when there is a choice, a plain line when the
+                archive genuinely holds only this one.
+              */}
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t("addSheet.whichPressing")}
+                accessibilityState={{ disabled: !logic.canPick }}
+                disabled={!logic.canPick}
+                onPress={logic.openPicker}
+                style={[styles.pressing, logic.canPick && styles.pressingPickable]}
+              >
                 <View style={styles.headText}>
                   <View style={styles.pressingTitleRow}>
                     <Text style={styles.pressingTitle}>
@@ -110,12 +151,17 @@ export function AddSheet({
                     {releaseDisambiguation(logic.picked) || t("addSheet.noCatalog")}
                   </Text>
                 </View>
-                {logic.others > 0 && (
-                  <Pressable accessibilityRole="button" onPress={logic.openPicker}>
+                {logic.loadingPressings ? (
+                  <ActivityIndicator size="small" color={colors.inkSubtle} />
+                ) : logic.canPick ? (
+                  <View style={styles.pressingPick}>
                     <Text style={styles.link}>{t("addSheet.others", { count: logic.others })}</Text>
-                  </Pressable>
+                    <ChevronRight size={15} color={colors.accent} strokeWidth={2} />
+                  </View>
+                ) : (
+                  <Text style={styles.pressingOnly}>{t("addSheet.onlyPressing")}</Text>
                 )}
-              </View>
+              </Pressable>
 
               <Text style={styles.label}>{t("addSheet.format")}</Text>
               <View style={styles.chips}>
@@ -127,9 +173,7 @@ export function AddSheet({
                     onPress={() => logic.setFormat(chip)}
                     style={[styles.chip, logic.format === chip && styles.chipOn]}
                   >
-                    <Text
-                      style={[styles.chipText, logic.format === chip && styles.chipTextOn]}
-                    >
+                    <Text style={[styles.chipText, logic.format === chip && styles.chipTextOn]}>
                       {FORMAT_LABELS[chip]}
                     </Text>
                   </Pressable>
@@ -183,10 +227,7 @@ function PressingRow({
       <View style={styles.headText}>
         <View style={styles.pressingTitleRow}>
           <Text style={styles.pressingTitle}>
-            {[
-              FORMAT_LABELS[release.format],
-              release.year === null ? null : String(release.year),
-            ]
+            {[FORMAT_LABELS[release.format], release.year === null ? null : String(release.year)]
               .filter((part) => part !== null)
               .join(" · ")}
           </Text>
@@ -268,6 +309,10 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: colors.ink,
   },
+  /* A choice reads as one: the accent edge is the app's way of saying "this opens". */
+  pressingPickable: { borderColor: colors.accent },
+  pressingPick: { flexDirection: "row", alignItems: "center", gap: 4 },
+  pressingOnly: { fontSize: 11, color: colors.inkSubtle, maxWidth: 92, textAlign: "right" },
   pressingRow: { borderWidth: 1, borderColor: "rgba(25,23,19,0.1)", marginBottom: 8 },
   pressingOn: { borderWidth: 1.5, borderColor: colors.ink },
   pressingArt: { width: 60, height: 50 },

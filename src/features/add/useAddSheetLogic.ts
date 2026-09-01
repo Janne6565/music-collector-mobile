@@ -1,12 +1,12 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import * as Crypto from "expo-crypto";
-import { useCallback, useState } from "react";
 import { lookupPressings } from "@/api/releases";
 import { useSatisfyWishes } from "@/features/wishlist/useSatisfyWishes";
 import { useStore } from "@/local/StoreProvider";
 import { readDefaultCurrency } from "@/local/settings";
 import type { Format, Release } from "@janne6565/rekordo-shared";
 import { asWishFormat, createCopy, createWishlistItem } from "@janne6565/rekordo-shared";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import * as Crypto from "expo-crypto";
+import { useCallback, useState } from "react";
 
 export type AddDestination = "SHELF" | "WISHLIST";
 
@@ -24,11 +24,7 @@ export type AddDestination = "SHELF" | "WISHLIST";
  *
  * Turn 28 of the deck, screen 6c.
  */
-export function useAddSheetLogic(
-  release: Release,
-  initial: AddDestination,
-  onDone: () => void,
-) {
+export function useAddSheetLogic(release: Release, initial: AddDestination, onDone: () => void) {
   const { store, clock } = useStore();
   const queryClient = useQueryClient();
   const satisfyWishes = useSatisfyWishes();
@@ -124,6 +120,14 @@ export function useAddSheetLogic(
     pressings: candidates,
     /** How many pressings are not the one on screen, for the "3 others" line. */
     others: Math.max(0, candidates.length - 1),
+    /**
+     * Whether there is a choice to make at all.
+     *
+     * An album the archive knows one pressing of is not a decision, and a box that opens a
+     * list of one would be a promise of a choice that is not there. Everything else is
+     * pickable, and says so on the box rather than in a link beside it.
+     */
+    canPick: candidates.length > 1,
     /** True while the album's pressings are still on their way; the line waits for them. */
     loadingPressings: pressings.isPending,
     pick: useCallback((next: Release) => {

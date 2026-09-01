@@ -361,6 +361,14 @@ const enCommon = {
       title: "No release with that barcode",
       body: "Common with promos, club editions and anything pressed before the mid-eighties.",
     },
+    examples: {
+      label: "Examples",
+      tapToSearch: "tap to add",
+      lead: "A few records, to see what a result looks like.",
+      footnote:
+        "These are ours, not yours. Tapping one opens it, and you still pick the pressing you actually have.",
+      open: "Add {{title}} by {{artist}}",
+    },
   },
   addDialog: {
     recent: "Recent searches",
@@ -369,6 +377,7 @@ const enCommon = {
   },
   artists: {
     shownOf: "{{shown}} of {{total}} releases",
+    pressingsUnavailable: "Could not fetch the pressings of this record.",
     yourMarks: "you own {{owned}} · {{wished}} on your wishlist",
     yours: "yours",
     yoursGraded: "yours · {{grade}}",
@@ -505,7 +514,8 @@ const enCommon = {
       },
     },
     createTitle: "Create an account",
-    optional: "An account is optional. It only syncs your collection across devices. Everything works without one.",
+    optional:
+      "An account is optional. It only syncs your collection across devices. Everything works without one.",
     email: "E-mail",
     password: "Password",
     signIn: "Sign in",
@@ -517,7 +527,8 @@ const enCommon = {
     signOutEverywhere: "Sign out everywhere",
     signOutEverywhereConfirm: "Tap again to sign out everywhere",
     signOutEverywhereBody: "Ends the session on every device, this one included.",
-    signOutEverywhereFailed: "That did not reach the server. This phone is signed out; the others may not be.",
+    signOutEverywhereFailed:
+      "That did not reach the server. This phone is signed out; the others may not be.",
     useWithout: "Use it without an account",
     useWithoutBody: "Your collection stays on this device. Add an account later to back it up.",
     skipRegister: "Skip and keep it on this device",
@@ -678,7 +689,8 @@ const enCommon = {
       },
       nearlyFull: {
         body_one: "Room for about one more photo. Deleting a photo frees its space right away.",
-        body_other: "Room for about {{count}} more photos. Deleting a photo frees its space right away.",
+        body_other:
+          "Room for about {{count}} more photos. Deleting a photo frees its space right away.",
       },
       full: {
         body: "Full. New photos stay on the device that took them and upload by themselves once something is deleted.",
@@ -713,7 +725,8 @@ const enCommon = {
       currentUnconfirmed: "Current · not confirmed, so it will be dropped",
       newAddress: "New address",
       password: "Your password",
-      passwordWhy: "Asked for because a stray session should not be able to walk off with the account.",
+      passwordWhy:
+        "Asked for because a stray session should not be able to walk off with the account.",
       next: {
         title: "What happens next",
         one: "A link goes to the new address, good for 24 hours.",
@@ -813,7 +826,8 @@ const enCommon = {
     translationNotice:
       "Translation for convenience. In case of dispute the German original is the version that applies.",
     bindingNotice: "The German version is the binding one; English is a courtesy translation.",
-    rightsNote: "Art. 15–21 DSGVO. Requests are answered within one month; nothing has to go through e-mail.",
+    rightsNote:
+      "Art. 15–21 DSGVO. Requests are answered within one month; nothing has to go through e-mail.",
     language: { de: "Deutsch", en: "English" },
     subtitle: {
       impressum: "Provider identification, § 5 DDG",
@@ -897,13 +911,15 @@ const enCommon = {
       body: "Nothing will reach you outside the app. Friend requests still arrive. They wait on the Friends tab with a dot, as they always did.",
     },
     noPush: {
-      bodyMobile: "Push is not set up yet, so the column has nothing to switch. Your choices are kept and will apply the moment it is.",
+      bodyMobile:
+        "Push is not set up yet, so the column has nothing to switch. Your choices are kept and will apply the moment it is.",
     },
     devices: {
       heading: "Where push would arrive",
       none: "No devices yet",
       noneAskable: "Turn a push switch on above and this phone appears here.",
-      noneBlocked: "Your phone has push switched off for Rekordo, so nothing can be added from here.",
+      noneBlocked:
+        "Your phone has push switched off for Rekordo, so nothing can be added from here.",
     },
     pushBlocked: {
       title: "Your phone is not letting us send push",
@@ -980,6 +996,7 @@ const enCommon = {
   },
   addSheet: {
     toYourShelf: "To your shelf",
+    addThisRecord: "Add this record",
     toYourWishlist: "To your wishlist",
     pressing: "Pressing",
     format: "Format",
@@ -988,6 +1005,7 @@ const enCommon = {
     others_one: "1 other",
     others_other: "{{count}} others",
     whichPressing: "Which pressing?",
+    onlyPressing: "the only one listed",
     addToShelf: "Add to shelf",
     addToWishlist: "Add to wishlist",
     wishlistInstead: "Put it on the wishlist instead",
@@ -1082,6 +1100,8 @@ const enCommon = {
     back: "Back",
     close: "Close",
     unknownYear: "Year unknown",
+    tryAgain: "Try again",
+    retrying: "Trying…",
   },
   scaffold: {
     comingInPhaseTwo: "This screen arrives with the local-first core.",
@@ -1354,8 +1374,7 @@ const deCommon: CommonSchema = {
       anonymous_one: "Ein Exemplar liegt nur auf diesem Telefon",
       anonymous_other: "{{count}} Exemplare liegen nur auf diesem Telefon",
       signIn: "Anmelden",
-      failed:
-        "Konnte auf diesem Telefon nicht geändert werden: der Speicher ist womöglich voll.",
+      failed: "Konnte auf diesem Telefon nicht geändert werden: der Speicher ist womöglich voll.",
     },
     local: {
       title: "Lokale Kopie behalten",
@@ -1393,7 +1412,8 @@ const deCommon: CommonSchema = {
       wishlist: "Wunschliste",
       who: {
         public: "Jede Person mit diesem Link kann ihn öffnen, ganz ohne Konto.",
-        friends: "Nur die Freunde, die du angenommen hast, können ihn öffnen, sobald sie angemeldet sind.",
+        friends:
+          "Nur die Freunde, die du angenommen hast, können ihn öffnen, sobald sie angemeldet sind.",
         only_me: "Noch kann ihn niemand öffnen. Öffne unten deine Sammlung, um ihn weiterzugeben.",
       },
     },
@@ -1468,6 +1488,14 @@ const deCommon: CommonSchema = {
       title: "Keine Veröffentlichung mit diesem Barcode",
       body: "Typisch für Promos, Clubauflagen und alles vor Mitte der Achtziger.",
     },
+    examples: {
+      label: "Beispiele",
+      tapToSearch: "tippen zum Hinzufügen",
+      lead: "Ein paar Platten, damit du siehst, wie ein Treffer aussieht.",
+      footnote:
+        "Das sind unsere, nicht deine. Ein Tipp öffnet sie, die passende Ausgabe wählst du weiterhin selbst.",
+      open: "{{title}} von {{artist}} hinzufügen",
+    },
   },
   addDialog: {
     recent: "Zuletzt gesucht",
@@ -1476,6 +1504,7 @@ const deCommon: CommonSchema = {
   },
   artists: {
     shownOf: "{{shown}} von {{total}} Veröffentlichungen",
+    pressingsUnavailable: "Die Ausgaben dieser Platte konnten nicht geladen werden.",
     yourMarks: "{{owned}} in deiner Sammlung · {{wished}} auf der Wunschliste",
     yours: "deins",
     yoursGraded: "deins · {{grade}}",
@@ -1533,7 +1562,8 @@ const deCommon: CommonSchema = {
     format: "Format",
     later: "Zustand, Preis, Laden, Bewertung",
     laterAction: "Später",
-    nothingLookedUp: "Hier wird nichts nachgeschlagen. Das Exemplar bleibt genau so, wie du es eintippst.",
+    nothingLookedUp:
+      "Hier wird nichts nachgeschlagen. Das Exemplar bleibt genau so, wie du es eintippst.",
     onShelf: "{{artist}} · {{count}} Exemplare in deiner Sammlung",
     cover: "cover",
     coverChoose: "Coverbild auswählen",
@@ -1613,7 +1643,8 @@ const deCommon: CommonSchema = {
       },
     },
     createTitle: "Konto erstellen",
-    optional: "Ein Konto ist optional. Es synchronisiert nur deine Sammlung zwischen Geräten. Alles funktioniert auch ohne.",
+    optional:
+      "Ein Konto ist optional. Es synchronisiert nur deine Sammlung zwischen Geräten. Alles funktioniert auch ohne.",
     email: "E-Mail",
     password: "Passwort",
     signIn: "Anmelden",
@@ -1625,7 +1656,8 @@ const deCommon: CommonSchema = {
     signOutEverywhere: "Überall abmelden",
     signOutEverywhereConfirm: "Zum Abmelden überall noch einmal tippen",
     signOutEverywhereBody: "Beendet die Sitzung auf jedem Gerät, dieses eingeschlossen.",
-    signOutEverywhereFailed: "Das hat den Server nicht erreicht. Dieses Telefon ist abgemeldet, die anderen vielleicht nicht.",
+    signOutEverywhereFailed:
+      "Das hat den Server nicht erreicht. Dieses Telefon ist abgemeldet, die anderen vielleicht nicht.",
     useWithout: "Ohne Konto benutzen",
     useWithoutBody:
       "Deine Sammlung bleibt auf diesem Gerät. Ein Konto kannst du später zum Sichern anlegen.",
@@ -1715,7 +1747,8 @@ const deCommon: CommonSchema = {
     keepBoth: "Beides behalten",
     keepBothBody_zero: "Nichts wird gelöscht.",
     keepBothBody_one: "Nichts wird gelöscht. Von {{count}} Änderung gilt die spätere.",
-    keepBothBody_other: "Nichts wird gelöscht. Von den {{count}} Änderungen gilt jeweils die spätere.",
+    keepBothBody_other:
+      "Nichts wird gelöscht. Von den {{count}} Änderungen gilt jeweils die spätere.",
     keepLocal: "Dieses Telefon behalten",
     keepAccount: "Das Konto behalten",
     keepLocalCost: "{{copies}} Exemplare. Verwirft {{drops}} aus dem Konto.",
@@ -1789,8 +1822,10 @@ const deCommon: CommonSchema = {
         body: "Der Server ist nicht erreichbar. Fotos werden weiter auf diesem Gerät gespeichert; die Zahl kommt mit der Verbindung zurück.",
       },
       nearlyFull: {
-        body_one: "Platz für etwa ein weiteres Foto. Ein gelöschtes Foto gibt seinen Platz sofort frei.",
-        body_other: "Platz für etwa {{count}} weitere Fotos. Ein gelöschtes Foto gibt seinen Platz sofort frei.",
+        body_one:
+          "Platz für etwa ein weiteres Foto. Ein gelöschtes Foto gibt seinen Platz sofort frei.",
+        body_other:
+          "Platz für etwa {{count}} weitere Fotos. Ein gelöschtes Foto gibt seinen Platz sofort frei.",
       },
       full: {
         body: "Voll. Neue Fotos bleiben auf dem Gerät, das sie aufgenommen hat, und laden von selbst hoch, sobald etwas gelöscht wird.",
@@ -1825,7 +1860,8 @@ const deCommon: CommonSchema = {
       currentUnconfirmed: "Aktuell · nicht bestätigt, wird also verworfen",
       newAddress: "Neue Adresse",
       password: "Dein Passwort",
-      passwordWhy: "Wird abgefragt, damit eine herumliegende Sitzung nicht mit dem Konto davonlaufen kann.",
+      passwordWhy:
+        "Wird abgefragt, damit eine herumliegende Sitzung nicht mit dem Konto davonlaufen kann.",
       next: {
         title: "Was als Nächstes passiert",
         one: "Ein Link geht an die neue Adresse, 24 Stunden gültig.",
@@ -2012,23 +2048,29 @@ const deCommon: CommonSchema = {
       body: "Außerhalb der App erreicht dich nichts. Freundschaftsanfragen kommen weiterhin an. Sie warten wie immer mit einem Punkt im Tab „Freunde“.",
     },
     noPush: {
-      bodyMobile: "Push ist noch nicht eingerichtet, die Spalte hat also nichts zu schalten. Deine Auswahl bleibt gespeichert und gilt, sobald es soweit ist.",
+      bodyMobile:
+        "Push ist noch nicht eingerichtet, die Spalte hat also nichts zu schalten. Deine Auswahl bleibt gespeichert und gilt, sobald es soweit ist.",
     },
     devices: {
       heading: "Wo Push ankommen würde",
       none: "Noch keine Geräte",
       noneAskable: "Schalte oben einen Push-Schalter ein, dann erscheint dieses Telefon hier.",
-      noneBlocked: "Dein Telefon hat Push für Rekordo abgeschaltet, von hier aus lässt sich nichts hinzufügen.",
+      noneBlocked:
+        "Dein Telefon hat Push für Rekordo abgeschaltet, von hier aus lässt sich nichts hinzufügen.",
     },
     pushBlocked: {
       title: "Dein Telefon lässt uns kein Push senden",
       body: "In den Systemeinstellungen für Rekordo abgeschaltet, die Push-Spalte unten kann also nichts bewirken. Mail ist davon nicht betroffen.",
       open: "Systemeinstellungen öffnen",
-      footnote: "Von hier aus können wir nicht noch einmal fragen. Nur du kannst das, dort draußen.",
+      footnote:
+        "Von hier aus können wir nicht noch einmal fragen. Nur du kannst das, dort draußen.",
     },
     category: {
       FRIEND_REQUEST: { title: "Eine Freundschaftsanfrage", short: "Wartet auf deine Antwort" },
-      FRIEND_ACTIVITY: { title: "Was Freunde eingestellt haben", short: "Wöchentlich, Sonntagmorgen" },
+      FRIEND_ACTIVITY: {
+        title: "Was Freunde eingestellt haben",
+        short: "Wöchentlich, Sonntagmorgen",
+      },
       SECURITY: { title: "Sicherheitshinweise", short: "Anmeldungen und Änderungen" },
       PRODUCT_NEWS: { title: "Neues über die App", short: "Zwei- bis dreimal im Jahr" },
     },
@@ -2084,7 +2126,8 @@ const deCommon: CommonSchema = {
     absent: {
       handEntered:
         "Von Hand eingetragen: es gibt keinen Katalogeintrag, aus dem sich eine Titelliste lesen lie\u00dfe.",
-      discogs: "Von Discogs \u00fcbernommen: Rekordo bekommt von dort die Anzahl, aber nicht die Titel.",
+      discogs:
+        "Von Discogs \u00fcbernommen: Rekordo bekommt von dort die Anzahl, aber nicht die Titel.",
       notInCatalogue: "Keine Titelliste f\u00fcr dieses Exemplar. Im Katalog passt nichts dazu.",
     },
     unreachable:
@@ -2094,6 +2137,7 @@ const deCommon: CommonSchema = {
   },
   addSheet: {
     toYourShelf: "Ins Regal",
+    addThisRecord: "Diese Platte hinzufügen",
     toYourWishlist: "Auf die Wunschliste",
     pressing: "Pressung",
     format: "Format",
@@ -2102,6 +2146,7 @@ const deCommon: CommonSchema = {
     others_one: "1 weitere",
     others_other: "{{count}} weitere",
     whichPressing: "Welche Pressung?",
+    onlyPressing: "die einzige gelistete",
     addToShelf: "Ins Regal legen",
     addToWishlist: "Auf die Wunschliste setzen",
     wishlistInstead: "Doch auf die Wunschliste",
@@ -2197,6 +2242,8 @@ const deCommon: CommonSchema = {
     cancel: "Abbrechen",
     back: "Zurück",
     unknownYear: "Jahr unbekannt",
+    tryAgain: "Erneut versuchen",
+    retrying: "Wird versucht…",
   },
   scaffold: {
     comingInPhaseTwo: "Dieser Screen kommt mit dem Local-First-Kern.",
