@@ -1,4 +1,5 @@
-import { lookupAlbumCovers, lookupPressingCovers } from "@/api/releases";
+import { lookupAlbumCovers, lookupReleases } from "@/api/releases";
+import { cacheWishAlbums, cachedCoverOf } from "@/features/wishlist/cacheWishReleases";
 import { useWishPhotos } from "@/features/wishlist/useWishPhotos";
 import { useStore } from "@/local/StoreProvider";
 import { readWishlistSort, writeWishlistSort } from "@/local/settings";
@@ -99,11 +100,24 @@ export function useWishlistLogic() {
     [items],
   );
 
+  /*
+   * The pressings themselves, not just their sleeves.
+   *
+   * `lookupPressingCovers` threw the rows away and kept the URLs, which is why a wish had
+   * nothing on this device to fall back on. The same request now lands in the `releases`
+   * table on the way past, so the next open answers from the cache when the mirror cannot
+   * be reached — and a copy of the same pressing finds the row already there.
+   */
   const pressingCovers = useQuery({
     queryKey: ["pressingCovers", releaseIds],
     enabled: releaseIds.length > 0,
     staleTime: 60 * 60 * 1000,
-    queryFn: () => lookupPressingCovers(releaseIds),
+    queryFn: async () => {
+      const releases = await lookupReleases(releaseIds);
+      await store.cacheReleases(releases);
+      await queryClient.invalidateQueries({ queryKey: ["wishlistReleases"] });
+      return new Map(releases.map((release) => [release.id, release.coverArtUrl]));
+    },
   });
 
   const covers = useQuery({
@@ -111,7 +125,24 @@ export function useWishlistLogic() {
     enabled: albumIds.length > 0,
     // The mirror's answer for an album does not move while a list is open.
     staleTime: 60 * 60 * 1000,
-    queryFn: () => lookupAlbumCovers(albumIds, store),
+    queryFn: async () => {
+      const found = await lookupAlbumCovers(albumIds, store);
+      await cacheWishAlbums(store, items, found, Date.now());
+      await queryClient.invalidateQueries({ queryKey: ["wishlistReleases"] });
+      return found;
+    },
+  });
+
+  /*
+   * What this device already holds for these entries, which is the whole point of writing
+   * the two lookups into the cache above. Read unconditionally rather than only on
+   * failure: a query that has not answered yet is the same picture as one that cannot,
+   * and the list should not go blank for the length of a request either.
+   */
+  const cachedReleases = useQuery({
+    queryKey: ["wishlistReleases", catalogueKeysOf(items)],
+    enabled: items.length > 0,
+    queryFn: () => store.getReleases(catalogueKeysOf(items)),
   });
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["wishlist"] });
@@ -206,7 +237,14 @@ export function useWishlistLogic() {
     coverOf: (item: WishlistItem): string | null => {
       const pressing =
         item.releaseId === null ? undefined : pressingCovers.data?.get(catalogueKeyOf(item) ?? "");
-      return pressing ?? covers.data?.get(item.albumId) ?? null;
+      return (
+        pressing ??
+        covers.data?.get(item.albumId) ??
+        // Offline, or simply not answered yet. The sleeve this device last saw for the
+        // record is a better answer than an empty sleeve, and it is the same one the
+        // shelf is drawing for a copy of it two tabs away.
+        cachedCoverOf(item, cachedReleases.data)
+      );
     },
     /**
      * The picture somebody uploaded for this entry.
