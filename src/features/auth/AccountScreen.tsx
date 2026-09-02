@@ -85,12 +85,48 @@ export function AccountScreen() {
           <>
             <AuthForm logic={logic} />
             <CollectionStatsBlock />
+            {/*
+             * The same card the signed-in tab carries, and the only way into the documents
+             * without an account.
+             *
+             * An Impressum and a Datenschutzerklärung have to be reachable by somebody who
+             * has never signed in — they are addressed to exactly that reader — and until
+             * now the only route to them from this tab was behind the account. `/legal`
+             * was already built for it: it takes `signedIn` and draws the consent record
+             * and the deletion row differently without one.
+             */}
+            <LegalSection />
           </>
         ) : (
           <SignedIn logic={logic} />
         )}
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+/** The way into the documents, drawn identically either side of signing in. */
+function LegalSection() {
+  const { t } = useTranslation();
+  const router = useRouter();
+
+  return (
+    <>
+      <Text style={styles.section}>{t("legal.title")}</Text>
+      <View style={styles.card}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push("/legal")}
+          style={styles.row}
+        >
+          <View style={styles.rowText}>
+            <Text style={styles.rowTitle}>{t("legal.title")}</Text>
+            <Text style={styles.rowBody}>{t("legal.rowBody")}</Text>
+          </View>
+          <ChevronRight size={16} color={colors.inkSubtle} strokeWidth={1.75} />
+        </Pressable>
+      </View>
+    </>
   );
 }
 
@@ -231,20 +267,7 @@ function SignedIn({ logic }: { readonly logic: ReturnType<typeof useAccountLogic
         </Pressable>
       </View>
 
-      <Text style={styles.section}>{t("legal.title")}</Text>
-      <View style={styles.card}>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => router.push("/legal")}
-          style={styles.row}
-        >
-          <View style={styles.rowText}>
-            <Text style={styles.rowTitle}>{t("legal.title")}</Text>
-            <Text style={styles.rowBody}>{t("legal.rowBody")}</Text>
-          </View>
-          <ChevronRight size={16} color={colors.inkSubtle} strokeWidth={1.75} />
-        </Pressable>
-      </View>
+      <LegalSection />
 
       <Pressable
         accessibilityRole="button"

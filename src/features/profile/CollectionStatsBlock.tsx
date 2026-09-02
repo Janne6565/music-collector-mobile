@@ -1,80 +1,38 @@
-import { formatMoney, spendByCurrency } from "@/domain/currency";
 import { useStore } from "@/local/StoreProvider";
-import { colors, fonts } from "@/theme/colors";
+import { colors } from "@/theme/colors";
 import { FORMAT_LABELS } from "@janne6565/rekordo-shared";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, Text, View } from "react-native";
 
 /**
- * The stats block from screen 1l.
+ * What is on the shelf, under the ways in to the signed-out You tab.
  *
- * Computed from the local store rather than fetched: someone with no account has exactly
- * the same numbers, and calculating them twice in two places is how they drift.
+ * Computed from the local store rather than fetched: somebody with no account has exactly
+ * the same numbers, and calculating them twice in two places is how they drift. Which is
+ * the point of putting it here at all — the collection is already yours before any account
+ * exists, so the tab says so rather than presenting sign-in as a gate.
+ *
+ * The two tiles are the two the signed-in page shows, reading the same `stats()` under the
+ * same labels. They used to be the total spent and the average per copy, which made the
+ * one number a stranger to this device sees the first thing it says about you, and left
+ * the tab's two halves counting different things.
  */
 export function CollectionStatsBlock() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { store } = useStore();
   const stats = useQuery({ queryKey: ["stats"], queryFn: () => store.stats() });
-  /**
-   * Split by the currency each copy was actually paid in (20d).
-   *
-   * The tiles used to add every `pricePaidCents` together and print a euro sign, which was
-   * harmless only while nothing could produce a copy in anything else. Since Settings has a
-   * currency picker, mixed collections are deliberate — and nothing here converts, because
-   * a total that silently depends on today's exchange rate is worse than two side by side.
-   */
-  const spend = useQuery({
-    queryKey: ["collectionSpend"],
-    queryFn: async () => spendByCurrency(await store.listCopies()),
-  });
 
   if (stats.data === undefined) return null;
   const { copyCount, releaseGroupCount, byFormat } = stats.data;
-  const byCurrency = spend.data ?? [];
 
   return (
     <View style={styles.root}>
-      <Text style={styles.summary}>
-        {t("profile.copies", { count: copyCount })}
-        {releaseGroupCount > 0 && ` · ${releaseGroupCount}`}
-      </Text>
-
+      {/* No summary line above these any more: it read "240 copies · 197", which is the
+          two tiles in a sentence. */}
       <View style={styles.tiles}>
-        <Tile
-          value={
-            byCurrency.length === 0
-              ? "—"
-              : byCurrency
-                  .map((entry) => formatMoney(entry.totalCents, entry.currency, i18n.language))
-                  .join(" + ")
-          }
-          label={
-            byCurrency.length === 1
-              ? t("profile.totalSpentIn", { currency: byCurrency[0].currency })
-              : t("profile.totalSpent")
-          }
-        />
-        <Tile
-          value={
-            byCurrency.length === 0
-              ? "—"
-              : byCurrency
-                  .map((entry) =>
-                    formatMoney(
-                      Math.round(entry.totalCents / entry.copies),
-                      entry.currency,
-                      i18n.language,
-                    ),
-                  )
-                  .join(" · ")
-          }
-          label={
-            byCurrency.length === 1
-              ? t("profile.averageIn", { currency: byCurrency[0].currency })
-              : t("profile.averagePerCopy")
-          }
-        />
+        <Tile value={copyCount} label={t("account.stat.copies")} />
+        <Tile value={releaseGroupCount} label={t("account.stat.releases")} />
       </View>
 
       <View style={styles.formats}>
@@ -91,7 +49,8 @@ export function CollectionStatsBlock() {
   );
 }
 
-function Tile({ value, label }: { readonly value: string; readonly label: string }) {
+/** The signed-in page's tile, down to the metrics: it is the same figure either side. */
+function Tile({ value, label }: { readonly value: number; readonly label: string }) {
   return (
     <View style={styles.tile}>
       <Text style={styles.tileValue}>{value}</Text>
@@ -102,18 +61,17 @@ function Tile({ value, label }: { readonly value: string; readonly label: string
 
 const styles = StyleSheet.create({
   root: { gap: 10, marginTop: 20 },
-  summary: { fontSize: 12.5, color: colors.inkMuted },
   tiles: { flexDirection: "row", gap: 9 },
   tile: {
     flex: 1,
+    padding: 13,
+    borderRadius: 10,
     backgroundColor: colors.surface,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.line,
-    borderRadius: 10,
-    padding: 14,
   },
-  tileValue: { fontFamily: fonts.serif, fontSize: 22, color: colors.ink },
-  tileLabel: { fontSize: 11, color: colors.inkMuted, marginTop: 3 },
+  tileValue: { fontSize: 18, fontWeight: "600", color: colors.ink },
+  tileLabel: { fontSize: 10.5, color: colors.inkMuted, marginTop: 2 },
   formats: {
     backgroundColor: colors.surface,
     borderWidth: StyleSheet.hairlineWidth,
