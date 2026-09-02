@@ -30,8 +30,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
  *
  * An account is optional, and this screen says so rather than presenting sign-in as a
  * gate. Everything in the app works before you ever reach here, which is why the signed-out
- * state shows the sign-in form and the collection stats side by side: the collection is
- * already yours.
+ * state puts the collection stats directly under the ways in: the numbers are read from
+ * the local store, so they are the same numbers an account would show, and they are there
+ * before any account exists.
  */
 export function AccountScreen() {
   const logic = useAccountLogic();
@@ -61,20 +62,14 @@ export function AccountScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      {/*
-       * The keyboard is part of this screen in a way it is not on the others: signed out,
-       * the whole tab is a form. Without an inset for it the fields below the fold cannot
-       * be reached at all — the content is there, and the one gesture that would bring it
-       * up is the one the keyboard is sitting on.
-       */}
       <ScrollView
         contentContainerStyle={styles.body}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
-        automaticallyAdjustKeyboardInsets
         /*
-         * Signed out this tab is a form, and a form has nothing to pull down for: the
-         * gesture would only fight the keyboard for the same drag.
+         * Signed out there is nothing here the server could tell us that a pull would
+         * fetch: the buttons are the buttons, and the numbers under them come out of the
+         * local store, which a sync cannot change while there is no account to sync with.
          */
         refreshControl={
           logic.user === null ? undefined : (

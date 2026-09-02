@@ -562,9 +562,8 @@ const enCommon = {
     signOutEverywhereBody: "Ends the session on every device, this one included.",
     signOutEverywhereFailed:
       "That did not reach the server. This phone is signed out; the others may not be.",
-    useWithout: "Use it without an account",
-    useWithoutBody: "Your collection stays on this device. Add an account later to back it up.",
-    skipRegister: "Skip and keep it on this device",
+    withEmail: "Sign in with e-mail",
+    createWithEmail: "Create one with e-mail",
     syncing: "Your collection syncs across your devices.",
     error: {
       badCredentials: "That e-mail address and password do not match.",
@@ -1727,10 +1726,8 @@ const deCommon: CommonSchema = {
     signOutEverywhereBody: "Beendet die Sitzung auf jedem Gerät, dieses eingeschlossen.",
     signOutEverywhereFailed:
       "Das hat den Server nicht erreicht. Dieses Telefon ist abgemeldet, die anderen vielleicht nicht.",
-    useWithout: "Ohne Konto benutzen",
-    useWithoutBody:
-      "Deine Sammlung bleibt auf diesem Gerät. Ein Konto kannst du später zum Sichern anlegen.",
-    skipRegister: "Überspringen und auf diesem Gerät behalten",
+    withEmail: "Mit E-Mail anmelden",
+    createWithEmail: "Konto mit E-Mail erstellen",
     syncing: "Deine Sammlung wird zwischen deinen Geräten synchronisiert.",
     error: {
       badCredentials: "E-Mail-Adresse und Passwort passen nicht zusammen.",
