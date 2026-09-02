@@ -1,3 +1,4 @@
+import { CoverPlaceholder } from "@/components/CoverPlaceholder";
 import { FormatThumb } from "@/components/FormatThumb";
 import { usePulse } from "@/components/Skeleton";
 import type { Format } from "@janne6565/rekordo-shared";
@@ -52,7 +53,7 @@ export function ReleaseArt({
   previewUri = null,
   allowCatalogArt = true,
   format,
-  placeholder = "format",
+  placeholder = "sleeve",
 }: {
   readonly release: CoverSubject | undefined;
   readonly style?: ArtStyle;
@@ -89,15 +90,17 @@ export function ReleaseArt({
   /**
    * What the `bleed` hero draws when there is no picture at all.
    *
-   * "format" is the silhouette, which on an item detail is the answer: it says what is on
-   * the shelf when there is nothing to show of it. "plain" is the quiet ground, for a
-   * hero whose surroundings already say the format in words — a shared sheet names it in
-   * the facts grid, so drawing a vinyl the width of the sheet on top of that is furniture
-   * repeating what is written directly underneath it.
+   * "sleeve" is an empty sleeve filling the frame a cover would have filled — see
+   * {@link CoverPlaceholder}. "plain" is the quiet ground, for a hero whose surroundings
+   * already say the format in words *and* that has no business pretending a record was
+   * photographed: a shared sheet is somebody else's shelf, and an embossed sleeve there
+   * would look like a picture of their copy.
    *
-   * Ignored by `sleeve`, whose whole subject is the silhouette.
+   * Ignored by `sleeve` the *variant*, whose whole subject is the format silhouette. The
+   * two names are unrelated: in a grid tile the silhouette is the only thing that can say
+   * what a 44px square is, and it stays there.
    */
-  readonly placeholder?: "format" | "plain";
+  readonly placeholder?: "sleeve" | "plain";
 }) {
   const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
   // A set rather than one URL: with a preview there are two addresses in play, and
@@ -195,19 +198,17 @@ export function ReleaseArt({
        * its own or the whole thing quietly disappears.
        */
       <View style={[styles.frame, styles.bleed, style]}>
-        {gone && !waiting && placeholder === "format" ? (
+        {gone && !waiting && placeholder === "sleeve" ? (
           /*
            * Nothing is coming — and known to be, which is why the release has to be
-           * resolved for this branch: a silhouette is a statement about what is on the
-           * shelf, and stating it before the row has arrived means saying "vinyl, no
-           * picture" about a record whose picture is one read away.
+           * resolved for this branch: an empty sleeve is a statement that this record has
+           * no picture, and making it before the catalogue row has arrived means saying so
+           * about a record whose cover is one read away.
            *
-           * The silhouette is the answer, not a wait. This is the one
-           * place it still belongs in the hero -- it says what is on the shelf when there
-           * is no picture of it. A caller whose layout already says the format in words
-           * asks for "plain" instead and gets the ground below.
+           * Full bleed and square, exactly the frame a cover would have taken, so the
+           * header does not change shape depending on whether the archive had artwork.
            */
-          <FormatThumb format={format ?? release?.format ?? "OTHER"} />
+          <CoverPlaceholder />
         ) : (
           /*
            * A plain ground while the cover is on its way. The hero is edge to edge, and a

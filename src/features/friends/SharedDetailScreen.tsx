@@ -156,10 +156,11 @@ export function SharedDetailScreen({
             previewUri={previewUri}
             variant="bleed"
             /*
-             * No silhouette up here. The grid directly below names the format in words --
-             * "Vinyl", or "Wanted: Vinyl" -- so a record drawn the width of the sheet only
-             * repeats it as furniture, and on a record with no picture that furniture is
-             * the whole header.
+             * The quiet ground up here, not the empty sleeve the item detail draws. That
+             * one says "this record of mine has no picture", which is a thing to say about
+             * your own copy; on somebody else's shelf a sleeve rendered the width of the
+             * sheet reads as a photograph of *their* copy. The grid directly below names
+             * the format in words anyway -- "Vinyl", or "Wanted: Vinyl".
              */
             placeholder="plain"
           />

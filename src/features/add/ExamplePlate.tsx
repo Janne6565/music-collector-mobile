@@ -141,8 +141,9 @@ function ExampleTile({
           for an album that has no one format to lean out of. `bleed` is the edge-to-edge
           frame, and it carries the square itself.
 
-          `plain` with it, so a record with no art stays a quiet ground rather than growing
-          a format silhouette this tile has no business claiming.
+          `plain` with it, so an album with no art stays a quiet ground: the empty sleeve
+          the item detail draws is a statement about one physical copy, and this plate is
+          standing for an album nobody necessarily owns.
         */}
         <ReleaseArt release={{ coverArtUrl: cover }} variant="bleed" placeholder="plain" />
         {/* The wait sits on the sleeve that caused it, so a slow mirror never leaves the
