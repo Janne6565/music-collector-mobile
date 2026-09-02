@@ -502,7 +502,10 @@ const enCommon = {
     paid: "Paid",
     bought: "Bought",
     where: "Where",
-    edit: "Edit copy",
+    /* Just the verb: the pill sits on the copy's own sleeve, so "copy" is said by the
+       place it is in. The fuller phrase is still the button's accessibility label. */
+    edit: "Edit",
+    editLabel: "Edit this copy",
     rating: "Rating",
     notes: "Notes",
     notesEmpty: "No notes yet.",
@@ -1660,7 +1663,8 @@ const deCommon: CommonSchema = {
     paid: "Bezahlt",
     bought: "Gekauft",
     where: "Wo",
-    edit: "Exemplar bearbeiten",
+    edit: "Bearbeiten",
+    editLabel: "Dieses Exemplar bearbeiten",
     rating: "Bewertung",
     notes: "Notizen",
     notesEmpty: "Noch keine Notizen.",

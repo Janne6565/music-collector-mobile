@@ -1,5 +1,5 @@
 import { ReleaseArt } from "@/components/ReleaseArt";
-import { CopyEditor } from "@/features/detail/CopyEditor";
+import { InlineCopyEditor } from "@/features/detail/CopyEditor";
 import { useStore } from "@/local/StoreProvider";
 import { useAppSelector } from "@/store/hooks";
 import { colors, fonts } from "@/theme/colors";
@@ -130,7 +130,7 @@ export function DetailsRunScreen() {
 
         {/* Keyed on the copy so moving to the next one starts a fresh form rather than
             carrying the last record's grades into it. */}
-        <CopyEditor
+        <InlineCopyEditor
           key={copy.id}
           copy={copy}
           catalogFormat={release?.format}

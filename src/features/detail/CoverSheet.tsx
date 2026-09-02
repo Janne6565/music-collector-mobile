@@ -5,6 +5,8 @@ import { useTranslation } from "react-i18next";
 import {
   Animated,
   type GestureResponderHandlers,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   StyleSheet,
   useWindowDimensions,
@@ -40,6 +42,9 @@ export function CoverSheet({
   onClose,
   fade,
   handlers,
+  action,
+  footer,
+  parked = false,
   children,
 }: {
   readonly art: ReactNode;
@@ -49,6 +54,30 @@ export function CoverSheet({
   readonly fade?: Animated.Value;
   /** A pan responder's handlers, when the caller has neighbours to move between. */
   readonly handlers?: GestureResponderHandlers;
+  /**
+   * What sits opposite the way out, on the sleeve itself.
+   *
+   * Turn 2a puts Edit here rather than in the body, so the page opens on the record's own
+   * facts instead of on a button, and the one thing you can do to it is reachable however
+   * far down you have read — the same argument that keeps the X outside the scroll.
+   */
+  readonly action?: ReactNode;
+  /**
+   * A bar pinned under the scroll, for a mode that has to be finished or abandoned.
+   *
+   * A sibling of the list rather than a layer over it, so its height is taken out of the
+   * scroll rather than covering the last field, and so the keyboard pushes it up instead
+   * of burying it.
+   */
+  readonly footer?: ReactNode;
+  /**
+   * Hold the sleeve at the band it would end up as, and start the body under it.
+   *
+   * The editor is drawn on a page that has already read itself: the sleeve is a strip that
+   * names the record and nothing more, which is exactly the state this frame collapses to
+   * on its own. So it is the same shell parked at that end rather than a second one.
+   */
+  readonly parked?: boolean;
   readonly children: ReactNode;
 }) {
   const { t } = useTranslation();
@@ -99,6 +128,20 @@ export function CoverSheet({
    */
   const stretchY = scrollY.interpolate({ ...pull, outputRange: [coverMax / 2, 0] });
 
+  const scroll = (
+    <Animated.ScrollView
+      style={styles.fill}
+      contentContainerStyle={[styles.scroll, { paddingTop: parked ? COVER_MIN : coverMax }]}
+      scrollEventThrottle={16}
+      keyboardShouldPersistTaps="handled"
+      onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+        useNativeDriver: true,
+      })}
+    >
+      {children}
+    </Animated.ScrollView>
+  );
+
   return (
     // No background of its own: the layers behind it own the colour, which is what lets a
     // wash run underneath while this stays put.
@@ -106,15 +149,20 @@ export function CoverSheet({
       style={[styles.root, fade === undefined ? null : { opacity: fade }]}
       {...handlers}
     >
-      <Animated.ScrollView
-        contentContainerStyle={[styles.scroll, { paddingTop: coverMax }]}
-        scrollEventThrottle={16}
-        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
-          useNativeDriver: true,
-        })}
-      >
-        {children}
-      </Animated.ScrollView>
+      {footer === undefined ? (
+        scroll
+      ) : (
+        // Only where there is a bar to keep above the keyboard. Android resizes the window
+        // itself; on iOS nothing does, and a Save button under the keyboard is a Save
+        // button you have to dismiss the keyboard to find.
+        <KeyboardAvoidingView
+          style={styles.fill}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+        >
+          {scroll}
+          {footer}
+        </KeyboardAvoidingView>
+      )}
 
       <Animated.View
         pointerEvents="none"
@@ -124,27 +172,38 @@ export function CoverSheet({
             width: coverMax,
             height: coverMax,
             // Only one of these two is ever doing anything: `headerY` is clamped to the
-            // scrolled-down half and the stretch to the pulled-past-the-top half.
-            transform: [{ translateY: headerY }, { translateY: stretchY }, { scale: stretch }],
+            // scrolled-down half and the stretch to the pulled-past-the-top half. Parked,
+            // neither is: the band is where it is, and the scroll under it is a form.
+            transform: parked
+              ? [{ translateY: -travel }]
+              : [{ translateY: headerY }, { translateY: stretchY }, { scale: stretch }],
           },
         ]}
       >
         {/* Explicitly square rather than left to work itself out: everything inside is
             absolutely positioned, and a box that is not definite on its own collapses. */}
         <Animated.View
-          style={{ width: coverMax, height: coverMax, transform: [{ translateY: imageY }] }}
+          style={{
+            width: coverMax,
+            height: coverMax,
+            transform: [{ translateY: parked ? travel / 2 : imageY }],
+          }}
         >
           {art}
         </Animated.View>
 
         <Animated.View
           pointerEvents="none"
-          style={[StyleSheet.absoluteFill, { backgroundColor: chrome.background, opacity: veil }]}
+          style={[
+            StyleSheet.absoluteFill,
+            { backgroundColor: chrome.background, opacity: parked ? VEIL : veil },
+          ]}
         />
       </Animated.View>
 
       {/* Outside the scroll view entirely: it is the way out, and a way out that scrolls
-          away is one you have to go looking for. */}
+          away is one you have to go looking for. What sits opposite it is there for the
+          same reason. */}
       <SafeAreaView style={styles.backWrap} edges={["top"]} pointerEvents="box-none">
         <Pressable
           accessibilityRole="button"
@@ -154,6 +213,7 @@ export function CoverSheet({
         >
           <X size={18} color={chrome.ink} strokeWidth={1.75} />
         </Pressable>
+        {action}
       </SafeAreaView>
     </Animated.View>
   );
@@ -161,9 +221,18 @@ export function CoverSheet({
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  fill: { flex: 1 },
   scroll: { paddingBottom: 40 },
   pinnedCover: { position: "absolute", left: 0, top: 0, overflow: "hidden" },
-  backWrap: { position: "absolute", left: 18, right: 18, top: 0, alignItems: "flex-start" },
+  backWrap: {
+    position: "absolute",
+    left: 18,
+    right: 18,
+    top: 0,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+  },
   back: {
     width: 34,
     height: 34,

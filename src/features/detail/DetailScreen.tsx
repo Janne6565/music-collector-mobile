@@ -153,21 +153,59 @@ function DetailBody({
   // and it only claims clearly horizontal ones.
   const swipe = useCopySwipe(copy.id);
 
+  const art = (
+    <ReleaseArt
+      release={release}
+      format={copyFormat(copy, release)}
+      style={styles.coverImage}
+      variant="bleed"
+      previewUri={copyPreviewSrc(copy, photos.firstUri)}
+      allowCatalogArt={copy.catalogArt !== "HIDDEN"}
+    />
+  );
+
+  /*
+   * 2a: editing is a mode with its own frame, not a block that unfolds inside this one.
+   * Everything below is a record being read — the sleeve at full size, the photographs,
+   * the tracklist, the way to throw it away — and none of it is being edited.
+   */
+  if (editing) {
+    return (
+      <CopyEditor
+        copy={copy}
+        release={release}
+        art={art}
+        chrome={chrome}
+        saving={logic.saving}
+        onSave={(patch) => {
+          logic.save(patch);
+          setEditing(false);
+        }}
+        onCancel={() => setEditing(false)}
+      />
+    );
+  }
+
   return (
     <CoverSheet
       chrome={chrome}
       onClose={() => router.back()}
       fade={swipe.fade}
       handlers={swipe.handlers}
-      art={
-        <ReleaseArt
-          release={release}
-          format={copyFormat(copy, release)}
-          style={styles.coverImage}
-          variant="bleed"
-          previewUri={copyPreviewSrc(copy, photos.firstUri)}
-          allowCatalogArt={copy.catalogArt !== "HIDDEN"}
-        />
+      art={art}
+      action={
+        /* On the sleeve, opposite the way out, so the page starts with the record's own
+           facts instead of with a button — and so the one thing you can do to it is still
+           to hand however far down you have read. */
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t("detail.editLabel")}
+          onPress={() => setEditing(true)}
+          style={[styles.edit, { backgroundColor: chrome.ink }]}
+        >
+          <Pencil size={14} color={chrome.background} strokeWidth={1.75} />
+          <Text style={[styles.editText, { color: chrome.background }]}>{t("detail.edit")}</Text>
+        </Pressable>
       }
     >
       <View style={styles.body}>
@@ -208,33 +246,7 @@ function DetailBody({
           ))}
         </Animated.View>
 
-        {editing ? (
-          <CopyEditor
-            copy={copy}
-            catalogFormat={release?.format}
-            chrome={chrome}
-            saving={logic.saving}
-            onSave={(patch) => {
-              logic.save(patch);
-              setEditing(false);
-            }}
-            onCancel={() => setEditing(false)}
-          />
-        ) : (
-          <>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => setEditing(true)}
-              style={[styles.edit, { backgroundColor: chrome.ink }]}
-            >
-              <Pencil size={15} color={chrome.background} strokeWidth={1.75} />
-              <Text style={[styles.editText, { color: chrome.background }]}>
-                {t("detail.edit")}
-              </Text>
-            </Pressable>
-            <Fields copy={copy} chrome={chrome} />
-          </>
-        )}
+        <Fields copy={copy} chrome={chrome} />
 
         <PhotoStrip logic={photos} chrome={chrome} hasCatalogArt={release?.coverArtUrl != null} />
 
@@ -432,12 +444,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-    height: 46,
+    gap: 7,
+    height: 34,
+    paddingHorizontal: 13,
     borderRadius: 999,
-    marginTop: 22,
+    marginTop: 8,
   },
-  editText: { fontSize: 14, fontWeight: "600" },
+  editText: { fontSize: 12.5, fontWeight: "600" },
   fields: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 24 },
   card: { borderRadius: 10, padding: 14 },
   fieldCard: { width: "47%" },

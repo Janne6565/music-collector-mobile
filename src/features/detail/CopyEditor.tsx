@@ -1,6 +1,14 @@
 import { CHOOSABLE_FORMATS } from "@/domain/formats";
+import { CoverSheet } from "@/features/detail/CoverSheet";
 import { fonts } from "@/theme/colors";
-import type { Condition, Copy, CopyPatch, DetailChrome, Format } from "@janne6565/rekordo-shared";
+import type {
+  Condition,
+  Copy,
+  CopyPatch,
+  DetailChrome,
+  Format,
+  Release,
+} from "@janne6565/rekordo-shared";
 import {
   CONDITIONS,
   CONDITION_SHORT,
@@ -8,6 +16,7 @@ import {
   useCopyEditorLogic,
 } from "@janne6565/rekordo-shared";
 import { Eye, EyeOff, Star } from "lucide-react-native";
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
@@ -18,7 +27,114 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
 interface CopyEditorProps {
+  readonly copy: Copy;
+  readonly release: Release | undefined;
+  /** The sleeve, which the frame keeps as a band above the form. */
+  readonly art: ReactNode;
+  readonly chrome: DetailChrome;
+  readonly saving: boolean;
+  readonly onSave: (patch: CopyPatch) => void;
+  readonly onCancel: () => void;
+}
+
+/**
+ * Editing a copy — what you paid, its condition, where it came from. Turn 2a.
+ *
+ * A mode with its own frame rather than a block that unfolds inside the read page. The
+ * page it replaces is a record being read: a sleeve the size of the screen, the facts, the
+ * photographs, the tracklist, the way to throw it away. None of that is being edited, and
+ * leaving it on screen under the form made the two Save buttons at the bottom look like
+ * the end of the page rather than the end of the mode.
+ *
+ * So the sleeve is parked at the band it collapses to anyway, the record is named once in
+ * a line, and Save and Cancel are pinned where they can be reached from any field.
+ *
+ * It owns `useCopyEditorLogic`, and therefore mounts only while editing: the fields are
+ * seeded from the copy once, so a form kept alive behind a read page would be editing
+ * whatever the copy was when the page opened.
+ *
+ * There is no swipe to a neighbouring copy here. On the read page that gesture is how you
+ * move along the shelf; over a form with unsaved changes it is how you lose them.
+ */
+export function CopyEditor({
+  copy,
+  release,
+  art,
+  chrome,
+  saving,
+  onSave,
+  onCancel,
+}: CopyEditorProps) {
+  const { t } = useTranslation();
+  const editor = useCopyEditorLogic(copy, onSave, release?.format);
+
+  const leave = () => {
+    editor.reset();
+    onCancel();
+  };
+
+  return (
+    <CoverSheet
+      parked
+      art={art}
+      chrome={chrome}
+      onClose={leave}
+      footer={
+        // Cancel on the left, where the way out has been all along — the X above it is in
+        // the same column. Save takes the rest of the bar because it is the one you mean.
+        <SafeAreaView
+          edges={["bottom"]}
+          style={[styles.bar, { backgroundColor: chrome.background, borderTopColor: chrome.line }]}
+        >
+          <View style={styles.barRow}>
+            <CopyEditorActions editor={editor} chrome={chrome} saving={saving} onCancel={leave} />
+          </View>
+        </SafeAreaView>
+      }
+    >
+      <View style={styles.root}>
+        {/* The record, named once and on one line. The read page gives it a serif line of
+            its own over a sleeve the size of the screen; here it is a caption on a form. */}
+        <View style={styles.heading}>
+          <Text style={[styles.headingTitle, { color: chrome.ink }]} numberOfLines={1}>
+            {release?.title ?? t("conflict.untitled")}
+          </Text>
+          <Text style={[styles.headingMeta, { color: chrome.muted }]} numberOfLines={1}>
+            {release?.artistName}
+            {release?.year == null ? "" : ` · ${release.year}`}
+          </Text>
+        </View>
+
+        <CopyEditorFields
+          editor={editor}
+          copy={copy}
+          chrome={chrome}
+          saving={saving}
+          onSave={onSave}
+        />
+      </View>
+    </CoverSheet>
+  );
+}
+
+/**
+ * The same form without a frame — the add flow's run through the copies it just saved,
+ * which supplies its own header, its own position counter and its own way to skip.
+ *
+ * Keeps the buttons in the body, because there they are the end of one record's form and
+ * the way on to the next, not the end of a mode.
+ */
+export function InlineCopyEditor({
+  copy,
+  catalogFormat,
+  chrome,
+  saving,
+  onSave,
+  onCancel,
+}: {
   readonly copy: Copy;
   /** What the archive says this pressing is, so the chips start where it stands. */
   readonly catalogFormat?: Format;
@@ -26,24 +142,55 @@ interface CopyEditorProps {
   readonly saving: boolean;
   readonly onSave: (patch: CopyPatch) => void;
   readonly onCancel: () => void;
-}
-
-/** Editing a copy — what you paid, its condition, where it came from. */
-export function CopyEditor({
-  copy,
-  catalogFormat,
-  chrome,
-  saving,
-  onSave,
-  onCancel,
-}: CopyEditorProps) {
-  const { t } = useTranslation();
+}) {
   const editor = useCopyEditorLogic(copy, onSave, catalogFormat);
 
   return (
-    <View style={styles.root}>
+    <View style={styles.inlineRoot}>
+      <CopyEditorFields
+        editor={editor}
+        copy={copy}
+        chrome={chrome}
+        saving={saving}
+        onSave={onSave}
+      />
+      <View style={styles.inlineActions}>
+        <CopyEditorActions
+          editor={editor}
+          chrome={chrome}
+          saving={saving}
+          onCancel={() => {
+            editor.reset();
+            onCancel();
+          }}
+        />
+      </View>
+    </View>
+  );
+}
+
+type Editor = ReturnType<typeof useCopyEditorLogic>;
+
+/** Every field a copy has, and nothing about where they are drawn. */
+function CopyEditorFields({
+  editor,
+  copy,
+  chrome,
+  saving,
+  onSave,
+}: {
+  readonly editor: Editor;
+  readonly copy: Copy;
+  readonly chrome: DetailChrome;
+  readonly saving: boolean;
+  readonly onSave: (patch: CopyPatch) => void;
+}) {
+  const { t } = useTranslation();
+
+  return (
+    <>
       {/* Only a hand-entered copy carries the pressing's own facts, and only it can correct
-          them — no archive is ever going to fix a typo in a bootleg nobody has listed. */}
+        them — no archive is ever going to fix a typo in a bootleg nobody has listed. */}
       {editor.manual && (
         <>
           <Labelled label={t("manual.artist")} chrome={chrome}>
@@ -88,13 +235,13 @@ export function CopyEditor({
       )}
 
       {/* Outside the block above: every copy may say what it is. The archive answers for
-          the pressing, but what is on your shelf can be a tape of a record it only lists
-          as vinyl — and picking the catalogue's format again puts the copy back to
-          following it.
+        the pressing, but what is on your shelf can be a tape of a record it only lists
+        as vinyl — and picking the catalogue's format again puts the copy back to
+        following it.
 
-          Four chips, never five: `OTHER` is what `copyFormat` answers when nothing has
-          said yet, not something to choose. A copy sitting at it lights nothing here,
-          which reads as the question it is. */}
+        Four chips, never five: `OTHER` is what `copyFormat` answers when nothing has said
+        yet, not something to choose. A copy sitting at it lights nothing here, which reads
+        as the question it is. */}
       <Text style={[styles.legend, { color: chrome.muted }]}>{t("manual.format")}</Text>
       <ScrollView
         horizontal
@@ -119,8 +266,8 @@ export function CopyEditor({
         onChange={(value) => editor.set("condition", value)}
       />
       {/* Two grades, not one: sellers list the record and its jacket separately, and a
-          near-mint pressing in a ring-worn sleeve is a different object from a near-mint
-          one in a near-mint sleeve. */}
+        near-mint pressing in a ring-worn sleeve is a different object from a near-mint
+        one in a near-mint sleeve. */}
       <GradeRow
         label={t("detail.sleeveCondition")}
         value={editor.fields.sleeveCondition}
@@ -205,10 +352,10 @@ export function CopyEditor({
       </Labelled>
 
       {/*
-        Hiding is written straight through rather than waiting for Save. It is not an edit
-        to the record's facts, it is a decision about who may see it, and a privacy switch
-        that only takes effect once you remember to press Save is the wrong kind of switch.
-      */}
+      Hiding is written straight through rather than waiting for Save. It is not an edit
+      to the record's facts, it is a decision about who may see it, and a privacy switch
+      that only takes effect once you remember to press Save is the wrong kind of switch.
+    */}
       <Pressable
         accessibilityRole="switch"
         accessibilityState={{ checked: copy.hidden }}
@@ -225,39 +372,55 @@ export function CopyEditor({
           {copy.hidden ? t("copyEditor.hidden") : t("copyEditor.hide")}
         </Text>
       </Pressable>
+    </>
+  );
+}
 
-      <View style={styles.actions}>
-        <Pressable
-          accessibilityRole="button"
-          onPress={editor.submit}
-          // A hand-entered copy cleared of its artist or title has nothing left to name it.
-          disabled={saving || !editor.canSave}
-          style={[
-            styles.primary,
-            { backgroundColor: chrome.ink },
-            (saving || !editor.canSave) && styles.dim,
-          ]}
-        >
-          {saving ? (
-            <ActivityIndicator size="small" color={chrome.background} />
-          ) : (
-            <Text style={[styles.primaryText, { color: chrome.background }]}>
-              {t("common.save")}
-            </Text>
-          )}
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => {
-            editor.reset();
-            onCancel();
-          }}
-          style={[styles.secondary, { backgroundColor: chrome.surface }]}
-        >
-          <Text style={[styles.secondaryText, { color: chrome.muted }]}>{t("common.cancel")}</Text>
-        </Pressable>
-      </View>
-    </View>
+/**
+ * Cancel and Save, in that order.
+ *
+ * Cancel first because the way out of this screen has been on the left since the X at the
+ * top of it, and Save wide because it is the one you mean. It was the other way round.
+ */
+function CopyEditorActions({
+  editor,
+  chrome,
+  saving,
+  onCancel,
+}: {
+  readonly editor: Editor;
+  readonly chrome: DetailChrome;
+  readonly saving: boolean;
+  readonly onCancel: () => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <>
+      <Pressable
+        accessibilityRole="button"
+        onPress={onCancel}
+        style={[styles.secondary, { backgroundColor: chrome.surface }]}
+      >
+        <Text style={[styles.secondaryText, { color: chrome.muted }]}>{t("common.cancel")}</Text>
+      </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        onPress={editor.submit}
+        // A hand-entered copy cleared of its artist or title has nothing left to name it.
+        disabled={saving || !editor.canSave}
+        style={[
+          styles.primary,
+          { backgroundColor: chrome.ink },
+          (saving || !editor.canSave) && styles.dim,
+        ]}
+      >
+        {saving ? (
+          <ActivityIndicator size="small" color={chrome.background} />
+        ) : (
+          <Text style={[styles.primaryText, { color: chrome.background }]}>{t("common.save")}</Text>
+        )}
+      </Pressable>
+    </>
   );
 }
 
@@ -345,7 +508,12 @@ function Labelled({
 }
 
 const styles = StyleSheet.create({
-  root: { marginTop: 24, gap: 10 },
+  root: { paddingHorizontal: 20, paddingTop: 22, paddingBottom: 24, gap: 10 },
+  heading: { flexDirection: "row", alignItems: "baseline", gap: 8, marginBottom: 10 },
+  headingTitle: { fontFamily: fonts.serif, fontSize: 24, lineHeight: 28, flexShrink: 1 },
+  headingMeta: { fontSize: 12.5, flexShrink: 1 },
+  inlineRoot: { marginTop: 24, gap: 10 },
+  inlineActions: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 4 },
   legend: { fontSize: 9.5, letterSpacing: 0.9, textTransform: "uppercase", fontWeight: "500" },
   chips: { flexDirection: "row", gap: 7, paddingVertical: 8 },
   chip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999 },
@@ -356,7 +524,15 @@ const styles = StyleSheet.create({
   stars: { flexDirection: "row", gap: 6, paddingTop: 2 },
   hideRow: { flexDirection: "row", alignItems: "center", gap: 7, paddingVertical: 12 },
   hideLabel: { fontFamily: fonts.sans, fontSize: 13 },
-  actions: { flexDirection: "row", gap: 10, marginTop: 4 },
+  bar: { borderTopWidth: StyleSheet.hairlineWidth },
+  barRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 14,
+  },
   primary: {
     flex: 1,
     height: 46,
