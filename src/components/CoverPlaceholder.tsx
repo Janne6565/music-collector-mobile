@@ -4,13 +4,15 @@ import { useState } from "react";
 import { type LayoutChangeEvent, StyleSheet, View } from "react-native";
 
 /**
- * What the item detail's hero shows when there is no picture of the record.
+ * What stands where a record's cover would be when there is no picture of it.
  *
- * It occupies exactly the frame a cover would: full bleed, square, cropping under the
- * header as you scroll like any sleeve does. That is the whole point — the header should
+ * One placeholder in every size it is needed: the item detail's hero, where it occupies
+ * exactly the frame a cover would — full bleed, square, cropping under the header as you
+ * scroll like any sleeve does — and the cover panel of a `FormatThumb`, which is the
+ * shelf grid, a friend's grid and every row that draws a record small. The header should
  * not change shape depending on whether the archive happened to have artwork, and a copy
- * with no cover should still look like a record you own rather than like a screen that
- * failed to load.
+ * with no cover should look like a record you own rather than like a tile that failed to
+ * load.
  *
  * The format silhouette used to stand here instead. It is the right answer in a grid tile,
  * where it is the only thing that can say what a 44px square is — but at the width of the
@@ -44,7 +46,7 @@ export function CoverPlaceholder() {
         end={{ x: 0.9, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
-      {width > 0 && (
+      {width >= MIN_MARK_WIDTH && (
         <View style={styles.centre}>
           <Disc3 size={width * MARK_SCALE} color={MARK_INK} strokeWidth={0.7} />
         </View>
@@ -55,6 +57,15 @@ export function CoverPlaceholder() {
 
 /** How much of the frame the embossed disc takes across. */
 const MARK_SCALE = 0.32;
+
+/**
+ * Below this the mark is left off and the sleeve is paper alone.
+ *
+ * At the 40px panel of a conflict row the emboss is four grey pixels arguing with the
+ * silhouette leaning out beside it. Paper on its own still reads as an empty sleeve there,
+ * and the format mark is doing the talking at that size anyway.
+ */
+const MIN_MARK_WIDTH = 52;
 
 /**
  * Faint on purpose.

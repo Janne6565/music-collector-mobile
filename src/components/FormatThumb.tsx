@@ -1,3 +1,4 @@
+import { CoverPlaceholder } from "@/components/CoverPlaceholder";
 import { usePulse } from "@/components/Skeleton";
 import type { Format } from "@janne6565/rekordo-shared";
 import { LinearGradient } from "expo-linear-gradient";
@@ -58,7 +59,7 @@ export function FormatThumb({
       {/* `OTHER` leans nothing out. It is not a format but the absence of one — the answer
           for a copy whose release this device cannot describe yet — so there is no object
           to draw. A bare cover is what "not known" actually looks like. */}
-      <Cover cover={cover} />
+      <Cover cover={cover} waiting={waiting} />
     </Animated.View>
   );
 }
@@ -72,11 +73,27 @@ export function FormatThumb({
  * artwork would swallow it. The clip is a child of the shadow-caster rather than the same
  * view, because iOS draws no shadow on a view that clips its own contents.
  */
-function Cover({ cover }: { readonly cover?: ReactNode }) {
+function Cover({ cover, waiting }: { readonly cover?: ReactNode; readonly waiting?: boolean }) {
+  /*
+   * With no artwork the panel is the same empty sleeve the item detail's hero draws, at
+   * tile size — paper catching light with the disc pressed faintly into it. It used to be
+   * a flat fill, which on a shelf of records nobody has photographed read as a grid of
+   * blank swatches rather than as a grid of covers not yet taken.
+   *
+   * Not while a cover is still on its way, though. The whole mark is breathing then, and
+   * an "empty sleeve" that pulses is promising a picture and denying one in the same
+   * frame.
+   */
+  const empty = cover == null && waiting !== true;
+
   return (
     <View style={styles.cover}>
       <View style={styles.coverClip}>
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: PAPER }]} />
+        {empty ? (
+          <CoverPlaceholder />
+        ) : (
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: PAPER }]} />
+        )}
         {cover}
         <View pointerEvents="none" style={styles.coverEdge} />
       </View>
