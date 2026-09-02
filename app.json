@@ -3,7 +3,7 @@
     "name": "Rekordo",
     "slug": "music-collector",
     "scheme": "musiccollector",
-    "version": "1.20.0",
+    "version": "1.20.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
