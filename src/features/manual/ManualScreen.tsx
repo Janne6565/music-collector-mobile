@@ -1,7 +1,8 @@
+import { CHOOSABLE_FORMATS } from "@/domain/formats";
 import { useManualEntryLogic } from "@/features/manual/useManualEntryLogic";
 import { colors } from "@/theme/colors";
 import type { Format } from "@janne6565/rekordo-shared";
-import { FORMATS, FORMAT_LABELS, formatBarcode } from "@janne6565/rekordo-shared";
+import { FORMAT_LABELS, formatBarcode } from "@janne6565/rekordo-shared";
 import { useRouter } from "expo-router";
 import { Camera, ImagePlus, LibraryBig, ScanBarcode, X } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
@@ -210,7 +211,7 @@ export function ManualScreen({ barcode = "" }: { readonly barcode?: string } = {
           <View style={styles.formatBlock}>
             <Text style={styles.eyebrow}>{t("manual.format")}</Text>
             <View style={styles.chips}>
-              {FORMATS.map((format) => (
+              {CHOOSABLE_FORMATS.map((format) => (
                 <FormatChip
                   key={format}
                   format={format}

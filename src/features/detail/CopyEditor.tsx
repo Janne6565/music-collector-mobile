@@ -1,9 +1,9 @@
+import { CHOOSABLE_FORMATS } from "@/domain/formats";
 import { fonts } from "@/theme/colors";
 import type { Condition, Copy, CopyPatch, DetailChrome, Format } from "@janne6565/rekordo-shared";
 import {
   CONDITIONS,
   CONDITION_SHORT,
-  FORMATS,
   FORMAT_LABELS,
   useCopyEditorLogic,
 } from "@janne6565/rekordo-shared";
@@ -90,14 +90,18 @@ export function CopyEditor({
       {/* Outside the block above: every copy may say what it is. The archive answers for
           the pressing, but what is on your shelf can be a tape of a record it only lists
           as vinyl — and picking the catalogue's format again puts the copy back to
-          following it. */}
+          following it.
+
+          Four chips, never five: `OTHER` is what `copyFormat` answers when nothing has
+          said yet, not something to choose. A copy sitting at it lights nothing here,
+          which reads as the question it is. */}
       <Text style={[styles.legend, { color: chrome.muted }]}>{t("manual.format")}</Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.chips}
       >
-        {FORMATS.map((format) => (
+        {CHOOSABLE_FORMATS.map((format) => (
           <Chip
             key={format}
             label={FORMAT_LABELS[format]}

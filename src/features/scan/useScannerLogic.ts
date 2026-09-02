@@ -1,4 +1,5 @@
 import { lookupByBarcode, lookupPressings } from "@/api/releases";
+import { CHOOSABLE_FORMATS } from "@/domain/formats";
 import { useStore } from "@/local/StoreProvider";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { type KeptScan, type ScanDestination, scanActions } from "@/store/scanSlice";
@@ -53,7 +54,7 @@ const SAME_CODE_COOLDOWN_MS = 2500;
 const ADVICE_AFTER_MS = 6000;
 
 /** The formats a confirm card offers. `OTHER` is a catalogue answer, never a choice. */
-export const SCAN_FORMATS: readonly Format[] = ["VINYL", "CD", "CASSETTE", "DIGITAL"];
+export const SCAN_FORMATS = CHOOSABLE_FORMATS;
 
 export function useScannerLogic() {
   const { store } = useStore();
