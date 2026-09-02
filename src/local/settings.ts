@@ -34,15 +34,6 @@ const WISHLIST_SORT = "wishlistSort";
 const DOCUMENT_LANGUAGE = "documentLanguage";
 
 /**
- * Whether the local-only notice (17b) has been read on this device.
- *
- * It is shown once, on the way past the sign-in screen without an account. Showing it every
- * time would turn a disclosure into an obstacle, and the same text stays reachable from the
- * Datenschutzerklärung afterwards.
- */
-const LOCAL_ONLY_NOTICE_SEEN = "localOnlyNoticeSeen";
-
-/**
  * What the last sync was unable to describe.
  *
  * Sync moves copies, not the catalogue behind them, so a device that has just signed in
@@ -313,14 +304,6 @@ export async function readCatalogueGap(store: LocalStore): Promise<CatalogueGap>
 
 export async function writeCatalogueGap(store: LocalStore, gap: CatalogueGap): Promise<void> {
   await store.writeSetting(CATALOGUE_GAP, JSON.stringify(gap));
-}
-
-export async function readLocalOnlyNoticeSeen(store: LocalStore): Promise<boolean> {
-  return (await store.readSetting(LOCAL_ONLY_NOTICE_SEEN)) === "true";
-}
-
-export async function markLocalOnlyNoticeSeen(store: LocalStore): Promise<void> {
-  await store.writeSetting(LOCAL_ONLY_NOTICE_SEEN, "true");
 }
 
 const APP_LANGUAGE = "appLanguage";

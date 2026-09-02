@@ -908,26 +908,6 @@ const enCommon = {
       keep: "Keep my account",
     },
   },
-  localOnly: {
-    title: "Staying on this device",
-    lede: "No account, no server. Here is exactly what that means.",
-    stays: {
-      title: "Your collection stays here",
-      body: "Items, photos, prices and notes are stored in this app's own storage. We never see them.",
-    },
-    lookups: {
-      title: "Catalog lookups leave the device",
-      body: "Searching a release or scanning a barcode sends the query and your IP address to MusicBrainz and Discogs. Skip it by entering copies by hand.",
-    },
-    delete: {
-      title: "Delete the app, lose the shelf",
-      body: "There is no backup without an account. You can export a file at any time from the You tab.",
-    },
-    tdddg:
-      "Local storage in this mode is technically necessary for the app to work, so it needs no consent (§ 25 Abs. 2 TDDDG). Details in the Datenschutzerklärung.",
-    start: "Start collecting",
-    createInstead: "Create an account instead",
-  },
   notifications: {
     title: "Notifications",
     rowBody: "What may reach you outside the app.",
@@ -2078,26 +2058,6 @@ const deCommon: CommonSchema = {
       confirm: "Konto endgültig löschen",
       keep: "Konto behalten",
     },
-  },
-  localOnly: {
-    title: "Bleibt auf diesem Gerät",
-    lede: "Kein Konto, kein Server. Was das genau heißt:",
-    stays: {
-      title: "Deine Sammlung bleibt hier",
-      body: "Exemplare, Fotos, Preise und Notizen liegen im Speicher dieser App. Wir sehen sie nie.",
-    },
-    lookups: {
-      title: "Katalogabfragen verlassen das Gerät",
-      body: "Bei Suche und Barcode-Scan gehen Suchbegriff und IP-Adresse an MusicBrainz und Discogs. Wer das vermeiden will, legt Exemplare von Hand an.",
-    },
-    delete: {
-      title: "App gelöscht, Sammlung weg",
-      body: "Ohne Konto gibt es kein Backup. Du kannst jederzeit im Du-Tab eine Datei exportieren.",
-    },
-    tdddg:
-      "Die lokale Speicherung ist in diesem Modus technisch erforderlich und daher einwilligungsfrei (§ 25 Abs. 2 TDDDG). Details in der Datenschutzerklärung.",
-    start: "Los geht's",
-    createInstead: "Doch ein Konto anlegen",
   },
   notifications: {
     title: "Benachrichtigungen",
