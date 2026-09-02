@@ -24,6 +24,8 @@ function PhotoThumb({ uri, chrome }: { readonly uri: string; readonly chrome: De
    * fire that without ever firing `onLoad` again, and the tile then stays at zero opacity
    * for good: a photo that is present, loaded, and invisible.
    */
+  // Keyed on `uri` and not reading it, exactly as ReleaseArt resets the same way.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on the uri, see above.
   useEffect(() => {
     reveal.setValue(0);
   }, [uri, reveal]);

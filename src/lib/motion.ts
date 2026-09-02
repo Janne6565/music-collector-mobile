@@ -69,6 +69,9 @@ export function useCross(key: string): Animated.Value {
   const opacity = useRef(new Animated.Value(1)).current;
   const reduced = useReducedMotion();
 
+  // `key` is the whole input: a Cross is replayed *because* the key changed, so the body
+  // has no need to read it and every need to be re-run by it.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on the key, see above.
   useEffect(() => {
     opacity.setValue(0);
     Animated.timing(opacity, {

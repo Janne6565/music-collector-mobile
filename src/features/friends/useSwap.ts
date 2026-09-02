@@ -22,6 +22,9 @@ export function useSwap<T>(value: T, { out = 110, into = 190 } = {}) {
   const latest = useRef(value);
   latest.current = value;
 
+  // `value` is read through `latest` on purpose (see above) but still has to *trigger* the
+  // fade, so it stays in the list without appearing in the body.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on the value, see above.
   useEffect(() => {
     if (Object.is(shown, latest.current)) return;
     Animated.timing(opacity, { toValue: 0, duration: out, useNativeDriver: true }).start(

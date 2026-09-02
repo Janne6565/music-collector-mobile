@@ -170,6 +170,8 @@ export function ReleaseArt({
    * Keyed on the URL, so a component handed a second release still hides the old cover
    * the instant the source swaps rather than flashing it at full opacity.
    */
+  // The body does not read `url` because its whole job is to run again when `url` changes.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on the url, see above.
   useEffect(() => {
     reveal.setValue(0);
   }, [url, reveal]);

@@ -156,7 +156,20 @@ export function useAccountLogic() {
     } finally {
       setBusy(false);
     }
-  }, [mode, email, password, displayName, rememberMe, decideFirstSync, dispatch]);
+  }, [
+    mode,
+    email,
+    password,
+    displayName,
+    rememberMe,
+    // Read straight into `createAccount`, and they were missing here: the closure only
+    // refreshed when one of the fields above changed, so ticking the two boxes *last* —
+    // which is the order the form is laid out in — submitted the false they held before.
+    agreed,
+    ageConfirmed,
+    decideFirstSync,
+    dispatch,
+  ]);
 
   /**
    * Google or Apple. Ends in the same place a password sign-in does — the round trip
@@ -303,6 +316,9 @@ export function useAccountLogic() {
    * store when there is not. A "download my data" that quietly returned an empty file to
    * somebody with no account would be the wrong kind of correct.
    */
+  // `store` is reached through `localExport` below, a plain function the rule does not
+  // follow into — so it is a real dependency that does not appear in this body.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: store, see above.
   const exportJson = useCallback(async () => {
     const body = user === null ? await localExport() : await accountExport();
     const file = `${FileSystem.cacheDirectory}rekordo-export-${new Date().toISOString().slice(0, 10)}.json`;
