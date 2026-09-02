@@ -2,12 +2,9 @@ import { CopyTile } from "@/components/CopyTile";
 import { ReleaseArt } from "@/components/ReleaseArt";
 import { ConfirmStrip } from "@/features/auth/ConfirmStrip";
 import { SyncOutcomeStrip } from "@/features/auth/SyncOutcomeStrip";
+import { FilterSheet } from "@/features/library/FilterSheet";
 import { rememberCopyOrder } from "@/features/library/copyOrder";
-import {
-  type FormatFilter,
-  type LibraryRow,
-  useLibraryLogic,
-} from "@/features/library/useLibraryLogic";
+import { type LibraryRow, useLibraryLogic } from "@/features/library/useLibraryLogic";
 import { useCoverPhotos } from "@/features/photos/useCoverPhotos";
 import { RollSheet } from "@/features/roll/RollSheet";
 import type { CatalogueGap } from "@/local/settings";
@@ -16,13 +13,11 @@ import type { Format } from "@janne6565/rekordo-shared";
 import { catalogArtShown, copyFormat, copyPreviewSrc } from "@janne6565/rekordo-shared";
 import { FORMAT_LABELS } from "@janne6565/rekordo-shared";
 import { useRouter } from "expo-router";
-import { Dices, Plus } from "lucide-react-native";
+import { Dices, Plus, SlidersHorizontal } from "lucide-react-native";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-const FILTERS: readonly FormatFilter[] = ["ALL", "VINYL", "CD", "CASSETTE", "DIGITAL"];
 
 export function LibraryScreen() {
   const { t } = useTranslation();
@@ -36,6 +31,22 @@ export function LibraryScreen() {
    * the dice can live in the toolbar.
    */
   const [rolling, setRolling] = useState(false);
+  const [filtering, setFiltering] = useState(false);
+  /**
+   * What the shelf is, in the words the sheet uses.
+   *
+   * With the chips gone this line is the only thing saying the grid is narrowed, so it
+   * has to name the filter rather than merely admit to one — a shelf that says "filtered"
+   * and nothing else sends you back into the sheet to find out what you did.
+   */
+  const shelfLine = logic.filtered
+    ? [
+        logic.format === "ALL" ? null : FORMAT_LABELS[logic.format as Format],
+        logic.minRating === null ? null : t("roll.poolRated", { count: logic.minRating }),
+      ]
+        .filter((part) => part !== null)
+        .join(" · ")
+    : t("library.sortedByAdded");
   const copyIds = useMemo(() => logic.rows.map((row) => row.copy.id), [logic.rows]);
   const covers = useCoverPhotos(copyIds);
   // Left here on the way past so the detail screen can be swiped through *this* order --
@@ -52,24 +63,6 @@ export function LibraryScreen() {
           <Text style={styles.count}>
             {t("library.itemCount", { count: logic.stats?.copyCount ?? 0 })}
           </Text>
-          {/* Beside Add rather than among the format chips: both are things you do to
-              the shelf, and the chips are what the shelf currently is. */}
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t("roll.openLabel")}
-            onPress={() => setRolling(true)}
-            disabled={logic.collectionEmpty}
-            style={[styles.rollButton, logic.collectionEmpty && styles.rollButtonOff]}
-          >
-            <Dices
-              size={15}
-              color={logic.collectionEmpty ? colors.inkSubtle : colors.accent}
-              strokeWidth={1.75}
-            />
-            <Text style={[styles.rollText, logic.collectionEmpty && styles.rollTextOff]}>
-              {t("roll.open")}
-            </Text>
-          </Pressable>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t("library.addItem")}
@@ -87,21 +80,48 @@ export function LibraryScreen() {
       <ConfirmStrip />
       <SyncOutcomeStrip logic={logic} />
 
-      <View style={styles.filters}>
-        {FILTERS.map((filter) => (
+      {/*
+       * 26a's meta row: what the shelf currently is on the left, and the two things you do
+       * to it on the right. It replaced a flat strip of format chips, which said the same
+       * thing in more room and could never say the second half of it — the shelf has a
+       * rating floor now, and there was nowhere in a single row of chips to put it.
+       */}
+      <View style={styles.meta}>
+        <Text style={styles.metaText} numberOfLines={1}>
+          {shelfLine}
+        </Text>
+        <View style={styles.metaActions}>
           <Pressable
-            key={filter}
-            onPress={() => logic.setFormat(filter)}
-            style={[styles.chip, logic.format === filter && styles.chipActive]}
+            accessibilityRole="button"
+            accessibilityLabel={t("roll.openLabel")}
+            onPress={() => setRolling(true)}
+            disabled={logic.collectionEmpty}
+            style={[styles.metaAction, logic.collectionEmpty && styles.metaActionOff]}
+            hitSlop={6}
           >
-            <Text style={[styles.chipText, logic.format === filter && styles.chipTextActive]}>
-              {filter === "ALL" ? t("format.all") : FORMAT_LABELS[filter as Format]}
-              {filter !== "ALL" && logic.stats !== undefined
-                ? ` ${logic.stats.byFormat[filter as Format]}`
-                : ""}
+            <Dices
+              size={14}
+              color={logic.collectionEmpty ? colors.inkSubtle : colors.accent}
+              strokeWidth={1.75}
+            />
+            <Text
+              style={[styles.metaActionText, logic.collectionEmpty && styles.metaActionTextOff]}
+            >
+              {t("roll.open")}
             </Text>
           </Pressable>
-        ))}
+          <View style={styles.metaRule} />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t("library.filters.openLabel")}
+            onPress={() => setFiltering(true)}
+            style={styles.metaAction}
+            hitSlop={6}
+          >
+            <SlidersHorizontal size={13} color={colors.accent} strokeWidth={1.75} />
+            <Text style={styles.metaActionText}>{t("library.filters.open")}</Text>
+          </Pressable>
+        </View>
       </View>
 
       <CatalogueNotice gap={logic.catalogueGap} />
@@ -135,6 +155,7 @@ export function LibraryScreen() {
       )}
 
       {rolling && <RollSheet onClose={() => setRolling(false)} />}
+      {filtering && <FilterSheet logic={logic} onClose={() => setFiltering(false)} />}
     </SafeAreaView>
   );
 }
@@ -211,20 +232,6 @@ const styles = StyleSheet.create({
   title: { fontFamily: fonts.serif, fontSize: 30, color: colors.ink },
   headerRight: { flexDirection: "row", alignItems: "center", gap: 8 },
   count: { fontSize: 11.5, color: colors.inkSubtle },
-  rollButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    height: 32,
-    paddingHorizontal: 11,
-    borderRadius: 999,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.line,
-    backgroundColor: colors.surface,
-  },
-  rollButtonOff: { opacity: 0.5 },
-  rollText: { fontSize: 11.5, fontWeight: "600", color: colors.accent },
-  rollTextOff: { color: colors.inkSubtle },
   addButton: {
     width: 32,
     height: 32,
@@ -233,26 +240,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  // The row owns the air under it as well as over it: the chips are a control strip, and
-  // letting the shelf start right below them read as the first row belonging to them.
-  filters: {
+  // The row owns the air under it as well as over it: it is a control strip, and letting
+  // the shelf start right below it read as the first row belonging to it.
+  meta: {
     flexDirection: "row",
-    gap: 7,
+    alignItems: "center",
+    gap: 12,
     paddingHorizontal: 18,
     paddingTop: 14,
     paddingBottom: 12,
   },
-  chip: {
-    paddingHorizontal: 13,
-    paddingVertical: 7,
-    borderRadius: 999,
-    backgroundColor: colors.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.line,
-  },
-  chipActive: { backgroundColor: colors.ink, borderColor: colors.ink },
-  chipText: { fontSize: 12, fontWeight: "500", color: colors.ink },
-  chipTextActive: { color: colors.paper, fontWeight: "600" },
+  metaText: { flex: 1, fontSize: 11.5, fontWeight: "500", color: colors.inkMuted },
+  metaActions: { flexDirection: "row", alignItems: "center", gap: 12 },
+  metaAction: { flexDirection: "row", alignItems: "center", gap: 5 },
+  metaActionOff: { opacity: 0.5 },
+  metaActionText: { fontSize: 11.5, fontWeight: "600", color: colors.accent },
+  metaActionTextOff: { color: colors.inkSubtle },
+  metaRule: { width: StyleSheet.hairlineWidth, height: 12, backgroundColor: "rgba(25,23,19,0.16)" },
   notice: {
     marginHorizontal: 18,
     marginBottom: 10,

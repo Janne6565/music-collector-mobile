@@ -21,6 +21,19 @@ const enCommon = {
     itemCount: "{{count}} items",
     addItem: "Add item",
     noMatches: "No items match this filter.",
+    /* What the shelf is when nothing has been asked of it. Replaced by the filter itself
+       once there is one -- see LibraryScreen's shelfLine. */
+    sortedByAdded: "Sorted by date added",
+    filters: {
+      open: "Filters",
+      openLabel: "Filter the shelf",
+      title: "Filters",
+      clear: "Clear",
+      format: "Format",
+      matching: "Copies matching",
+      show_one: "Show the one copy",
+      show_other: "Show {{count}}",
+    },
     catalogue: {
       pending_one: "1 record is still waiting for its details.",
       pending_other: "{{count}} records are still waiting for their details.",
@@ -32,6 +45,15 @@ const enCommon = {
       title: "Nothing here yet",
       body: "Scan a barcode or search to add your first record, tape, disc or download.",
     },
+  },
+  /* The rating floor, which the deck draws identically in the roll's pool and the shelf's
+     filters. One control, one set of words -- see components/RatingFloor.tsx. */
+  rating: {
+    floorLabel: "Min rating",
+    atLeast_one: "At least 1 star",
+    atLeast_other: "At least {{count}} stars",
+    any: "Any",
+    floor: "{{count}}+",
   },
   roll: {
     open: "Roll",
@@ -51,10 +73,6 @@ const enCommon = {
     session_one: "First roll this session.",
     session_other: "Roll {{count}} this session.",
     passedLine: "Passed on: {{titles}}.",
-    minRating: "Min rating",
-    atLeast: "At least {{count}} stars",
-    ratingAny: "Any",
-    ratingFloor: "{{count}}+",
     pool: "Pool",
     poolEverything: "Everything",
     poolRated: "Rated {{count}} and up",
@@ -1169,6 +1187,17 @@ const deCommon: CommonSchema = {
     itemCount: "{{count}} Exemplare",
     addItem: "Hinzufügen",
     noMatches: "Keine Einträge passen zu diesem Filter.",
+    sortedByAdded: "Nach Aufnahmedatum sortiert",
+    filters: {
+      open: "Filter",
+      openLabel: "Das Regal filtern",
+      title: "Filter",
+      clear: "Zurücksetzen",
+      format: "Format",
+      matching: "Passende Exemplare",
+      show_one: "Das eine Exemplar zeigen",
+      show_other: "{{count}} zeigen",
+    },
     catalogue: {
       pending_one: "Bei 1 Exemplar fehlen noch die Angaben.",
       pending_other: "Bei {{count}} Exemplaren fehlen noch die Angaben.",
@@ -1180,6 +1209,13 @@ const deCommon: CommonSchema = {
       title: "Noch nichts da",
       body: "Scanne einen Barcode oder suche, um dein erstes Exemplar hinzuzufügen.",
     },
+  },
+  rating: {
+    floorLabel: "Mind. Bewertung",
+    atLeast_one: "Mindestens 1 Stern",
+    atLeast_other: "Mindestens {{count}} Sterne",
+    any: "Egal",
+    floor: "ab {{count}}",
   },
   roll: {
     open: "Würfeln",
@@ -1199,10 +1235,6 @@ const deCommon: CommonSchema = {
     session_one: "Erster Wurf in dieser Sitzung.",
     session_other: "Wurf {{count}} in dieser Sitzung.",
     passedLine: "Übergangen: {{titles}}.",
-    minRating: "Mind. Bewertung",
-    atLeast: "Mindestens {{count}} Sterne",
-    ratingAny: "Egal",
-    ratingFloor: "ab {{count}}",
     pool: "Topf",
     poolEverything: "Alles",
     poolRated: "Ab {{count}} Sternen",

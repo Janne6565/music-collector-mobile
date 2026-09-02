@@ -1,3 +1,4 @@
+import { RatingFloor } from "@/components/RatingFloor";
 import { RisingSheet } from "@/components/RisingSheet";
 import { RollWheel } from "@/features/roll/RollWheel";
 import { useRollRows } from "@/features/roll/useRollRows";
@@ -522,32 +523,7 @@ function Pool({ logic }: { readonly logic: RollLogic }) {
         })}
       </View>
 
-      <View style={styles.ratingRow}>
-        <Text style={styles.footLabel}>{t("roll.minRating")}</Text>
-        <View style={styles.stars}>
-          {[1, 2, 3, 4, 5].map((step) => {
-            const on = logic.pool.minRating !== null && step <= logic.pool.minRating;
-            return (
-              <Pressable
-                key={step}
-                accessibilityRole="button"
-                accessibilityLabel={t("roll.atLeast", { count: step })}
-                // Tapping the floor you already asked for takes it off again, which is the
-                // only gesture that can get back to "any" without a sixth control.
-                onPress={() => logic.setMinRating(logic.pool.minRating === step ? null : step)}
-                hitSlop={6}
-              >
-                <Text style={[styles.star, on && styles.starOn]}>{on ? "★" : "☆"}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
-        <Text style={styles.ratingValue}>
-          {logic.pool.minRating === null
-            ? t("roll.ratingAny")
-            : t("roll.ratingFloor", { count: logic.pool.minRating })}
-        </Text>
-      </View>
+      <RatingFloor value={logic.pool.minRating} onChange={logic.setMinRating} />
     </View>
   );
 }
@@ -619,19 +595,6 @@ const styles = StyleSheet.create({
   chipOn: { backgroundColor: colors.ink, borderColor: colors.ink },
   chipText: { fontSize: 12, fontWeight: "600", color: colors.inkMuted },
   chipTextOn: { color: colors.paper },
-  ratingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.line,
-  },
-  stars: { flexDirection: "row", alignItems: "center", gap: 4, marginLeft: "auto" },
-  star: { fontSize: 19, lineHeight: 22, color: "rgba(25,23,19,0.18)" },
-  starOn: { color: colors.accent },
-  ratingValue: { fontSize: 11, fontWeight: "500", color: colors.inkSubtle },
 
   // Pulled out to both edges of the phone, which is what makes it a wheel passing behind
   // the sheet rather than a filmstrip sitting inside it.

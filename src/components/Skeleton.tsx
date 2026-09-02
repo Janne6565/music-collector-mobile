@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from "react";
-import { AccessibilityInfo, Animated, Easing, type ViewStyle } from "react-native";
+import { useReducedMotion } from "@/lib/motion";
+import { useEffect, useRef } from "react";
+import { Animated, Easing, type ViewStyle } from "react-native";
 
 /** The deck's three bar weights, strongest first. */
 export type SkeletonTone = "strong" | "soft" | "faint";
@@ -36,22 +37,23 @@ const CYCLE_MS = 700;
  * placeholder blocks below, and the cover silhouette that holds a frame until its image
  * arrives. Respects the system's reduce-motion setting, which is why it is worth having
  * in one place rather than re-derived at each call site.
+ *
+ * The *value* is deliberately still one per caller, and the reduce-motion answer is the
+ * only thing shared. Handing every caller one module-level node looks like the obvious
+ * win — the roll's wheel mounts sixty of these at once — and it is a trap: the node is
+ * driven natively, so a view that has ever been attached to it has its opacity owned by
+ * the UI thread, and swapping in a different node when the cover finally loads leaves
+ * that view frozen at whatever the loop happened to be on. A shelf of covers stuck at
+ * half opacity, with the record behind each one showing through it.
+ *
+ * What was actually expensive was never the loop. It was that each caller asked the
+ * accessibility service for the same boolean and kept its own native listener for it, so
+ * opening the roll meant sixty subscriptions and sixty promises before a cover was drawn.
+ * That is what `useReducedMotion` now answers from one subscription for the whole process.
  */
 export function usePulse(active: boolean): Animated.Value {
   const pulse = useRef(new Animated.Value(1)).current;
-  const [reduceMotion, setReduceMotion] = useState(false);
-
-  useEffect(() => {
-    let live = true;
-    void AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
-      if (live) setReduceMotion(enabled);
-    });
-    const subscription = AccessibilityInfo.addEventListener("reduceMotionChanged", setReduceMotion);
-    return () => {
-      live = false;
-      subscription.remove();
-    };
-  }, []);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     // An indicator that will not stop moving is exactly the kind of motion people turn

@@ -1,5 +1,5 @@
 import { DURATION, EASING, MARK_HOLD } from "@janne6565/rekordo-shared";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import { AccessibilityInfo, Animated, Easing } from "react-native";
 
 /**
@@ -22,21 +22,41 @@ export const curve = {
  *
  * Read once and then listened to, because it can be turned on while the app is open — and
  * on this platform there is no media query to fall back on.
+ *
+ * One subscription for the whole process, not one per caller. This is asked by every
+ * placeholder that breathes, and the roll's wheel alone mounts sixty of those at once —
+ * which was sixty native listeners and sixty round trips to the accessibility service for
+ * a single boolean that cannot differ between them.
  */
+let reducedMotion = false;
+let watching = false;
+const watchers = new Set<() => void>();
+
+function reduceMotionChanged(on: boolean): void {
+  if (on === reducedMotion) return;
+  reducedMotion = on;
+  for (const watcher of watchers) watcher();
+}
+
+/**
+ * The listener is never removed. It is the app's, not any component's: dropping it when
+ * the last placeholder unmounts would mean re-probing the service the next time one
+ * appears, which is the cost this exists to remove.
+ */
+function watchReduceMotion(watcher: () => void): () => void {
+  watchers.add(watcher);
+  if (!watching) {
+    watching = true;
+    void AccessibilityInfo.isReduceMotionEnabled().then(reduceMotionChanged);
+    AccessibilityInfo.addEventListener("reduceMotionChanged", reduceMotionChanged);
+  }
+  return () => {
+    watchers.delete(watcher);
+  };
+}
+
 export function useReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(false);
-  useEffect(() => {
-    let alive = true;
-    void AccessibilityInfo.isReduceMotionEnabled().then((on) => {
-      if (alive) setReduced(on);
-    });
-    const listener = AccessibilityInfo.addEventListener("reduceMotionChanged", setReduced);
-    return () => {
-      alive = false;
-      listener.remove();
-    };
-  }, []);
-  return reduced;
+  return useSyncExternalStore(watchReduceMotion, () => reducedMotion);
 }
 
 /**

@@ -4,10 +4,10 @@ import { readCatalogueGap } from "@/local/settings";
 import { syncOutcomeCleared } from "@/store/authSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { useSync } from "@/sync/SyncProvider";
-import { catalogueKeyOf, catalogueKeysOf } from "@janne6565/rekordo-shared";
+import { catalogueKeyOf, catalogueKeysOf, inRollPool } from "@janne6565/rekordo-shared";
 import type { Copy, Format, Release } from "@janne6565/rekordo-shared";
 import { useQuery } from "@tanstack/react-query";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 export type FormatFilter = Format | "ALL";
 
@@ -16,10 +16,22 @@ export interface LibraryRow {
   readonly release: Release | undefined;
 }
 
+export type LibraryLogic = ReturnType<typeof useLibraryLogic>;
+
 export function useLibraryLogic() {
   const { store } = useStore();
   const { syncNow } = useSync();
   const [format, setFormat] = useState<FormatFilter>("ALL");
+  /**
+   * 26c — the shelf's second axis, and the reason its filters are worth a sheet.
+   *
+   * Applied here rather than in the query, because the store filters by format and the
+   * rating lives on the copy that has already been read. Keeping the query key to the
+   * format alone also means moving the star does not go back to disk, and — the reason
+   * it matters — leaves `["copies","ALL","ADDED_DESC"]` intact as the key the roll sheet
+   * warms itself from.
+   */
+  const [minRating, setMinRating] = useState<number | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [sort] = useState<NonNullable<LibraryFilter["sort"]>>("ADDED_DESC");
   /**
@@ -54,7 +66,13 @@ export function useLibraryLogic() {
     },
   });
 
-  const all = copiesQuery.data ?? [];
+  // The pool predicate is the roll's, deliberately: "at least four stars" has to mean the
+  // same thing on the shelf as it does in the sheet, unrated copies excluded and all.
+  const all = useMemo(() => {
+    const rows = copiesQuery.data ?? [];
+    if (minRating === null) return rows;
+    return rows.filter((row) => inRollPool(row, { format: "ALL", minRating }));
+  }, [copiesQuery.data, minRating]);
   const arrived = new Set(outcome?.ids ?? []);
 
   return {
@@ -73,6 +91,15 @@ export function useLibraryLogic() {
     collectionEmpty: statsQuery.data !== undefined && statsQuery.data.copyCount === 0,
     format,
     setFormat: useCallback((next: FormatFilter) => setFormat(next), []),
+    minRating,
+    setMinRating,
+    /** What "Show" would show — the filters alone, not the sync strip's narrowing. */
+    matching: all.length,
+    filtered: format !== "ALL" || minRating !== null,
+    clearFilters: useCallback(() => {
+      setFormat("ALL");
+      setMinRating(null);
+    }, []),
     refreshing,
     /**
      * A pull on the shelf runs a sync, not just a re-read.
