@@ -42,6 +42,18 @@
           "resizeMode": "contain",
           "backgroundColor": "#faf8f5"
         }
+      ],
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/Manrope-Regular.ttf",
+            "./assets/fonts/Manrope-Medium.ttf",
+            "./assets/fonts/Manrope-SemiBold.ttf",
+            "./assets/fonts/Manrope-Bold.ttf",
+            "./assets/fonts/Newsreader-Regular.ttf"
+          ]
+        }
       ]
     ],
     "ios": {

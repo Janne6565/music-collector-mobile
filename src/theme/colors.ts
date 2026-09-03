@@ -26,6 +26,18 @@ export const colors = {
   accentNight: "#d08a5f",
 } as const;
 
+/**
+ * The two families, by the name the embedded faces carry.
+ *
+ * Shipped in `assets/fonts` and registered through the `expo-font` plugin in `app.json`,
+ * so they are in the binary before the first frame. They were named here long before they
+ * were shipped, and an unknown family is not an error on either platform -- it is a silent
+ * fall back to the system font, which is what every build did until 2026-09-03.
+ *
+ * `sans` carries weights 400, 500, 600 and 700; `serif` only 400. A `fontWeight` outside
+ * that set does not fail, it just draws the nearest face that is there. See
+ * `assets/fonts/README.md`.
+ */
 export const fonts = {
   sans: "Manrope",
   serif: "Newsreader",
