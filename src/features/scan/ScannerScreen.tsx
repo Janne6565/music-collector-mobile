@@ -328,7 +328,14 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 6,
   },
-  cardSpacer: { flex: 1 },
+  /*
+   * The gap between the camera window and the card, and nothing else.
+   *
+   * A zero basis with no shrink of its own: it takes whatever space is spare and gives up
+   * none, so a card taller than the room left shrinks and scrolls rather than running off
+   * the bottom edge with its buttons on it.
+   */
+  cardSpacer: { flexGrow: 1, flexShrink: 0, flexBasis: 0 },
 
   tray: { flex: 1 },
   trayContent: { paddingHorizontal: 16, paddingTop: 18 },

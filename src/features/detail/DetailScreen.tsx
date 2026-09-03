@@ -177,6 +177,9 @@ function DetailBody({
         art={art}
         chrome={chrome}
         saving={logic.saving}
+        photos={
+          <PhotoStrip logic={photos} chrome={chrome} hasCatalogArt={release?.coverArtUrl != null} />
+        }
         onSave={(patch) => {
           logic.save(patch);
           setEditing(false);
@@ -248,11 +251,9 @@ function DetailBody({
 
         <Fields copy={copy} chrome={chrome} />
 
-        <PhotoStrip logic={photos} chrome={chrome} hasCatalogArt={release?.coverArtUrl != null} />
-
-        {/* The photo strip ends flush against whatever follows it, so the notes card
-              carries the gap rather than the strip -- the strip is also used where nothing
-              comes after it. */}
+        {/* The photographs are not here. Adding, starring and removing them is editing the
+            copy, and it belongs in the mode that says so -- this page is the record being
+            read, and the picture it shows is already the strip's first one, at full size. */}
         <View style={[styles.card, styles.notesCard, { backgroundColor: chrome.surface }]}>
           <Text style={[styles.fieldKey, { color: chrome.muted }]}>{t("detail.notes")}</Text>
           <Text style={[styles.notes, { color: copy.notes === null ? chrome.muted : chrome.ink }]}>

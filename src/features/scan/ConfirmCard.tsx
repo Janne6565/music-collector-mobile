@@ -31,7 +31,6 @@ type Logic = ReturnType<typeof useScannerLogic>;
  * Turn 28 of the deck, screens 2a through 2e.
  */
 export function ConfirmCard({ logic }: { readonly logic: Logic }) {
-  const { t } = useTranslation();
   const card = logic.card;
   if (card === null) return null;
 
@@ -39,11 +38,49 @@ export function ConfirmCard({ logic }: { readonly logic: Logic }) {
 
   return (
     <View style={styles.card}>
-      {card.kind === "MATCH" && <Match logic={logic} />}
-      {card.kind === "PRESSINGS" && <Pressings logic={logic} />}
-      {card.kind === "DUPLICATE" && <Duplicate logic={logic} />}
-      {card.kind === "MISSING" && <Missing logic={logic} />}
-      {card.kind === "OFFLINE" && <Offline logic={logic} />}
+      {/*
+       * The card scrolls and its answers do not.
+       *
+       * Three pressings under a question under a camera window is taller than a small
+       * phone, and the card used to be laid out as if the screen were always tall enough:
+       * everything below the fold was simply off the bottom edge, unscrollable. Somebody
+       * scanning a CD could pick a pressing and then had no way to say where it should go.
+       * So the part that varies scrolls, and the part you press stays where the thumb is.
+       */}
+      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+        {card.kind === "MATCH" && <Match logic={logic} />}
+        {card.kind === "PRESSINGS" && <Pressings logic={logic} />}
+        {card.kind === "DUPLICATE" && <Duplicate logic={logic} />}
+        {card.kind === "MISSING" && <Missing logic={logic} />}
+        {card.kind === "OFFLINE" && <Offline logic={logic} />}
+      </ScrollView>
+
+      <Actions logic={logic} />
+    </View>
+  );
+}
+
+/**
+ * What this card can be answered with, pinned under the part that scrolls.
+ *
+ * Every kind ends in the same place — one or two ways on — so they are gathered here
+ * rather than left at the bottom of five different bodies where a long one can push them
+ * out of reach.
+ */
+function Actions({ logic }: { readonly logic: Logic }) {
+  const { t } = useTranslation();
+  const card = logic.card;
+  if (card === null) return null;
+
+  return (
+    <View style={styles.actions}>
+      {(card.kind === "MATCH" || card.kind === "PRESSINGS" || card.kind === "OFFLINE") && (
+        <Destinations logic={logic} />
+      )}
+      {card.kind === "DUPLICATE" && card.owned !== null && (
+        <DuplicateActions logic={logic} ownedId={card.owned.id} />
+      )}
+      {card.kind === "MISSING" && <MissingActions logic={logic} barcode={card.barcode} />}
 
       {(card.kind === "MATCH" || card.kind === "DUPLICATE") && (
         <Pressable accessibilityRole="button" onPress={logic.dismiss}>
@@ -75,7 +112,6 @@ function Match({ logic }: { readonly logic: Logic }) {
 
       <ReleaseHead release={card.picked} format={card.format} />
       <FormatChips logic={logic} others={others} />
-      <Destinations logic={logic} />
     </>
   );
 }
@@ -115,8 +151,6 @@ function Pressings({ logic }: { readonly logic: Logic }) {
           <Text style={styles.moreLink}>{t("scan.showMore", { count: hidden })}</Text>
         </Pressable>
       )}
-
-      <Destinations logic={logic} />
     </>
   );
 }
@@ -153,25 +187,31 @@ function Duplicate({ logic }: { readonly logic: Logic }) {
       <View style={styles.aside}>
         <Text style={styles.asideText}>{t("scan.copiesCountSeparately")}</Text>
       </View>
-
-      <View style={styles.stack}>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => logic.keep("SHELF")}
-          style={styles.primary}
-        >
-          <CopyPlus size={16} color="#ffffff" strokeWidth={2} />
-          <Text style={styles.primaryText}>{t("scan.addSecondCopy")}</Text>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => logic.openOwned(owned.id)}
-          style={styles.secondary}
-        >
-          <Text style={styles.secondaryText}>{t("scan.openTheOneIHave")}</Text>
-        </Pressable>
-      </View>
     </>
+  );
+}
+
+/** Add another of the same, or go and look at the one already on the shelf. */
+function DuplicateActions({ logic, ownedId }: { readonly logic: Logic; readonly ownedId: string }) {
+  const { t } = useTranslation();
+  return (
+    <View style={styles.stack}>
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => logic.keep("SHELF")}
+        style={styles.primary}
+      >
+        <CopyPlus size={16} color="#ffffff" strokeWidth={2} />
+        <Text style={styles.primaryText}>{t("scan.addSecondCopy")}</Text>
+      </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => logic.openOwned(ownedId)}
+        style={styles.secondary}
+      >
+        <Text style={styles.secondaryText}>{t("scan.openTheOneIHave")}</Text>
+      </Pressable>
+    </View>
   );
 }
 
@@ -191,26 +231,32 @@ function Missing({ logic }: { readonly logic: Logic }) {
     <>
       <Text style={styles.serif}>{t("scan.noRelease.title")}</Text>
       <Text style={styles.body}>{t("scan.noRelease.body")}</Text>
-
-      <View style={styles.pair}>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => logic.enterManually(card.barcode)}
-          style={[styles.primary, styles.half]}
-        >
-          <PencilLine size={16} color="#ffffff" strokeWidth={2} />
-          <Text style={styles.primaryText}>{t("scan.enterManually")}</Text>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          onPress={logic.dismiss}
-          style={[styles.secondary, styles.half]}
-        >
-          <Search size={16} color="rgba(25,23,19,0.75)" strokeWidth={2} />
-          <Text style={styles.secondaryText}>{t("scan.searchTitle")}</Text>
-        </Pressable>
-      </View>
     </>
+  );
+}
+
+/** The two ways out of a barcode nothing has heard of, with the digits carried into both. */
+function MissingActions({ logic, barcode }: { readonly logic: Logic; readonly barcode: string }) {
+  const { t } = useTranslation();
+  return (
+    <View style={styles.pair}>
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => logic.enterManually(barcode)}
+        style={[styles.primary, styles.half]}
+      >
+        <PencilLine size={16} color="#ffffff" strokeWidth={2} />
+        <Text style={styles.primaryText}>{t("scan.enterManually")}</Text>
+      </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        onPress={logic.dismiss}
+        style={[styles.secondary, styles.half]}
+      >
+        <Search size={16} color="rgba(25,23,19,0.75)" strokeWidth={2} />
+        <Text style={styles.secondaryText}>{t("scan.searchTitle")}</Text>
+      </Pressable>
+    </View>
   );
 }
 
@@ -244,7 +290,6 @@ function Offline({ logic }: { readonly logic: Logic }) {
       </View>
 
       <FormatChips logic={logic} hint={t("scan.setItNow")} />
-      <Destinations logic={logic} />
 
       {waiting + ready > 0 && (
         <View style={styles.waitingLine}>
@@ -433,6 +478,9 @@ const MONO = "ui-monospace";
 
 const styles = StyleSheet.create({
   card: {
+    // Shrinks rather than overflowing: the spacer above it has a zero basis, so when the
+    // window, the card and the safe area do not fit, this is the box that gives.
+    flexShrink: 1,
     marginHorizontal: 10,
     backgroundColor: colors.surface,
     borderWidth: 1,
@@ -444,6 +492,9 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 20,
   },
+
+  scroll: { flexShrink: 1 },
+  actions: { flexShrink: 0 },
 
   eyebrow: { flexDirection: "row", alignItems: "center", gap: 8 },
   eyebrowText: {
@@ -558,7 +609,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   pressingList: { marginTop: 13, gap: 8 },
-  pickerList: { marginTop: 13, maxHeight: 340 },
+  // Bounded twice: the design's height, and whatever the screen actually has left.
+  pickerList: { marginTop: 13, maxHeight: 340, flexShrink: 1 },
   pressingRow: {
     flexDirection: "row",
     alignItems: "center",

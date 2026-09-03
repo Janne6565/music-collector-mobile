@@ -13,6 +13,7 @@ import {
   isManualReleaseId,
   manualRelease,
   manualReleaseCopyId,
+  mergeCachedRelease,
 } from "@janne6565/rekordo-shared";
 import * as Crypto from "expo-crypto";
 import * as FileSystem from "expo-file-system/legacy";
@@ -648,8 +649,12 @@ export class SqliteLocalStore implements LocalStore {
 
   async cacheReleases(releases: readonly Release[]): Promise<void> {
     const db = this.handle();
+    // Read first, in one go: `mergeCachedRelease` decides each row against the one already
+    // held, and a cover this device knows about is never written back to nothing.
+    const held = await this.getReleases(releases.map((release) => release.id));
     await db.withTransactionAsync(async () => {
-      for (const release of releases) {
+      for (const cached of releases) {
+        const release = mergeCachedRelease(cached, held.get(cached.id));
         await db.runAsync(
           `INSERT OR REPLACE INTO releases
             (id, albumId, title, artistName, year, format, label, catalogNumber,

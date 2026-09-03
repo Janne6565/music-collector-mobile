@@ -36,6 +36,14 @@ interface CopyEditorProps {
   readonly art: ReactNode;
   readonly chrome: DetailChrome;
   readonly saving: boolean;
+  /**
+   * The copy's own photographs, which are edited here and nowhere else.
+   *
+   * Handed in rather than mounted here: the screen above already holds the strip's hook —
+   * the hero it draws is the first picture in it — and a second one would be a second list
+   * of the same photos going out of step with the first.
+   */
+  readonly photos?: ReactNode;
   readonly onSave: (patch: CopyPatch) => void;
   readonly onCancel: () => void;
 }
@@ -65,6 +73,7 @@ export function CopyEditor({
   art,
   chrome,
   saving,
+  photos,
   onSave,
   onCancel,
 }: CopyEditorProps) {
@@ -115,6 +124,10 @@ export function CopyEditor({
           saving={saving}
           onSave={onSave}
         />
+
+        {/* Last, under the fields: adding a picture is a thing you do to the record, and
+            the form above is what the record says about itself. */}
+        {photos}
       </View>
     </CoverSheet>
   );
