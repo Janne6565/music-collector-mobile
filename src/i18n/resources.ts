@@ -1033,7 +1033,9 @@ const enCommon = {
     toYourWishlist: "To your wishlist",
     pressing: "Pressing",
     format: "Format",
-    bestGuess: "best guess",
+    /* Not "best guess": nothing ranks these. It is the row the catalogue answered with
+       first, and nobody has picked another one yet. */
+    firstListed: "first listed",
     noCatalog: "No label or catalog number",
     others_one: "1 other",
     others_other: "{{count}} others",
@@ -1087,7 +1089,6 @@ const enCommon = {
     reissuesReuse: "Reissues often reuse the number. Keep the top one and fix it later if unsure.",
     showMore_one: "Show one more",
     showMore_other: "Show {{count}} more",
-    bestGuess: "best guess",
     alreadyOwned: "Already in your library",
     addedOn: "Added {{date}}",
     copiesCountSeparately:
@@ -2203,7 +2204,7 @@ const deCommon: CommonSchema = {
     toYourWishlist: "Auf die Wunschliste",
     pressing: "Pressung",
     format: "Format",
-    bestGuess: "beste Vermutung",
+    firstListed: "zuerst gelistet",
     noCatalog: "Kein Label, keine Katalognummer",
     others_one: "1 weitere",
     others_other: "{{count}} weitere",
@@ -2258,7 +2259,6 @@ const deCommon: CommonSchema = {
       "Wiederveröffentlichungen benutzen die Nummer oft erneut. Im Zweifel die oberste nehmen und später korrigieren.",
     showMore_one: "Eine weitere zeigen",
     showMore_other: "{{count}} weitere zeigen",
-    bestGuess: "beste Vermutung",
     alreadyOwned: "Schon in deiner Sammlung",
     addedOn: "Hinzugefügt am {{date}}",
     copiesCountSeparately:

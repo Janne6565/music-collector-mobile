@@ -21,7 +21,7 @@ export type AddDestination = "SHELF" | "WISHLIST";
  *
  * A search hit names a *release*, but a shelf holds a *pressing*, and the two are not the
  * same claim: "Bitches Brew" came back as one row and exists as forty-seven objects. The
- * sheet is where that gap is closed — a best guess you can accept in one tap, the other
+ * sheet is where that gap is closed — the catalogue's first answer to accept in one tap, the other
  * pressings a tap further, and the format still editable because the catalogue is
  * describing a record while you are holding one.
  *
@@ -57,8 +57,9 @@ export function useAddSheetLogic(
   /**
    * The other pressings of the same album.
    *
-   * Fetched behind the sheet, which is answerable without it: the best guess is already on
-   * screen and the line that opens this only appears once there is something behind it.
+   * Fetched behind the sheet, which is answerable without it: the catalogue's first answer
+   * is already on screen and the line that opens this only appears once there is something
+   * behind it.
    */
   const pressings = useQuery({
     queryKey: ["pressings", release.albumId],
@@ -165,10 +166,12 @@ export function useAddSheetLogic(
       setPicking(false);
     }, []),
     /**
-     * Whether the pressing on screen is the archive's own first answer.
+     * Whether the pressing on screen is the one the catalogue answered with first.
      *
-     * Only that one is labelled a guess. Once somebody has picked from the list it is not
-     * a guess any more, it is their choice, and leaving the badge on would say otherwise.
+     * Only that one is labelled, and the label says exactly that. It used to read "best
+     * guess", which claimed a judgement nothing here makes: with no format to go on
+     * `pickPressing` returns `releases[0]`. Once somebody has picked from the list the
+     * badge goes, because then it is their choice rather than the catalogue's order.
      */
     isGuess: picked !== null && picked.id === release.id && pressingChosen,
     save: () => save.mutate(),

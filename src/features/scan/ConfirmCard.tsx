@@ -1,5 +1,6 @@
 import { releaseDisambiguation } from "@/api/releases";
 import { ReleaseArt } from "@/components/ReleaseArt";
+import { hiddenPressings, shownPressings } from "@/features/scan/shownPressings";
 import { SCAN_FORMATS, type useScannerLogic } from "@/features/scan/useScannerLogic";
 import { useAppSelector } from "@/store/hooks";
 import { colors, fonts } from "@/theme/colors";
@@ -122,8 +123,8 @@ function Pressings({ logic }: { readonly logic: Logic }) {
   const card = logic.card;
   if (card === null) return null;
 
-  const shown = logic.pressings.slice(0, 3);
-  const hidden = logic.pressings.length - shown.length;
+  const shown = shownPressings(logic.pressings, card.picked);
+  const hidden = hiddenPressings(logic.pressings, shown);
 
   return (
     <>
@@ -136,12 +137,11 @@ function Pressings({ logic }: { readonly logic: Logic }) {
       <Text style={styles.body}>{t("scan.reissuesReuse")}</Text>
 
       <View style={styles.pressingList}>
-        {shown.map((release, index) => (
+        {shown.map((release) => (
           <PressingRow
             key={release.id}
             release={release}
             picked={card.picked?.id === release.id}
-            best={index === 0}
             onPress={() => logic.pick(release)}
           />
         ))}
@@ -409,18 +409,24 @@ function Destinations({ logic }: { readonly logic: Logic }) {
   );
 }
 
+/**
+ * One pressing in the list.
+ *
+ * The first row used to carry a "best guess" badge, which was a claim nobody had made:
+ * `pickPressing` with no format to go on returns `releases[0]`, so the label meant "first
+ * in whatever order the catalogue answered in" and dressed it up as a judgement. The rule
+ * it needed is already in the paragraph above the list, in words, and which row is
+ * selected is already said by the border and the check.
+ */
 function PressingRow({
   release,
   picked,
-  best,
   onPress,
 }: {
   readonly release: Release;
   readonly picked: boolean;
-  readonly best: boolean;
   readonly onPress: () => void;
 }) {
-  const { t } = useTranslation();
   return (
     <Pressable
       accessibilityRole="button"
@@ -435,11 +441,6 @@ function PressingRow({
               .filter((part) => part !== null)
               .join(" · ")}
           </Text>
-          {best && (
-            <View style={styles.guess}>
-              <Text style={styles.guessText}>{t("scan.bestGuess")}</Text>
-            </View>
-          )}
         </View>
         <Text style={styles.pressingMeta}>{releaseDisambiguation(release)}</Text>
       </View>
@@ -460,12 +461,11 @@ function PressingPicker({ logic }: { readonly logic: Logic }) {
         </Pressable>
       </View>
       <ScrollView style={styles.pickerList}>
-        {logic.pressings.map((release, index) => (
+        {logic.pressings.map((release) => (
           <PressingRow
             key={release.id}
             release={release}
             picked={logic.card?.picked?.id === release.id}
-            best={index === 0}
             onPress={() => logic.pick(release)}
           />
         ))}
@@ -627,20 +627,6 @@ const styles = StyleSheet.create({
   pressingTitleRow: { flexDirection: "row", alignItems: "center", gap: 7 },
   pressingTitle: { fontFamily: fonts.sans, fontSize: 13.5, fontWeight: "600", color: colors.ink },
   pressingMeta: { fontFamily: fonts.sans, fontSize: 11.5, color: colors.inkMuted, marginTop: 2 },
-  guess: {
-    paddingVertical: 2,
-    paddingHorizontal: 6,
-    borderRadius: 4,
-    backgroundColor: "rgba(162,87,58,0.14)",
-  },
-  guessText: {
-    fontFamily: MONO,
-    fontSize: 8.5,
-    letterSpacing: 0.8,
-    textTransform: "uppercase",
-    color: colors.accentStrong,
-    fontWeight: "600",
-  },
   moreLink: {
     fontFamily: fonts.sans,
     fontSize: 12.5,

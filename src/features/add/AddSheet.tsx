@@ -76,12 +76,11 @@ export function AddSheet({
                 </Pressable>
               </View>
               <ScrollView style={styles.pickerList}>
-                {logic.pressings.map((pressing, index) => (
+                {logic.pressings.map((pressing) => (
                   <PressingRow
                     key={pressing.id}
                     release={pressing}
                     picked={logic.picked.id === pressing.id}
-                    best={index === 0}
                     onPress={() => logic.pick(pressing)}
                   />
                 ))}
@@ -154,7 +153,7 @@ export function AddSheet({
                     </Text>
                     {logic.isGuess && (
                       <View style={styles.guess}>
-                        <Text style={styles.guessText}>{t("addSheet.bestGuess")}</Text>
+                        <Text style={styles.guessText}>{t("addSheet.firstListed")}</Text>
                       </View>
                     )}
                   </View>
@@ -224,18 +223,21 @@ export function AddSheet({
   );
 }
 
+/**
+ * One pressing in the picker.
+ *
+ * No badge on the first row. It used to say "best guess", which nothing here had earned:
+ * the order is the catalogue's, and the check already says which one is picked.
+ */
 function PressingRow({
   release,
   picked,
-  best,
   onPress,
 }: {
   readonly release: Release;
   readonly picked: boolean;
-  readonly best: boolean;
   readonly onPress: () => void;
 }) {
-  const { t } = useTranslation();
   return (
     <Pressable
       accessibilityRole="button"
@@ -250,15 +252,8 @@ function PressingRow({
               .filter((part) => part !== null)
               .join(" · ")}
           </Text>
-          {best && (
-            <View style={styles.guess}>
-              <Text style={styles.guessText}>{t("addSheet.bestGuess")}</Text>
-            </View>
-          )}
         </View>
-        <Text style={styles.pressingMeta}>
-          {releaseDisambiguation(release) || t("addSheet.noCatalog")}
-        </Text>
+        <Text style={styles.pressingMeta}>{releaseDisambiguation(release)}</Text>
       </View>
       {picked && <Check size={17} color={colors.ink} strokeWidth={2.2} />}
     </Pressable>
