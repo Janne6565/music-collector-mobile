@@ -177,9 +177,7 @@ function DetailBody({
         art={art}
         chrome={chrome}
         saving={logic.saving}
-        photos={
-          <PhotoStrip logic={photos} chrome={chrome} hasCatalogArt={release?.coverArtUrl != null} />
-        }
+        photos={<PhotoStrip logic={photos} chrome={chrome} release={release} />}
         onSave={(patch) => {
           logic.save(patch);
           setEditing(false);

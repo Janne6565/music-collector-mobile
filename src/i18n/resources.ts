@@ -93,6 +93,10 @@ const enCommon = {
     useCatalogArt: "Use the catalogue's cover",
     hideCatalogArt: "Hide the catalogue's cover",
     showCatalogArt: "Show the catalogue's cover",
+    /* The ribbon on the tile that is not one of your photographs. Mirrors photos.catalog in
+       the web frontend, where the strip has drawn this tile all along. */
+    catalog: "Catalog",
+    catalogHidden: "Hidden",
     deviceOnly: "on device",
     refusal: {
       title: "Saved on this phone",
@@ -1257,6 +1261,8 @@ const deCommon: CommonSchema = {
     useCatalogArt: "Cover aus dem Katalog verwenden",
     hideCatalogArt: "Katalog-Cover ausblenden",
     showCatalogArt: "Katalog-Cover einblenden",
+    catalog: "Katalog",
+    catalogHidden: "Ausgeblendet",
     deviceOnly: "nur hier",
     refusal: {
       title: "Auf diesem Telefon gespeichert",

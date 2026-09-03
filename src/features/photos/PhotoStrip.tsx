@@ -1,8 +1,9 @@
+import { type CoverSubject, ReleaseArt } from "@/components/ReleaseArt";
 import type { PhotoStripLogic } from "@/features/photos/usePhotoStripLogic";
 import { curve, useReducedMotion } from "@/lib/motion";
 import type { DetailChrome } from "@janne6565/rekordo-shared";
 import { DURATION } from "@janne6565/rekordo-shared";
-import { Camera, CloudOff, EyeOff, ImagePlus, Star, Trash2 } from "lucide-react-native";
+import { Camera, CloudOff, Eye, EyeOff, ImagePlus, Star, Trash2 } from "lucide-react-native";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Animated, Pressable, StyleSheet, Text, View } from "react-native";
@@ -66,18 +67,21 @@ function isPreview(logic: PhotoStripLogic, photoId: string): boolean {
 export function PhotoStrip({
   logic,
   chrome,
-  hasCatalogArt,
+  release,
 }: {
   readonly logic: PhotoStripLogic;
   readonly chrome: DetailChrome;
   /**
-   * Whether the release has artwork to answer about at all. The strip does not read the
-   * release itself — the screen around it already has one, and a second fetch to ask one
-   * yes-or-no question is how two answers start disagreeing.
+   * The release, for the tile that draws its artwork.
+   *
+   * Handed in rather than fetched — the screen around this already has one, and a second
+   * fetch of the same row is how two answers start disagreeing. Undefined, or with no
+   * artwork, and there is simply no catalogue tile: nothing to show and nothing to answer.
    */
-  readonly hasCatalogArt: boolean;
+  readonly release: CoverSubject | undefined;
 }) {
   const { t } = useTranslation();
+  const hasCatalogArt = release?.coverArtUrl != null;
 
   return (
     <View style={styles.root}>
@@ -97,16 +101,16 @@ export function PhotoStrip({
               <Trash2 size={11} color={chrome.background} strokeWidth={2} />
             </Pressable>
             {/*
-              * A star is a move to the front, because the preview *is* the first picture —
-              * one gesture rather than two, and the same write the web makes.
-              *
-              * Top left, and as dark as the bin opposite it. It used to sit bottom right in
-              * the surface colour, which put it under the "on device" strip -- a later
-              * sibling, so it painted over it -- and, on the half that hung off the tile,
-              * near-white on near-white paper. The one gesture that decides which picture
-              * stands for a copy was invisible and unpressable on exactly the photos that
-              * had not uploaded yet. Reported 2026-09-03.
-              */}
+             * A star is a move to the front, because the preview *is* the first picture —
+             * one gesture rather than two, and the same write the web makes.
+             *
+             * Top left, and as dark as the bin opposite it. It used to sit bottom right in
+             * the surface colour, which put it under the "on device" strip -- a later
+             * sibling, so it painted over it -- and, on the half that hung off the tile,
+             * near-white on near-white paper. The one gesture that decides which picture
+             * stands for a copy was invisible and unpressable on exactly the photos that
+             * had not uploaded yet. Reported 2026-09-03.
+             */}
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={t("photos.star")}
@@ -136,6 +140,79 @@ export function PhotoStrip({
           </PhotoTile>
         ))}
 
+        {/*
+         * The catalogue's artwork, as one of this copy's images.
+         *
+         * It always was one -- `copyPreviewSrc` ranks it against the photographs and
+         * `catalogArtShown` decides whether it is in the list at all -- but the strip only
+         * ever drew the photographs, so the two answers about it lived underneath as a pair
+         * of sentences. You were asked to star or hide a picture the list did not show you.
+         * The web frontend has drawn this tile all along; this is mobile catching up to it.
+         *
+         * The badges say the same two things the sentences did, in the places the photo
+         * tiles already use for them: the star on the left sets the preview, and the eye on
+         * the right takes the artwork out of this copy's images, or puts it back.
+         */}
+        {hasCatalogArt && (
+          <PhotoTile>
+            <ReleaseArt
+              release={release}
+              variant="bleed"
+              placeholder="plain"
+              style={styles.image}
+            />
+            {/* Dimmed rather than dropped: a tile that vanished when hidden would take the
+                only way back with it, which is the corner the two sentences were painted
+                into. */}
+            {logic.catalogArt === "HIDDEN" && (
+              <View style={[styles.image, styles.underlay, styles.hiddenWash]} />
+            )}
+
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t("photos.useCatalogArt")}
+              onPress={logic.starCatalogArt}
+              disabled={logic.choosing || logic.catalogArt === "HIDDEN"}
+              style={[
+                styles.starBadge,
+                { backgroundColor: chrome.ink },
+                logic.catalogArt === "HIDDEN" && styles.badgeOff,
+              ]}
+            >
+              <Star
+                size={11}
+                color={logic.catalogArt === "PREFERRED" ? chrome.accent : chrome.background}
+                fill={logic.catalogArt === "PREFERRED" ? chrome.accent : "transparent"}
+                strokeWidth={2}
+              />
+            </Pressable>
+
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t(
+                logic.catalogArt === "HIDDEN" ? "photos.showCatalogArt" : "photos.hideCatalogArt",
+              )}
+              onPress={
+                logic.catalogArt === "HIDDEN" ? logic.restoreCatalogArt : logic.hideCatalogArt
+              }
+              disabled={logic.choosing}
+              style={[styles.removeBadge, { backgroundColor: chrome.ink }]}
+            >
+              {logic.catalogArt === "HIDDEN" ? (
+                <Eye size={11} color={chrome.background} strokeWidth={2} />
+              ) : (
+                <EyeOff size={11} color={chrome.background} strokeWidth={2} />
+              )}
+            </Pressable>
+
+            <View style={[styles.localBadge, { backgroundColor: chrome.surface }]}>
+              <Text style={[styles.localBadgeText, { color: chrome.muted }]}>
+                {t(logic.catalogArt === "HIDDEN" ? "photos.catalogHidden" : "photos.catalog")}
+              </Text>
+            </View>
+          </PhotoTile>
+        )}
+
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={t("photos.take")}
@@ -160,44 +237,6 @@ export function PhotoStrip({
           <ImagePlus size={18} color={chrome.muted} strokeWidth={1.75} />
         </Pressable>
       </View>
-
-      {/*
-       * The catalogue's artwork is one of this copy's images too, but it is not a photo and
-       * has no position in the strip to be starred by dragging — so its two answers live
-       * here instead. Only offered where there is artwork to answer about.
-       */}
-      {hasCatalogArt && (
-        <View style={styles.catalogRow}>
-          <Pressable
-            accessibilityRole="button"
-            onPress={logic.starCatalogArt}
-            disabled={logic.choosing || logic.catalogArt === "HIDDEN"}
-            style={styles.catalogAction}
-          >
-            <Star
-              size={13}
-              color={chrome.accent}
-              fill={logic.catalogArt === "PREFERRED" ? chrome.accent : "transparent"}
-              strokeWidth={1.9}
-            />
-            <Text style={[styles.catalogLabel, { color: chrome.muted }]}>
-              {t("photos.useCatalogArt")}
-            </Text>
-          </Pressable>
-
-          <Pressable
-            accessibilityRole="button"
-            onPress={logic.catalogArt === "HIDDEN" ? logic.restoreCatalogArt : logic.hideCatalogArt}
-            disabled={logic.choosing}
-            style={styles.catalogAction}
-          >
-            <EyeOff size={13} color={chrome.muted} strokeWidth={1.75} />
-            <Text style={[styles.catalogLabel, { color: chrome.muted }]}>
-              {t(logic.catalogArt === "HIDDEN" ? "photos.showCatalogArt" : "photos.hideCatalogArt")}
-            </Text>
-          </Pressable>
-        </View>
-      )}
     </View>
   );
 }
@@ -205,7 +244,13 @@ export function PhotoStrip({
 const styles = StyleSheet.create({
   root: { marginTop: 22 },
   label: { fontSize: 9.5, letterSpacing: 0.9, textTransform: "uppercase", fontWeight: "500" },
-  strip: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 },
+  /*
+   * Wide enough for the badges, which are the reason this is not the 8 the rest of the
+   * screen uses. Each one hangs 5 past its tile, so at 8 the bin on one tile and the star
+   * on the next overlapped by a couple of pixels and read as one smudged control. 16 leaves
+   * 6 between them, and the same gap between rows, where they hang over just as far.
+   */
+  strip: { flexDirection: "row", flexWrap: "wrap", gap: 16, marginTop: 10 },
   tile: { width: 64, height: 64 },
   image: { width: "100%", height: "100%", borderRadius: 6 },
   underlay: { position: "absolute", top: 0, left: 0 },
@@ -219,9 +264,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  catalogRow: { flexDirection: "row", gap: 16, marginTop: 12 },
-  catalogAction: { flexDirection: "row", alignItems: "center", gap: 6 },
-  catalogLabel: { fontSize: 11.5 },
+  // The artwork is still one of the images while it is hidden, so the tile stays and says
+  // so rather than leaving. Paper-coloured, because the page is what shows through when a
+  // copy has dropped the catalogue's cover.
+  hiddenWash: { backgroundColor: "rgba(250,248,245,0.72)" },
+  badgeOff: { opacity: 0.35 },
   removeBadge: {
     position: "absolute",
     top: -5,
