@@ -96,18 +96,27 @@ export function PhotoStrip({
             >
               <Trash2 size={11} color={chrome.background} strokeWidth={2} />
             </Pressable>
-            {/* A star is a move to the front, because the preview *is* the first picture —
-                one gesture rather than two, and the same write the web makes. */}
+            {/*
+              * A star is a move to the front, because the preview *is* the first picture —
+              * one gesture rather than two, and the same write the web makes.
+              *
+              * Top left, and as dark as the bin opposite it. It used to sit bottom right in
+              * the surface colour, which put it under the "on device" strip -- a later
+              * sibling, so it painted over it -- and, on the half that hung off the tile,
+              * near-white on near-white paper. The one gesture that decides which picture
+              * stands for a copy was invisible and unpressable on exactly the photos that
+              * had not uploaded yet. Reported 2026-09-03.
+              */}
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={t("photos.star")}
               onPress={() => logic.star(photo)}
               disabled={logic.choosing}
-              style={[styles.starBadge, { backgroundColor: chrome.surface }]}
+              style={[styles.starBadge, { backgroundColor: chrome.ink }]}
             >
               <Star
                 size={11}
-                color={chrome.accent}
+                color={isPreview(logic, photo.id) ? chrome.accent : chrome.background}
                 fill={isPreview(logic, photo.id) ? chrome.accent : "transparent"}
                 strokeWidth={2}
               />
@@ -202,8 +211,8 @@ const styles = StyleSheet.create({
   underlay: { position: "absolute", top: 0, left: 0 },
   starBadge: {
     position: "absolute",
-    bottom: -5,
-    right: -5,
+    top: -5,
+    left: -5,
     width: 20,
     height: 20,
     borderRadius: 999,
