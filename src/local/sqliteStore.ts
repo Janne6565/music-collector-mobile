@@ -194,6 +194,10 @@ export class SqliteLocalStore implements LocalStore {
         notes           TEXT,
         notesConflict   TEXT,
         rating          INTEGER,
+        -- Which of this copy's images stands for it: AUTO, PREFERRED or HIDDEN. Defaulted
+        -- rather than nullable, because "nobody said" and "the first photo wins" are the
+        -- same answer and a third state would only be a way to get this wrong.
+        catalogArt      TEXT NOT NULL DEFAULT 'AUTO',
         -- Kept off every shelf but the owner's, whatever the sharing settings say. 0/1
         -- rather than a boolean, which SQLite does not have.
         hidden          INTEGER NOT NULL DEFAULT 0,
@@ -295,6 +299,22 @@ export class SqliteLocalStore implements LocalStore {
     // gets null: they were all identified at the moment they were made.
     if (!columns.some((column) => column.name === "pendingBarcode")) {
       await db.execAsync("ALTER TABLE copies ADD COLUMN pendingBarcode TEXT");
+    }
+    /*
+     * Which picture stands for this copy -- and the column this store never had.
+     *
+     * `catalogArt` has been on `Copy` since turn 12 and is carried by sync, but no version
+     * of this table ever held it: the write listed its columns by hand and left it out, and
+     * `CopyRow` is an `Omit` of `Copy`, so the type system was told the column existed and
+     * had nothing to complain about. Every write was dropped and every read came back
+     * undefined, which `?? "AUTO"` then turned into the default. So on this device starring
+     * the catalogue's cover and hiding it did nothing at all, silently, and a value set on
+     * the web was thrown away on arrival. Reported 2026-09-03; found by logging the write.
+     *
+     * Every row already here gets AUTO, which is what they have all been behaving as.
+     */
+    if (!columns.some((column) => column.name === "catalogArt")) {
+      await db.execAsync("ALTER TABLE copies ADD COLUMN catalogArt TEXT NOT NULL DEFAULT 'AUTO'");
     }
     // The album a copy is of. Nullable, and backfilled from the mirror below, because
     // every copy written before this column pointed at a pressing and a pressing knows
@@ -610,8 +630,8 @@ export class SqliteLocalStore implements LocalStore {
         (id, releaseId, albumId, pendingBarcode, manualTitle, manualArtist, manualYear,
          manualLabel, manualCatalogNumber, manualFormat, condition, sleeveCondition,
          pricePaidCents, currency, purchasedOn, purchasedAt, notes, notesConflict, rating,
-         hidden, createdAt, deletedAt, fieldClocks)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         catalogArt, hidden, createdAt, deletedAt, fieldClocks)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         copy.id,
         copy.releaseId,
@@ -632,6 +652,7 @@ export class SqliteLocalStore implements LocalStore {
         copy.notes,
         copy.notesConflict,
         copy.rating,
+        copy.catalogArt,
         copy.hidden ? 1 : 0,
         copy.createdAt,
         copy.deletedAt,
@@ -1041,7 +1062,8 @@ export class SqliteLocalStore implements LocalStore {
   }
 }
 
-interface CopyRow extends Omit<Copy, "fieldClocks" | "hidden" | "pendingBarcode" | "albumId"> {
+interface CopyRow
+  extends Omit<Copy, "fieldClocks" | "hidden" | "pendingBarcode" | "albumId" | "catalogArt"> {
   fieldClocks: string;
   /** SQLite has no boolean; 0 or 1. */
   hidden: number;
@@ -1049,6 +1071,8 @@ interface CopyRow extends Omit<Copy, "fieldClocks" | "hidden" | "pendingBarcode"
   pendingBarcode: string | null | undefined;
   /** Undefined on a row written before the column existed, for the same reason. */
   albumId: string | null | undefined;
+  /** Undefined on a row written before this store had the column at all -- see the migration. */
+  catalogArt: Copy["catalogArt"] | undefined;
 }
 
 interface ReleaseRow extends Omit<Release, "coverTheme"> {
@@ -1077,6 +1101,8 @@ function toCopy(row: CopyRow): Copy {
     pendingBarcode: row.pendingBarcode ?? null,
     // Undefined on a row written before the column existed, for the same reason.
     albumId: row.albumId ?? null,
+    // A row from before this store held the column at all. AUTO is what it behaved as.
+    catalogArt: row.catalogArt ?? "AUTO",
     fieldClocks: JSON.parse(row.fieldClocks) as Copy["fieldClocks"],
   };
 }
