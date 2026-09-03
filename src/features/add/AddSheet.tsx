@@ -32,6 +32,7 @@ export function AddSheet({
   destination,
   chosen = true,
   pressingChosen = true,
+  prefer,
   onClose,
 }: {
   readonly release: Release;
@@ -54,10 +55,16 @@ export function AddSheet({
    * writing down whichever pressing the catalogue happened to rank first.
    */
   readonly pressingChosen?: boolean;
+  /**
+   * A format to open on, and to land the pressing on, where the tap named only an album.
+   *
+   * The example plate passes `VINYL`. See `useAddSheetLogic`.
+   */
+  readonly prefer?: Format;
   readonly onClose: () => void;
 }) {
   const { t } = useTranslation();
-  const logic = useAddSheetLogic(release, destination, onClose, pressingChosen);
+  const logic = useAddSheetLogic(release, destination, onClose, pressingChosen, prefer);
   const shelf = logic.destination === "SHELF";
 
   return (

@@ -9,10 +9,11 @@ import {
   createAlbumCopy,
   createCopy,
   createWishlistItem,
+  pickPressing,
 } from "@janne6565/rekordo-shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Crypto from "expo-crypto";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export type AddDestination = "SHELF" | "WISHLIST";
 
@@ -41,6 +42,19 @@ export function useAddSheetLogic(
    * there is no pressing yet and picking one for them would record a guess as an answer.
    */
   pressingChosen = true,
+  /**
+   * A format to open on, and to land the pressing on, where the tap said nothing.
+   *
+   * The example plate only. Those tiles exist to show a newcomer what adding a record
+   * looks like, and a sheet that opens on "no format, no pressing, two questions to answer"
+   * shows them a form instead. Set to `VINYL` there because that is what this app is mostly
+   * for; everywhere else the tap named a pressing and this stays undefined.
+   *
+   * A preference, not an override: it decides the opening chip and which pressing is landed
+   * on, and the moment the album has no pressing in that format the sheet follows the
+   * catalogue rather than keeping a chip nothing behind it agrees with.
+   */
+  prefer?: Format,
 ) {
   const { store, clock } = useStore();
   const queryClient = useQueryClient();
@@ -51,7 +65,7 @@ export function useAddSheetLogic(
   // for an album-first open is the album shaped as the release a copy of it would have had.
   const [picked, setPicked] = useState<Release | null>(pressingChosen ? release : null);
   const shown = picked ?? release;
-  const [format, setFormat] = useState<Format>(release.format);
+  const [format, setFormat] = useState<Format>(prefer ?? release.format);
   const [picking, setPicking] = useState(false);
 
   /**
@@ -65,6 +79,28 @@ export function useAddSheetLogic(
     queryKey: ["pressings", release.albumId],
     queryFn: () => lookupPressings(release.albumId),
   });
+
+  /**
+   * Landing an opened-on-an-album sheet on a real pressing.
+   *
+   * Runs once, only where `prefer` asked for it, and only while nothing has been chosen --
+   * so a person who opens the picker before the list has loaded is never overruled by it.
+   * Note what this gives up: everywhere else, an album-first sheet deliberately records no
+   * pressing at all, because writing down whichever one the catalogue ranked first is a
+   * guess stored as an answer. On the example tiles that trade is worth making, and the
+   * format then follows the pressing actually landed on rather than the preference.
+   */
+  const landed = useRef(prefer === undefined);
+  useEffect(() => {
+    if (landed.current || picked !== null) return;
+    const candidates = pressings.data;
+    if (candidates === undefined || candidates.length === 0) return;
+    landed.current = true;
+    const first = pickPressing(candidates, prefer ?? null);
+    if (first === undefined) return;
+    setPicked(first);
+    if (first.format !== "OTHER") setFormat(first.format);
+  }, [pressings.data, prefer, picked]);
 
   const save = useMutation({
     mutationFn: async () => {

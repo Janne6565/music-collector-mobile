@@ -96,6 +96,7 @@ export function AddScreen({
     chosen?: boolean;
     /** False when all that was named is an album, so no pressing has been chosen yet. */
     pressingChosen?: boolean;
+    prefer?: Format;
   } | null>(null);
 
   /*
@@ -152,6 +153,7 @@ export function AddScreen({
           destination={confirming.destination}
           chosen={confirming.chosen ?? true}
           pressingChosen={confirming.pressingChosen ?? true}
+          prefer={confirming.prefer}
           onClose={() => setConfirming(null)}
         />
       )}
@@ -172,6 +174,7 @@ function Body({
     destination: AddDestination;
     chosen?: boolean;
     pressingChosen?: boolean;
+    prefer?: Format;
   }) => void;
   readonly destination: AddDestination;
 }) {
@@ -363,6 +366,7 @@ function BeforeTyping({
     destination: AddDestination;
     chosen?: boolean;
     pressingChosen?: boolean;
+    prefer?: Format;
   }) => void;
   readonly destination: AddDestination;
 }) {
@@ -487,8 +491,19 @@ function BeforeTyping({
               Date.now(),
             );
             /* The shelf is only where the sheet starts here. Nobody pressed a destination
-             to get in, so the sheet must not report one back. */
-            onConfirm({ release, destination, chosen: false, pressingChosen: false });
+             to get in, so the sheet must not report one back.
+
+             `prefer` is the exception to that restraint, and only here: an example tile is
+             the app showing a newcomer what adding a record looks like, so the sheet lands
+             on a vinyl pressing rather than opening two unanswered questions. See
+             `useAddSheetLogic`. */
+            onConfirm({
+              release,
+              destination,
+              chosen: false,
+              pressingChosen: false,
+              prefer: "VINYL",
+            });
           }}
         />
       )}
