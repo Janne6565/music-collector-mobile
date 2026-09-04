@@ -928,7 +928,7 @@ const enCommon = {
         "{{count}} copies and your wishlist go with the account. Friends lose access immediately; backups are cleared within 30 days.",
       exportFirst: "Export a copy first",
       exportAction: "Export",
-      typeToConfirm: "Type LÖSCHEN to confirm",
+      typeToConfirm: "Type DELETE to confirm",
       confirm: "Delete account permanently",
       keep: "Keep my account",
     },
